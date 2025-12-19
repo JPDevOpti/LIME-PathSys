@@ -1,21 +1,23 @@
-#!/bin/zsh
-# Script de ejecución para WEB-LIS PathSys en macOS
+#!/bin/bash
+# Script de ejecución para WEB-LIS PathSys
 
 set -e
 
 ensure_python() {
-  if ! command -v /opt/homebrew/bin/python3.12 >/dev/null 2>&1; then
-    echo "❌ Python 3.12 no está instalado. Instalando..."
-    brew install python@3.12
+  local python_cmd
+  if command -v python3.12 >/dev/null 2>&1; then
+    python_cmd=python3.12
+  elif command -v python3 >/dev/null 2>&1; then
+    python_cmd=python3
+  else
+    echo "❌ Python 3 no está instalado. Por favor instala Python 3.12 o superior."
+    exit 1
   fi
+  echo "$python_cmd"
 }
 
 clean_env_files() {
-  setopt localoptions null_glob
-  local targets=(Back-End/.env Back-End/.env.* Front-End/.env Front-End/.env.*)
-  if (( ${#targets[@]} )); then
-    rm -f "${targets[@]}"
-  fi
+  rm -f Back-End/.env Back-End/.env.* Front-End/.env Front-End/.env.* 2>/dev/null || true
 }
 
 write_env_files() {
@@ -53,20 +55,49 @@ ensure_frontend_deps() {
 
 ensure_backend_deps() {
   local mode=${1:-ensure}
-  ensure_python
+  local python_cmd
+  python_cmd=$(ensure_python)
   local refresh=0
   if [ ! -d "Back-End/venv" ]; then
     echo "🐍 Creando entorno virtual del Back-End..."
-    /opt/homebrew/bin/python3.12 -m venv Back-End/venv
+    if "$python_cmd" -m venv Back-End/venv 2>/dev/null; then
+      refresh=1
+    else
+      echo "⚠️  Intentando crear venv sin pip..."
+      if "$python_cmd" -m venv --without-pip Back-End/venv 2>/dev/null; then
+        echo "🐍 Instalando pip en el venv..."
+        curl -sSL https://bootstrap.pypa.io/get-pip.py | Back-End/venv/bin/python || {
+          echo "❌ Error al instalar pip en el venv"
+          rm -rf Back-End/venv
+          exit 1
+        }
     refresh=1
+      else
+        echo "❌ Error al crear el entorno virtual. Por favor instala python3-venv: sudo apt install python3-venv"
+        exit 1
+      fi
+    fi
   fi
   if [ "$mode" = "force" ]; then
     refresh=1
   fi
-  if (( refresh )); then
+  if [ "$refresh" = "1" ]; then
     echo "🐍 Instalando dependencias del Back-End..."
     (cd Back-End && . venv/bin/activate && pip install --upgrade pip && [ -f requirements.txt ] && pip install -r requirements.txt)
   fi
+}
+
+check_mongo_port() {
+  if command -v ss >/dev/null 2>&1; then
+    ss -tln 2>/dev/null | grep -q ":27017 " && return 0
+  fi
+  if command -v netstat >/dev/null 2>&1; then
+    netstat -tln 2>/dev/null | grep -q ":27017 " && return 0
+  fi
+  if lsof -Pi :27017 -sTCP:LISTEN -t >/dev/null 2>&1; then
+    return 0
+  fi
+  return 1
 }
 
 ensure_mongo_local() {
@@ -75,17 +106,20 @@ ensure_mongo_local() {
     return
   fi
 
-  if lsof -Pi :27017 -sTCP:LISTEN -t >/dev/null 2>&1; then
+  if check_mongo_port; then
     echo "✅ MongoDB local ya está activo (puerto 27017)"
     return
   fi
 
-  if command -v brew >/dev/null 2>&1; then
-    echo "🍃 Iniciando MongoDB local con brew services..."
-    if brew services start mongodb/brew/mongodb-community >/dev/null 2>&1 || \
-       brew services start mongodb-community >/dev/null 2>&1; then
+  if command -v systemctl >/dev/null 2>&1; then
+    if systemctl is-active --quiet mongod 2>/dev/null; then
+      echo "✅ MongoDB local ya está activo (servicio systemctl)"
+      return
+    fi
+    echo "🍃 Iniciando MongoDB local con systemctl..."
+    if sudo systemctl start mongod >/dev/null 2>&1; then
       sleep 2
-      if lsof -Pi :27017 -sTCP:LISTEN -t >/dev/null 2>&1; then
+      if check_mongo_port; then
         echo "✅ MongoDB local iniciado"
         return
       fi
@@ -96,25 +130,32 @@ ensure_mongo_local() {
     echo "🍃 Ejecutando mongod en segundo plano..."
     local log_file="${TMPDIR:-/tmp}/mongod-pathsys.log"
     mkdir -p "${HOME}/data/db" >/dev/null 2>&1 || true
-    if mongod --config /opt/homebrew/etc/mongod.conf --fork --logpath "$log_file" >/dev/null 2>&1 || \
-       mongod --dbpath "${HOME}/data/db" --fork --logpath "$log_file" >/dev/null 2>&1; then
+    if mongod --dbpath "${HOME}/data/db" --fork --logpath "$log_file" >/dev/null 2>&1; then
       sleep 2
-      if lsof -Pi :27017 -sTCP:LISTEN -t >/dev/null 2>&1; then
+      if check_mongo_port; then
         echo "✅ MongoDB local iniciado (log: $log_file)"
         return
       fi
     fi
   fi
 
-  echo "❌ No fue posible iniciar MongoDB automáticamente. Inicia el servicio manualmente o instala mongodb-community." >&2
-  exit 1
+  echo "⚠️  MongoDB no está activo en el puerto 27017. Por favor inicia MongoDB manualmente con: sudo systemctl start mongod" >&2
+  echo "⚠️  Continuando de todos modos. Si hay errores de conexión, verifica MongoDB." >&2
 }
 
 kill_port() {
   local port=$1
   local label=$2
-  local pids
+  local pids=""
+  if command -v lsof >/dev/null 2>&1; then
   pids=$(lsof -ti:$port 2>/dev/null || true)
+  fi
+  if [ -z "$pids" ] && command -v ss >/dev/null 2>&1; then
+    pids=$(ss -tlnp 2>/dev/null | grep ":${port} " | grep -oP 'pid=\K[0-9]+' | head -1 || true)
+  fi
+  if [ -z "$pids" ] && command -v fuser >/dev/null 2>&1; then
+    pids=$(fuser ${port}/tcp 2>/dev/null || true)
+  fi
   if [ -n "$pids" ]; then
     echo "⚠️  Liberando puerto $port (${label})..."
     echo "$pids" | xargs kill -9 2>/dev/null || true
@@ -136,10 +177,24 @@ wait_http() {
   return 1
 }
 
+check_port() {
+  local port=$1
+  if command -v ss >/dev/null 2>&1; then
+    ss -tln 2>/dev/null | grep -q ":${port} " && return 0
+  fi
+  if command -v netstat >/dev/null 2>&1; then
+    netstat -tln 2>/dev/null | grep -q ":${port} " && return 0
+  fi
+  if lsof -Pi :${port} -sTCP:LISTEN -t >/dev/null 2>&1; then
+    return 0
+  fi
+  return 1
+}
+
 report_port() {
   local port=$1
   local label=$2
-  if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
+  if check_port "$port"; then
     echo "✅ $label activo (puerto $port)"
   else
     echo "❌ $label detenido"
@@ -231,6 +286,14 @@ function setup() {
   ensure_python
   ensure_frontend_deps force
   ensure_backend_deps force
+  
+  echo "🌐 Instalando Chromium para Playwright (generación de PDFs)..."
+  if [ -d "Back-End/venv" ]; then
+    (cd Back-End && source venv/bin/activate && playwright install chromium >/dev/null 2>&1 && echo "✅ Chromium instalado correctamente" || echo "⚠️  Error al instalar Chromium, pero continuando...")
+  else
+    echo "⚠️  No se encontró el entorno virtual. Chromium no se instaló."
+  fi
+  
   echo "✅ Configuración completada"
 }
 
@@ -331,7 +394,9 @@ function stop() {
   kill_port 8000 "Backend 8000"
   kill_port 5174 "Frontend"
   kill_port 27017 "MongoDB"
-  brew services stop mongodb/brew/mongodb-community >/dev/null 2>&1 || true
+  if command -v systemctl >/dev/null 2>&1; then
+    sudo systemctl stop mongod >/dev/null 2>&1 || true
+  fi
   local docker_down_status="skipped"
   if command -v docker >/dev/null 2>&1; then
     if wait_for_docker 10 2 true; then
@@ -364,6 +429,93 @@ function stop() {
   esac
 }
 
+function import_all_data() {
+  echo "📥 Importando todos los datos a la base de datos..."
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  
+  if [ ! -d "Back-End/venv" ]; then
+    echo "❌ El entorno virtual del Back-End no existe. Ejecuta './Run.sh setup' primero."
+    exit 1
+  fi
+  
+  if [ ! -f "Back-End/.env" ]; then
+    echo "⚠️  No se encontró Back-End/.env. Creando configuración local..."
+    write_env_files local
+  fi
+  
+  ensure_mongo_local local
+  
+  local scripts_dir="Back-End/Scripts"
+  local venv_python="Back-End/venv/bin/python"
+  local error_occurred=0
+  
+  echo ""
+  echo "1/8 Importando administradores..."
+  if ! (cd Back-End && source venv/bin/activate && python Scripts/1_import_administrators.py); then
+    echo "❌ Error en importación de administradores"
+    error_occurred=1
+  fi
+  
+  echo ""
+  echo "2/8 Importando patólogos..."
+  if ! (cd Back-End && source venv/bin/activate && python Scripts/2_import_pathologists.py); then
+    echo "❌ Error en importación de patólogos"
+    error_occurred=1
+  fi
+  
+  echo ""
+  echo "3/8 Importando entidades..."
+  if ! (cd Back-End && source venv/bin/activate && python Scripts/3_import_entities.py); then
+    echo "❌ Error en importación de entidades"
+    error_occurred=1
+  fi
+  
+  echo ""
+  echo "4/8 Importando pruebas/exámenes..."
+  if ! (cd Back-End && source venv/bin/activate && python Scripts/4_import_tests.py); then
+    echo "❌ Error en importación de pruebas"
+    error_occurred=1
+  fi
+  
+  echo ""
+  echo "5/8 Importando 5000 pacientes (esto puede tardar varios minutos)..."
+  if ! (cd Back-End && source venv/bin/activate && python Scripts/7_Import_patients.py --count 5000); then
+    echo "❌ Error en importación de pacientes"
+    error_occurred=1
+  fi
+  
+  echo ""
+  echo "6/8 Importando enfermedades CIE-10..."
+  if ! (cd Back-End && source venv/bin/activate && python Scripts/5_import_diseases.py); then
+    echo "❌ Error en importación de enfermedades"
+    error_occurred=1
+  fi
+  
+  echo ""
+  echo "7/8 Importando enfermedades de cáncer (CIE-O)..."
+  if ! (cd Back-End && source venv/bin/activate && python Scripts/6_import_cancer_diseases.py); then
+    echo "❌ Error en importación de enfermedades de cáncer"
+    error_occurred=1
+  fi
+  
+  echo ""
+  echo "8/8 Importando 20000 casos (esto puede tardar varios minutos)..."
+  if ! (cd Back-End && source venv/bin/activate && python Scripts/8_Import_cases.py --count 20000); then
+    echo "❌ Error en importación de casos"
+    error_occurred=1
+  fi
+  
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  if [ $error_occurred -eq 0 ]; then
+    echo "✅ Importación de datos completada exitosamente"
+  else
+    echo "⚠️  La importación se completó con algunos errores. Revisa los mensajes anteriores."
+    exit 1
+  fi
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+}
+
 function help() {
   echo " WEB-LIS PathSys - Script de Control"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -376,6 +528,9 @@ function help() {
   echo "  local        - Inicia servicios en LOCAL (MongoDB local)"
   echo "  atlas        - Inicia servicios en LOCAL con MongoDB Atlas"
   echo "  docker       - Inicia servicios en DOCKER"
+  echo ""
+  echo " Datos:"
+  echo "  import-all   - Importa todos los datos (administradores, patólogos, entidades, pruebas, 5000 pacientes, enfermedades, 20000 casos)"
   echo ""
   echo "  Utilidades:"
   echo "  status       - Muestra el estado del sistema"
@@ -401,6 +556,7 @@ function help() {
   echo "  ./Run.sh tests        # Ejecutar suite de tests"
   echo "  ./Run.sh tests -v     # Ejecutar en modo detallado"
   echo "  ./Run.sh tests --full # Forzar ejecución completa del runner"
+  echo "  ./Run.sh import-all   # Importar todos los datos a la base de datos"
   echo ""
   echo " Sistema de configuración:"
   echo "  • LOCAL: MongoDB local (puerto 27017) + Frontend Development"
@@ -459,6 +615,9 @@ case "$1" in
   tests)
     # Pasar todos los argumentos desde la posición 2 en adelante al runner
     run_tests "${@:2}"
+    ;;
+  import-all)
+    import_all_data
     ;;
   help|*)
     help

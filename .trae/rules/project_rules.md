@@ -1,1 +1,0 @@
-En la base de datos los valores de los campos los quiero en espanol pero el campo debe tener su nombre en ingles
