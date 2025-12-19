@@ -91,11 +91,12 @@ interface PatientData {
 
 interface Props {
   visible: boolean
-  patientData: PatientData
+  patientData?: PatientData | null
   closeOnEsc?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  patientData: null,
   closeOnEsc: true
 })
 

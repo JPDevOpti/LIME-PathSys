@@ -32,6 +32,7 @@ import { useSignatureNotifier } from '@/shared/composables/useSignatureNotifier'
 // Inicializar persistencia de autenticación
 const { isInitialized } = useAuthPersistence()
 const route = useRoute()
+const isDev = import.meta.env.DEV
 
 // Control de notificación centrada
 const { visible: signatureNoticeVisible, checkAndShowOncePerSession, close: closeSignatureNotice } = useSignatureNotifier()
@@ -40,22 +41,18 @@ const handleSignatureNoticeClose = () => closeSignatureNotice()
 
 // Mostrar al finalizar inicialización
 watch(() => isInitialized.value, (ready) => {
-  console.log('[App] isInitialized changed', ready)
   if (ready) checkAndShowOncePerSession()
 }, { immediate: true })
 
 // Mostrar al entrar al dashboard
 // Comentario: Dispara la verificación solo cuando la ruta es '/dashboard'.
 watch(() => route.path, (path) => {
-  console.log('[App] route changed', path)
   if (path === '/dashboard') {
     checkAndShowOncePerSession()
   }
 })
 
-watch(() => signatureNoticeVisible.value, (v) => {
-  console.log('[App] signatureNoticeVisible', v)
-})
+watch(() => signatureNoticeVisible.value, () => {})
 </script>
 
 <style>

@@ -14,7 +14,6 @@ function hasSignature(u: any): boolean {
     if (!sig) {
       sig = sessionStorage.getItem('signature_url') || localStorage.getItem('signature_url')
     }
-    console.log('[SignatureNotifier] hasSignature check', { sig })
     return !!(sig && sig.toString().trim())
   } catch {
     return false
@@ -35,19 +34,16 @@ function checkAndShowOncePerSession(): void {
       ? Boolean(rawIsAuth.value)
       : Boolean(rawIsAuth)
     const user = authStore.user as any
-    console.log('[SignatureNotifier] checkAndShowOncePerSession', { alreadyShown, isAuth, isPatologist, user })
     if (!alreadyShown && isAuth && isPatologist && !hasSignature(user)) {
-      console.log('[SignatureNotifier] showing signature notice')
       visible.value = true
       sessionStorage.setItem(shownKey, '1')
     } else {
-      console.log('[SignatureNotifier] conditions not met, notice hidden', { visible: visible.value })
+      visible.value = false
     }
   } catch {}
 }
 
 function close(): void {
-  console.log('[SignatureNotifier] closing notice')
   visible.value = false
 }
 

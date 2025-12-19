@@ -251,8 +251,8 @@ interface PatientData {
     municipality_code?: string
     municipality_name?: string
     subregion?: string
-    address?: string
-  }
+    address?: string | null
+  } | null
   municipality_code?: string
   municipality_name?: string
   subregion?: string
@@ -272,11 +272,12 @@ interface PatientData {
 
 interface Props {
   visible: boolean
-  patientData: PatientData
+  patientData?: PatientData | null
   closeOnEsc?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  patientData: null,
   closeOnEsc: true
 })
 

@@ -102,11 +102,25 @@ export function useSidebarProvider() {
 
 // Function to consume sidebar context in child components
 export function useSidebar(): SidebarContextType {
-  const context = inject<SidebarContextType>(SidebarSymbol)
-  if (!context) {
-    throw new Error(
-      'useSidebar must be used within a component that has SidebarProvider as an ancestor',
-    )
+  const context = inject<SidebarContextType | null>(SidebarSymbol, null)
+
+  if (context) {
+    return context
   }
-  return context
+
+  // Fallback silencioso para componentes que se usan fuera del provider.
+  const flag = ref(false)
+  return {
+    isExpanded: flag,
+    isMobileOpen: flag,
+    isHovered: flag,
+    activeItem: ref<string | null>(null),
+    openSubmenu: ref<string | null>(null),
+    sidebarOpen: flag,
+    toggleSidebar: () => {},
+    toggleMobileSidebar: () => {},
+    setIsHovered: () => {},
+    setActiveItem: () => {},
+    toggleSubmenu: () => {},
+  }
 }

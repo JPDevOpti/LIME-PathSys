@@ -20,7 +20,7 @@ export interface Location {
   municipality_code: string
   municipality_name: string
   subregion: string
-  address: string
+  address?: string | null
 }
 
 // Interfaces para información de entidad
@@ -35,16 +35,16 @@ export interface PatientData {
   identification_type: IdentificationType
   identification_number: string
   first_name: string
-  second_name?: string
+  second_name?: string | null
   first_lastname: string
-  second_lastname?: string
+  second_lastname?: string | null
   birth_date: string
   age?: number
   gender: Gender
-  location?: Location
+  location?: Location | null
   entity_info: EntityInfo
   care_type: CareType
-  observations?: string
+  observations?: string | null
   created_at?: string
   updated_at?: string
 }
@@ -54,29 +54,29 @@ export interface CreatePatientRequest {
   identification_type: IdentificationType
   identification_number: string
   first_name: string
-  second_name?: string
+  second_name?: string | null
   first_lastname: string
-  second_lastname?: string
+  second_lastname?: string | null
   birth_date: string
   gender: Gender
-  location?: Location
+  location?: Location | null
   entity_info: EntityInfo
   care_type: CareType
-  observations?: string
+  observations?: string | null
 }
 
 // Interface para actualizar paciente
 export interface UpdatePatientRequest {
   first_name?: string
-  second_name?: string
+  second_name?: string | null
   first_lastname?: string
-  second_lastname?: string
+  second_lastname?: string | null
   birth_date?: string
   gender?: Gender
-  location?: Partial<Location>
+  location?: Partial<Location> | null
   entity_info?: Partial<EntityInfo>
   care_type?: CareType
-  observations?: string
+  observations?: string | null
 }
 
 // Interface para cambio de identificación

@@ -3,18 +3,31 @@
     <FormInputField
       :label="label"
       :placeholder="placeholder || 'Seleccione fecha'"
-      :type="'date'"
+      :type="'text'"
       :required="required"
       :errors="combinedErrors"
       :warnings="warnings"
       :help-text="helpText"
-      :min="minIso"
-      :max="maxIso"
+      inputmode="numeric"
       rightAdornmentWidth="1.5rem"
-      v-model="innerValue"
+      v-model="displayValue"
       ref="container"
       class="date-input-field"
     />
+
+    <!-- Input nativo oculto para abrir el selector de fecha sin mostrar el icono del navegador -->
+    <input
+      ref="nativeDateInput"
+      type="date"
+      class="native-date-input"
+      :min="minIso"
+      :max="maxIso"
+      :value="isoValue"
+      @change="onNativeDateChange"
+      tabindex="-1"
+      aria-hidden="true"
+    />
+
     <button 
       type="button" 
       class="absolute right-2 top-0 h-full flex items-center p-1 text-blue-600 hover:text-blue-700 z-10" 
@@ -85,33 +98,63 @@ function convertISOToDisplay(isoDate: string): string {
   return `${dd}/${mm}/${yyyy}`
 }
 
-const innerValue = computed({
+function normalizeDisplayDate(displayDate: string): string {
+  // Si luce como DD/MM/AAAA o MM/DD/AAAA, ajustar a un formato válido DD/MM/AAAA
+  if (!isDisplayDateFormat(displayDate)) return displayDate
+  const [p1, p2, yyyy] = displayDate.split('/')
+  const n1 = Number(p1)
+  const n2 = Number(p2)
+
+  // Caso: el usuario escribe MM/DD/AAAA y el “mes” (p2) quedó > 12 -> intercambiar
+  if (n2 > 12 && n1 >= 1 && n1 <= 12) {
+    return `${p2.padStart(2, '0')}/${p1.padStart(2, '0')}/${yyyy}`
+  }
+
+  // Caso: el usuario escribe DD/MM/AAAA (normal), mantener
+  return displayDate
+}
+
+const displayValue = computed({
   get: () => {
     const value = props.modelValue || ''
     if (!value) return ''
-    if (isISODateFormat(value)) return value
-    if (isDisplayDateFormat(value)) return convertDisplayToISO(value)
-    return ''
+    if (isISODateFormat(value)) return convertISOToDisplay(value)
+    if (isDisplayDateFormat(value)) return normalizeDisplayDate(value)
+    return value
   },
   set: (val: string) => {
     if (!val) {
       emit('update:modelValue', '')
       return
     }
-    if (isISODateFormat(val)) {
-      emit('update:modelValue', convertISOToDisplay(val))
-      return
+    // Formatear a DD/MM/AAAA mientras el usuario escribe (ergonomía)
+    const digits = val.replace(/\D/g, '').slice(0, 8) // máximo 8 dígitos
+    let formatted = ''
+    if (digits.length <= 2) {
+      formatted = digits
+    } else if (digits.length <= 4) {
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`
+    } else {
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`
     }
-    // Si el navegador enviara un formato no esperado, preservamos el valor
-    emit('update:modelValue', val)
+    formatted = normalizeDisplayDate(formatted)
+    emit('update:modelValue', formatted)
   }
+})
+
+const isoValue = computed(() => {
+  const value = props.modelValue || ''
+  if (!value) return ''
+  if (isISODateFormat(value)) return value
+  if (isDisplayDateFormat(value)) return convertDisplayToISO(normalizeDisplayDate(value))
+  return ''
 })
 
 // Errores combinados: añade validación opcional por año mínimo
 const combinedErrors = computed(() => {
   const list = Array.isArray(props.errors) ? [...props.errors] : []
-  if (props.minYear && innerValue.value) {
-    const iso = innerValue.value
+  if (props.minYear && isoValue.value) {
+    const iso = isoValue.value
     const year = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? Number(iso.slice(0, 4)) : NaN
     if (!Number.isNaN(year) && year < (props.minYear as number)) {
       list.push(`La fecha no puede ser anterior al año ${props.minYear}`)
@@ -127,8 +170,8 @@ const combinedErrors = computed(() => {
     }
     return ''
   }
-  if (innerValue.value) {
-    const current = innerValue.value
+  if (isoValue.value) {
+    const current = isoValue.value
     const nb = norm(props.notBefore || '')
     const na = norm(props.notAfter || '')
     if (nb && current < nb) {
@@ -158,6 +201,7 @@ const maxIso = computed(() => {
 })
 
 const container = ref<any>(null)
+const nativeDateInput = ref<HTMLInputElement | null>(null)
 
 // Calculate button position to align with input field
 const buttonStyle = computed(() => {
@@ -173,15 +217,65 @@ const buttonStyle = computed(() => {
 })
 
 function openCalendar() {
-  const root: any = container.value?.$el ?? container.value
-  const input = (root && typeof root.querySelector === 'function') ? (root.querySelector('input') as HTMLInputElement | null) : null
+  const input = nativeDateInput.value
   if (!input) return
+
+  // Asegurar que el input nativo esté sincronizado antes de abrir
+  try { input.value = isoValue.value || '' } catch {}
+
   if (typeof (input as any).showPicker === 'function') {
-    try { (input as any).showPicker() } catch { input.focus() }
+    try { (input as any).showPicker() } catch { input.click() }
   } else {
-    input.focus()
+    input.click()
   }
 }
+
+function onNativeDateChange(event: Event) {
+  const target = event.target as HTMLInputElement
+  const iso = target.value || ''
+  if (!iso) {
+    emit('update:modelValue', '')
+    return
+  }
+  emit('update:modelValue', convertISOToDisplay(iso))
+}
 </script>
+
+<style scoped>
+/* Mantener el input nativo fuera de vista pero disponible para showPicker/click */
+.native-date-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 1px;
+  height: 1px;
+  right: 0;
+  top: 0;
+}
+</style>
+<style scoped>
+/* Ocultar el ícono nativo del navegador para input type="date" (evita doble icono) */
+:deep(.date-input-field input[type='date']::-webkit-calendar-picker-indicator) {
+  opacity: 0 !important;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Chrome/Safari: ocultar botones auxiliares que pueden aparecer */
+:deep(.date-input-field input[type='date']::-webkit-clear-button),
+:deep(.date-input-field input[type='date']::-webkit-inner-spin-button) {
+  display: none !important;
+}
+
+/* Quitar apariencia nativa para evitar el icono del input date */
+:deep(.date-input-field input[type='date']) {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  background-image: none !important;
+  padding-right: 2.75rem; /* espacio para el botón azul */
+}
+</style>
 
 

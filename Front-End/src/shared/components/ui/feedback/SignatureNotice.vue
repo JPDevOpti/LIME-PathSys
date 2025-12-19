@@ -64,16 +64,11 @@ const props = defineProps<{ visible: boolean }>()
 const emit = defineEmits<{ (e: 'close'): void }>()
 
 const visible = computed(() => props.visible)
-let overlayLeftClass = computed(() => 'left-0 lg:left-20')
-try {
-  const { isExpanded, isMobileOpen, isHovered } = useSidebar()
-  overlayLeftClass = computed(() => {
-    const hasWideSidebar = (isExpanded.value && !isMobileOpen.value) || (!isExpanded.value && isHovered.value)
-    return hasWideSidebar ? 'left-0 lg:left-72' : 'left-0 lg:left-20'
-  })
-} catch (error) {
-  console.warn('[SignatureNotice] Sidebar provider not found, using default overlay positioning')
-}
+const { isExpanded, isMobileOpen, isHovered } = useSidebar()
+const overlayLeftClass = computed(() => {
+  const hasWideSidebar = (isExpanded.value && !isMobileOpen.value) || (!isExpanded.value && isHovered.value)
+  return hasWideSidebar ? 'left-0 lg:left-72' : 'left-0 lg:left-20'
+})
 </script>
 
 <style scoped>

@@ -399,6 +399,26 @@ const maxBirthDate = computed(() => {
   return today.toISOString().split('T')[0]
 })
 
+// Utilidad: convertir fechas a ISO (soporta DD/MM/AAAA y MM/DD/AAAA)
+const toISODateString = (value: string): string => {
+  if (!value) return ''
+  // Si ya es ISO
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value
+  // Si es DD/MM/AAAA o MM/DD/AAAA
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+    const [p1, p2, yyyy] = value.split('/')
+    const n1 = Number(p1)
+    const n2 = Number(p2)
+    // Si el segundo segmento es >12 asumimos que el usuario escribió MM/DD
+    if (n2 > 12 && n1 >= 1 && n1 <= 12) {
+      return `${yyyy}-${p1.padStart(2, '0')}-${p2.padStart(2, '0')}`
+    }
+    // Caso normal DD/MM
+    return `${yyyy}-${p2.padStart(2, '0')}-${p1.padStart(2, '0')}`
+  }
+  return ''
+}
+
 // Validation functions
 const validateForm = (): boolean => {
   clearErrors()
@@ -436,16 +456,22 @@ const validateForm = (): boolean => {
     errors.birth_date.push('La fecha de nacimiento es obligatoria')
     isValid = false
   } else {
-    const birthDate = new Date(form.birth_date)
-    const today = new Date()
-    const age = today.getFullYear() - birthDate.getFullYear()
-    
-    if (birthDate > today) {
-      errors.birth_date.push('La fecha de nacimiento no puede ser futura')
+    const iso = toISODateString(form.birth_date)
+    if (!iso) {
+      errors.birth_date.push('La fecha de nacimiento no es válida')
       isValid = false
-    } else if (age > 120) {
-      errors.birth_date.push('La edad no puede ser mayor a 120 años')
-      isValid = false
+    } else {
+      const birthDate = new Date(iso)
+      const today = new Date()
+      const age = today.getFullYear() - birthDate.getFullYear()
+      
+      if (birthDate > today) {
+        errors.birth_date.push('La fecha de nacimiento no puede ser futura')
+        isValid = false
+      } else if (age > 120) {
+        errors.birth_date.push('La edad no puede ser mayor a 120 años')
+        isValid = false
+      }
     }
   }
 
@@ -704,15 +730,9 @@ const searchPatient = async () => {
   try {
     // Buscar por identificación usando searchPatients
     const searchResults = await patientsApiService.searchPatients(searchIdentificationNumber.value, 10)
-    
-    console.log('Search results:', searchResults)
-    console.log('Search identification type:', searchIdentificationType.value, typeof searchIdentificationType.value)
-    console.log('Search identification number:', searchIdentificationNumber.value, typeof searchIdentificationNumber.value)
-    
+
     // Filtrar por tipo de identificación exacto
     const matchingPatient = searchResults.find(p => {
-      console.log('Comparing patient:', p.identification_type, typeof p.identification_type, 'vs', searchIdentificationType.value, typeof searchIdentificationType.value)
-      console.log('Number comparison:', p.identification_number, typeof p.identification_number, 'vs', searchIdentificationNumber.value, typeof searchIdentificationNumber.value)
       return p.identification_type === Number(searchIdentificationType.value) && 
              p.identification_number === searchIdentificationNumber.value
     })
@@ -753,40 +773,90 @@ const onSubmit = async () => {
   isLoading.value = true
 
   try {
-    // Preparar objeto location solo si al menos un campo tiene contenido válido
-    const hasLocation = form.municipality_code?.trim() || 
-                        form.municipality_name?.trim() || 
-                        form.subregion?.trim() || 
-                        form.address?.trim()
-    
+    // Log: estado actual del formulario antes de normalizar
+    const formSnapshot = { ...form }
+    console.log('[EditPatient] estado del formulario al guardar', formSnapshot)
+
+    // Normalizar valores opcionales: enviar null cuando se limpian para que el backend los elimine
+    const secondNameRaw = form.second_name.trim()
+    const secondLastnameRaw = form.second_lastname.trim()
+    const observationsRaw = form.observations.trim()
+
+    const secondName = secondNameRaw === '' ? null : secondNameRaw
+    const secondLastname = secondLastnameRaw === '' ? null : secondLastnameRaw
+    const observations = observationsRaw === '' ? null : observationsRaw
+
+    // Validación coherente con backend: si se llena algún campo de ubicación, exigir los obligatorios
+    const locCode = form.municipality_code.trim()
+    const locName = form.municipality_name.trim()
+    const locSubregion = form.subregion.trim()
+    const locAddress = form.address.trim() || null
+
+    const hasLocationFields = locCode || locName || locSubregion || locAddress
+    const hasRequiredLocation = locCode && locName && locSubregion
+    if (hasLocationFields && !hasRequiredLocation) {
+      showNotification('error', 'Error de validación', 'Complete código, municipio y subregión para guardar la ubicación', 0)
+      isLoading.value = false
+      return
+    }
+
+    const hadLocation = Boolean(
+      originalData.value?.location &&
+      (
+        originalData.value.location.municipality_code ||
+        originalData.value.location.municipality_name ||
+        originalData.value.location.subregion ||
+        originalData.value.location.address
+      )
+    )
+
+    const birthDateIso = toISODateString(form.birth_date)
+
+    const locationPayload: UpdatePatientRequest['location'] = hasRequiredLocation
+      ? {
+          municipality_code: locCode,
+          municipality_name: locName,
+          subregion: locSubregion,
+          address: locAddress,
+        }
+      : (hadLocation ? null : undefined)
+
+    console.log('[EditPatient] ubicación normalizada', {
+      locCode,
+      locName,
+      locSubregion,
+      locAddress,
+      hasLocationFields,
+      hasRequiredLocation,
+      hadLocation,
+      locationPayload
+    })
+
     const updateData: UpdatePatientRequest = {
       first_name: form.first_name.trim(),
-      second_name: form.second_name.trim() || undefined,
+      second_name: secondName,
       first_lastname: form.first_lastname.trim(),
-      second_lastname: form.second_lastname.trim() || undefined,
-      birth_date: form.birth_date,
+      second_lastname: secondLastname,
+      birth_date: birthDateIso,
       gender: form.gender as Gender,
-      location: hasLocation ? {
-        municipality_code: form.municipality_code?.trim() || '',
-        municipality_name: form.municipality_name?.trim() || '',
-        subregion: form.subregion?.trim() || '',
-        address: form.address?.trim() || ''
-      } : undefined,
-      // Enviar entidad sólo si ambos campos están completos
-      entity_info: (
-        form.entity_id?.trim() &&
-        form.entity_name?.trim()
-      ) ? {
+      location: locationPayload,
+      entity_info: {
         id: form.entity_id.trim(),
         name: form.entity_name.trim()
-      } : undefined,
+      },
       care_type: form.care_type as CareType,
-      observations: form.observations.trim() || undefined
+      observations
     }
 
     // Limpiar claves undefined para evitar validaciones innecesarias
     Object.keys(updateData).forEach((k) => {
       if ((updateData as any)[k] === undefined) delete (updateData as any)[k]
+    })
+
+    // Log: payload final que se envía al backend
+    console.log('[EditPatient] payload enviado a updatePatient', {
+      patient_code: form.patient_code,
+      updateData: JSON.parse(JSON.stringify(updateData))
     })
 
     // Paso 1: si cambió la identificación, validar duplicados y actualizar identificación primero
@@ -841,6 +911,12 @@ const onSubmit = async () => {
     
   } catch (error: any) {
     let errorMessage = 'No se pudo actualizar el paciente. Por favor, inténtelo nuevamente.'
+
+    console.error('[EditPatient] error al actualizar', {
+      message: error?.message,
+      response: error?.response?.data,
+      status: error?.response?.status
+    })
 
     // Mensajes específicos para identificación duplicada o cambio fallido
     if (error.message?.includes('Ya existe un paciente')) {
