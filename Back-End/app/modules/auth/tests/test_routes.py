@@ -83,6 +83,14 @@ def test_login_route_success_200(app):
     assert body["user"]["email"] == "admin@pathsys.io"
     assert body["user"]["role"] == "administrador"
 
+def test_login_route_with_remember_me_returns_token_200(app):
+    client = TestClient(app)
+    r = client.post("/auth/login", json={"email": "admin@pathsys.io", "password": "secreto123", "remember_me": True})
+    assert r.status_code == 200
+    body = r.json()
+    assert "token" in body and "user" in body
+    assert body["token"]["token_type"] == "bearer"
+
 
 def test_login_route_invalid_credentials_401(app):
     client = TestClient(app)
@@ -125,6 +133,14 @@ def test_me_with_invalid_token_returns_401(app):
 def test_refresh_success_returns_new_token(app):
     client = TestClient(app)
     token = create_access_token("64b64c7e8f0a1b2c3d4e5f60")
+    r = client.post("/auth/refresh", headers={"Authorization": f"Bearer {token}"})
+    assert r.status_code == 200
+    data = r.json()
+    assert set(["access_token", "token_type", "expires_in"]).issubset(data.keys())
+
+def test_refresh_preserves_remember_me_flag(app):
+    client = TestClient(app)
+    token = create_access_token("64b64c7e8f0a1b2c3d4e5f60", extra_claims={"rm": True})
     r = client.post("/auth/refresh", headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 200
     data = r.json()

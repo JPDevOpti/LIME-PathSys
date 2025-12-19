@@ -44,6 +44,7 @@ class PacientesMetrics(BaseModel):
     """Schema para métricas de pacientes"""
     mes_actual: int = Field(..., description="Pacientes del mes actual")
     mes_anterior: int = Field(..., description="Pacientes del mes anterior")
+    mes_anterior_anterior: int = Field(0, description="Pacientes del mes ante-anterior")
     cambio_porcentual: float = Field(..., description="Cambio porcentual respecto al mes anterior")
 
 
@@ -51,6 +52,7 @@ class CasosMetrics(BaseModel):
     """Schema para métricas de casos"""
     mes_actual: int = Field(..., description="Casos del mes actual")
     mes_anterior: int = Field(..., description="Casos del mes anterior")
+    mes_anterior_anterior: int = Field(0, description="Casos del mes ante-anterior")
     cambio_porcentual: float = Field(..., description="Cambio porcentual respecto al mes anterior")
 
 

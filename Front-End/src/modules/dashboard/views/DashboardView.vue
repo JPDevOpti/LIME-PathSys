@@ -1,7 +1,7 @@
 <template>
   <!-- Dashboard layout: KPIs + charts + urgent list -->
   <AdminLayout>
-    <div class="grid grid-cols-12 gap-4 md:gap-6 p-4 md:p-6 bg-gray-50">
+    <div class="grid grid-cols-12 gap-4 md:gap-6">
       <!-- Left column: KPIs and monthly cases -->
       <div class="col-span-12 space-y-4 xl:col-span-7">
         <MetricsBlocks />
@@ -137,14 +137,12 @@ watch(
 @media (max-width: 768px) {
   .grid {
     gap: 1rem;
-    padding: 1rem;
   }
 }
 
 @media (max-width: 480px) {
   .grid {
     gap: 0.75rem;
-    padding: 0.75rem;
   }
 }
 </style>

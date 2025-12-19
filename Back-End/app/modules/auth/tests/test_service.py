@@ -78,6 +78,12 @@ async def test_login_success_returns_token_and_user(service: AuthService):
     subject = verify_token(token["access_token"])
     assert subject == "64b64c7e8f0a1b2c3d4e5f60"
 
+@pytest.mark.asyncio
+async def test_login_with_remember_me_returns_longer_expiration(service: AuthService):
+    res = await service.login("admin@pathsys.io", "secreto123", remember_me=True)
+    token = res["token"]
+    assert token["expires_in"] == int(timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES_REMEMBER_ME).total_seconds())
+
 
 @pytest.mark.asyncio
 async def test_login_fails_with_wrong_password(service: AuthService):
@@ -101,6 +107,12 @@ async def test_login_email_is_case_insensitive(service: AuthService):
 async def test_refresh_token_success(service: AuthService):
     data = await service.refresh_token("64b64c7e8f0a1b2c3d4e5f60")
     assert set(["access_token", "token_type", "expires_in"]).issubset(data.keys())
+    assert verify_token(data["access_token"]) == "64b64c7e8f0a1b2c3d4e5f60"
+
+@pytest.mark.asyncio
+async def test_refresh_token_with_remember_me_returns_longer_expiration(service: AuthService):
+    data = await service.refresh_token("64b64c7e8f0a1b2c3d4e5f60", remember_me=True)
+    assert data["expires_in"] == int(timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES_REMEMBER_ME).total_seconds())
     assert verify_token(data["access_token"]) == "64b64c7e8f0a1b2c3d4e5f60"
 
 

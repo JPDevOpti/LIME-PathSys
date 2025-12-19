@@ -16,7 +16,11 @@ class AuthService:
         db = await get_database()
         return cls(AuthRepository(db))
 
-    async def login(self, email: EmailStr, password: str) -> Dict[str, Any]:
+    def _get_expires_delta(self, remember_me: bool) -> timedelta:
+        minutes = settings.ACCESS_TOKEN_EXPIRE_MINUTES_REMEMBER_ME if remember_me else settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        return timedelta(minutes=minutes)
+
+    async def login(self, email: EmailStr, password: str, remember_me: bool = False) -> Dict[str, Any]:
         user = await self.repo.get_user_by_email(email)
         if not user:
             raise ValueError("Invalid credentials")
@@ -24,8 +28,8 @@ class AuthService:
         if not verify_password(password, user.get("password_hash", "")):
             raise ValueError("Invalid credentials")
 
-        expires_delta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        token = create_access_token(subject=user["_id"], expires_delta=expires_delta)
+        expires_delta = self._get_expires_delta(remember_me)
+        token = create_access_token(subject=user["_id"], expires_delta=expires_delta, extra_claims={"rm": bool(remember_me)})
 
         public_user = {
             "id": user.get("_id"),
@@ -49,7 +53,7 @@ class AuthService:
             "user": public_user,
         }
 
-    async def refresh_token(self, user_id: str) -> Dict[str, Any]:
+    async def refresh_token(self, user_id: str, remember_me: bool = False) -> Dict[str, Any]:
         """Refresh an access token for an authenticated user"""
         user = await self.repo.get_user_by_id(user_id)
         if not user:
@@ -58,8 +62,8 @@ class AuthService:
         if not user.get("is_active", True):
             raise ValueError("User account is inactive")
 
-        expires_delta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        token = create_access_token(subject=user["_id"], expires_delta=expires_delta)
+        expires_delta = self._get_expires_delta(remember_me)
+        token = create_access_token(subject=user["_id"], expires_delta=expires_delta, extra_claims={"rm": bool(remember_me)})
 
         return {
             "access_token": token,

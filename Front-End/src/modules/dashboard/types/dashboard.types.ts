@@ -38,6 +38,7 @@ export interface DashboardMetrics {
   casos: {
     mes_actual: number
     mes_anterior: number
+    mes_anterior_anterior?: number
     cambio_porcentual: number
   }
 }

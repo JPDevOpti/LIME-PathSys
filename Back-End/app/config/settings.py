@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     SECRET_KEY: str = os.getenv("SECRET_KEY", "")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "480"))  # 8 horas
+    ACCESS_TOKEN_EXPIRE_MINUTES_REMEMBER_ME: int = int(
+        os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES_REMEMBER_ME", "43200")
+    )  # 30 días
     
     @field_validator("SECRET_KEY")
     @classmethod

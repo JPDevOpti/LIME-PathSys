@@ -24,6 +24,8 @@
           <path v-if="pacientesCambio >= 0" fill-rule="evenodd" clip-rule="evenodd" d="M5.56462 1.62393C5.70193 1.47072 5.90135 1.37432 6.12329 1.37432C6.1236 1.37432 6.12391 1.37432 6.12422 1.37432C6.31631 1.37415 6.50845 1.44731 6.65505 1.59381L9.65514 4.5918C9.94814 4.88459 9.94831 5.35947 9.65552 5.65246C9.36273 5.94546 8.88785 5.94562 8.59486 5.65283L6.87329 3.93247L6.87329 10.125C6.87329 10.5392 6.53751 10.875 6.12329 10.875C5.70908 10.875 5.37329 10.5392 5.37329 10.125L5.37329 3.93578L3.65516 5.65282C3.36218 5.94562 2.8873 5.94547 2.5945 5.65248C2.3017 5.35949 2.30185 4.88462 2.59484 4.59182L5.56462 1.62393Z" fill=""/>
           <path v-else fill-rule="evenodd" clip-rule="evenodd" d="M5.31462 10.3761C5.45194 10.5293 5.65136 10.6257 5.87329 10.6257C5.8736 10.6257 5.8739 10.6257 5.87421 10.6257C6.0663 10.6259 6.25845 10.5527 6.40505 10.4062L9.40514 7.4082C9.69814 7.11541 9.69831 6.64054 9.40552 6.34754C9.11273 6.05454 8.63785 6.05438 8.34486 6.34717L6.62329 8.06753L6.62329 1.875C6.62329 1.46079 6.28751 1.125 5.87329 1.125C5.45908 1.125 5.12329 1.46079 5.12329 1.875L5.12329 8.06422L3.40516 6.34719C3.11218 6.05439 2.6373 6.05454 2.3445 6.34752C2.0517 6.64051 2.05185 7.11538 2.34484 7.40818L5.31462 10.3761Z" fill=""/>
         </svg>
+        <span class="whitespace-nowrap">{{ mesesComparacionLabel }}</span>
+        <span class="opacity-80">·</span>
         {{ Math.abs(pacientesCambio).toFixed(1) }}%
       </span>
     </Card>
@@ -49,6 +51,8 @@
           <path v-if="casosCambio >= 0" fill-rule="evenodd" clip-rule="evenodd" d="M5.56462 1.62393C5.70193 1.47072 5.90135 1.37432 6.12329 1.37432C6.1236 1.37432 6.12391 1.37432 6.12422 1.37432C6.31631 1.37415 6.50845 1.44731 6.65505 1.59381L9.65514 4.5918C9.94814 4.88459 9.94831 5.35947 9.65552 5.65246C9.36273 5.94546 8.88785 5.94562 8.59486 5.65283L6.87329 3.93247L6.87329 10.125C6.87329 10.5392 6.53751 10.875 6.12329 10.875C5.70908 10.875 5.37329 10.5392 5.37329 10.125L5.37329 3.93578L3.65516 5.65282C3.36218 5.94562 2.8873 5.94547 2.5945 5.65248C2.3017 5.35949 2.30185 4.88462 2.59484 4.59182L5.56462 1.62393Z" fill=""/>
           <path v-else fill-rule="evenodd" clip-rule="evenodd" d="M5.31462 10.3761C5.45194 10.5293 5.65136 10.6257 5.87329 10.6257C5.8736 10.6257 5.8739 10.6257 5.87421 10.6257C6.0663 10.6259 6.25845 10.5527 6.40505 10.4062L9.40514 7.4082C9.69814 7.11541 9.69831 6.64054 9.40552 6.34754C9.11273 6.05454 8.63785 6.05438 8.34486 6.34717L6.62329 8.06753L6.62329 1.875C6.62329 1.46079 6.28751 1.125 5.87329 1.125C5.45908 1.125 5.12329 1.46079 5.12329 1.875L5.12329 8.06422L3.40516 6.34719C3.11218 6.05439 2.6373 6.05454 2.3445 6.34752C2.0517 6.64051 2.05185 7.11538 2.34484 7.40818L5.31462 10.3761Z" fill=""/>
         </svg>
+        <span class="whitespace-nowrap">{{ mesesComparacionLabel }}</span>
+        <span class="opacity-80">·</span>
         {{ Math.abs(casosCambio).toFixed(1) }}%
       </span>
     </Card>
@@ -76,21 +80,35 @@ const { metricas, loadingMetricas: isLoading, error, cargarMetricas, cargarCasos
 const esPatologo = computed(() => authStore.user?.role === 'pathologist' && authStore.userRole !== 'administrator')
 // Patient metrics
 const pacientesMesActual = computed(() => Number(metricas.value?.pacientes?.mes_actual ?? 0))
+const mesesComparacionLabel = computed(() => {
+  // Etiqueta: "Nov vs Oct" (mes anterior vs mes ante-anterior)
+  const monthShort = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+  const now = new Date()
+  const currentMonthIdx = now.getMonth() // 0..11
+  const previousMonthIdx = (currentMonthIdx + 11) % 12
+  const twoMonthsAgoIdx = (currentMonthIdx + 10) % 12
+  return `${monthShort[previousMonthIdx]} vs ${monthShort[twoMonthsAgoIdx]}`
+})
+const calcularCambioEntreMeses = (mesReciente: number, mesAnterior: number): number => {
+  if (mesAnterior > 0) return ((mesReciente - mesAnterior) / mesAnterior) * 100
+  return mesReciente > 0 ? 100 : 0
+}
 const pacientesCambio = computed(() => {
-  // Prefer delta vs previous month-1 when available; fallback to backend percentage
+  // Comparar mes anterior vs mes ante-anterior (ej: nov vs oct)
   const mesAnt = Number(metricas.value?.pacientes?.mes_anterior ?? 0)
-  const mesAntAnt = (metricas.value as any)?.pacientes?.mes_anterior_anterior
-  if (typeof mesAntAnt === 'number') {
-    const denom = mesAntAnt === 0 ? 1 : mesAntAnt
-    return Math.round(((mesAnt - mesAntAnt) / denom) * 100)
-  }
-  return Number(metricas.value?.pacientes?.cambio_porcentual ?? 0)
+  const mesAntAnt = Number(metricas.value?.pacientes?.mes_anterior_anterior ?? 0)
+  return calcularCambioEntreMeses(mesAnt, mesAntAnt)
 })
 
 // Case metrics
 const casosMesActual = computed(() => Number(metricas.value?.casos?.mes_actual ?? 0))
 
-const casosCambio = computed(() => Number(metricas.value?.casos?.cambio_porcentual ?? 0))
+const casosCambio = computed(() => {
+  // Comparar mes anterior vs mes ante-anterior (ej: nov vs oct)
+  const mesAnt = Number(metricas.value?.casos?.mes_anterior ?? 0)
+  const mesAntAnt = Number(metricas.value?.casos?.mes_anterior_anterior ?? 0)
+  return calcularCambioEntreMeses(mesAnt, mesAntAnt)
+})
 
 // Load metrics and monthly cases in parallel
 const cargarEstadisticas = async () => {

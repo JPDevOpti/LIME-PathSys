@@ -300,7 +300,7 @@ import logoCollapsed from '@/assets/images/LOGO-LIME-Inicial.png'
 const route = useRoute();
 const { isAdmin, isPatologo, isAuxiliar, isResidente, isFacturacion } = usePermissions();
 
-const { isExpanded, isMobileOpen, isHovered, openSubmenu, setIsHovered, toggleSubmenu } = useSidebar();
+const { isExpanded, isMobileOpen, isHovered, openSubmenu, toggleSubmenu, setIsHovered } = useSidebar();
 
 
 

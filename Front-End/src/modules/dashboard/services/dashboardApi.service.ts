@@ -68,11 +68,13 @@ class DashboardApiService {
         pacientes: {
           mes_actual: Number(data?.pacientes?.mes_actual ?? 0),
           mes_anterior: Number(data?.pacientes?.mes_anterior ?? 0),
+          mes_anterior_anterior: Number(data?.pacientes?.mes_anterior_anterior ?? 0),
           cambio_porcentual: Number(data?.pacientes?.cambio_porcentual ?? 0)
         },
         casos: {
           mes_actual: Number(data?.casos?.mes_actual ?? 0),
           mes_anterior: Number(data?.casos?.mes_anterior ?? 0),
+          mes_anterior_anterior: Number(data?.casos?.mes_anterior_anterior ?? 0),
           cambio_porcentual: Number(data?.casos?.cambio_porcentual ?? 0)
         }
       }

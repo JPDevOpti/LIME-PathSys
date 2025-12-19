@@ -21,18 +21,16 @@
       <div class="absolute top-0 right-0 w-96 h-96 bg-teal-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
       <div class="absolute bottom-0 left-1/2 w-96 h-96 bg-cyan-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
       
-      <div class="w-full max-w-6xl mx-auto mb-6 sm:mb-10 text-center relative z-20 animate-fadeIn">
+      <div class="w-full max-w-6xl mx-auto mb-3 sm:mb-6 text-center relative z-20 animate-fadeIn">
         <div class="flex flex-wrap justify-center items-center gap-4 sm:gap-8 lg:gap-13">
-          <div class="flex items-center gap-1 sm:gap-2">
-            <router-link to="/" class="inline-block transition-all duration-500 hover:scale-110 hover:-translate-y-2">
-              <img src="@/assets/images/Banner_HAMA.png" alt="Logo HAMA" class="w-40 sm:w-48 lg:w-64 h-auto mx-auto filter drop-shadow-xl" />
-            </router-link>
-            <router-link to="/" class="inline-block transition-all duration-500 hover:scale-110 hover:-translate-y-2 flex justify-center">
-              <img src="@/assets/images/Logo-LIME-NoFondo.png" alt="Logo LIME" class="w-24 sm:w-28 lg:w-32 h-auto rounded-xl filter drop-shadow-xl" />
-            </router-link>
-          </div>
           <router-link to="/" class="inline-block transition-all duration-500 hover:scale-110 hover:-translate-y-2">
-            <img src="@/assets/images/Banner_UDEA.png" alt="Logo UDEA" class="w-32 sm:w-40 lg:w-52 h-auto mx-auto rounded-xl filter drop-shadow-xl" />
+            <img src="@/assets/images/Logo-LIME-NoFondo.png" alt="Logo LIME" class="w-24 sm:w-28 lg:w-32 h-auto rounded-xl filter drop-shadow-xl" />
+          </router-link>
+          <router-link to="/" class="inline-block transition-all duration-500 hover:scale-110 hover:-translate-y-2">
+            <img src="@/assets/images/Banner_UDEA.png" alt="Logo Universidad de Antioquia" class="w-32 sm:w-40 lg:w-52 h-auto mx-auto rounded-xl filter drop-shadow-xl" />
+          </router-link>
+          <router-link to="/" class="inline-block transition-all duration-500 hover:scale-110 hover:-translate-y-2">
+            <img src="@/assets/images/Banner_HAMA.png" alt="Logo Hospital Alma Mater" class="w-40 sm:w-48 lg:w-64 h-auto mx-auto filter drop-shadow-xl" />
           </router-link>
         </div>
       </div>

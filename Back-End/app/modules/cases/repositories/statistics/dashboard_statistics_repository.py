@@ -166,6 +166,14 @@ class DashboardStatisticsRepository:
             previous_month_start = datetime(now.year - 1, 12, 1, tzinfo=timezone.utc)
         else:
             previous_month_start = datetime(now.year, now.month - 1, 1, tzinfo=timezone.utc)
+
+        # Mes ante-anterior (dos meses atrás)
+        if now.month == 1:
+            two_months_ago_start = datetime(now.year - 1, 11, 1, tzinfo=timezone.utc)
+        elif now.month == 2:
+            two_months_ago_start = datetime(now.year - 1, 12, 1, tzinfo=timezone.utc)
+        else:
+            two_months_ago_start = datetime(now.year, now.month - 2, 1, tzinfo=timezone.utc)
         
         # Próximo mes para el rango
         if now.month == 12:
@@ -256,6 +264,48 @@ class DashboardStatisticsRepository:
                 "$count": "total"
             }
         ]
+
+        # Pipeline para pacientes del mes ante-anterior
+        two_months_ago_patients_pipeline = [
+            {
+                "$match": {
+                    "created_at": {
+                        "$gte": two_months_ago_start,
+                        "$lt": previous_month_start
+                    }
+                }
+            },
+            {
+                "$addFields": {
+                    "patient_key": {
+                        "$ifNull": [
+                            "$patient_info.patient_code",
+                            {
+                                "$cond": [
+                                    {
+                                        "$and": [
+                                            {"$gt": [{"$strLenCP": {"$ifNull": ["$patient_info.identification_type", ""]}}, 0]},
+                                            {"$gt": [{"$strLenCP": {"$ifNull": ["$patient_info.identification_number", ""]}}, 0]}
+                                        ]
+                                    },
+                                    {"$concat": ["$patient_info.identification_type", "-", "$patient_info.identification_number"]},
+                                    "$patient_info.identification_number"
+                                ]
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "$group": {
+                    "_id": "$patient_key",
+                    "count": {"$sum": 1}
+                }
+            },
+            {
+                "$count": "total"
+            }
+        ]
         
         # Pipeline para casos del mes actual
         current_month_cases_pipeline = [
@@ -286,18 +336,37 @@ class DashboardStatisticsRepository:
                 "$count": "total"
             }
         ]
+
+        # Pipeline para casos del mes ante-anterior
+        two_months_ago_cases_pipeline = [
+            {
+                "$match": {
+                    "created_at": {
+                        "$gte": two_months_ago_start,
+                        "$lt": previous_month_start
+                    }
+                }
+            },
+            {
+                "$count": "total"
+            }
+        ]
         
         # Ejecutar agregaciones
         current_month_patients_result = await self.collection.aggregate(current_month_patients_pipeline).to_list(1)
         previous_month_patients_result = await self.collection.aggregate(previous_month_patients_pipeline).to_list(1)
+        two_months_ago_patients_result = await self.collection.aggregate(two_months_ago_patients_pipeline).to_list(1)
         current_month_cases_result = await self.collection.aggregate(current_month_cases_pipeline).to_list(1)
         previous_month_cases_result = await self.collection.aggregate(previous_month_cases_pipeline).to_list(1)
+        two_months_ago_cases_result = await self.collection.aggregate(two_months_ago_cases_pipeline).to_list(1)
         
         # Procesar resultados
         pacientes_mes_actual = current_month_patients_result[0]["total"] if current_month_patients_result else 0
         pacientes_mes_anterior = previous_month_patients_result[0]["total"] if previous_month_patients_result else 0
+        pacientes_mes_ante_anterior = two_months_ago_patients_result[0]["total"] if two_months_ago_patients_result else 0
         casos_mes_actual = current_month_cases_result[0]["total"] if current_month_cases_result else 0
         casos_mes_anterior = previous_month_cases_result[0]["total"] if previous_month_cases_result else 0
+        casos_mes_ante_anterior = two_months_ago_cases_result[0]["total"] if two_months_ago_cases_result else 0
         
         # Calcular cambios porcentuales con ventanas rodantes de 30 días
         from datetime import timedelta
@@ -361,31 +430,41 @@ class DashboardStatisticsRepository:
             "pacientes": {
                 "mes_actual": pacientes_mes_actual,
                 "mes_anterior": pacientes_mes_anterior,
+                "mes_anterior_anterior": pacientes_mes_ante_anterior,
                 "cambio_porcentual": round(pacientes_cambio, 2)
             },
             "casos": {
                 "mes_actual": casos_mes_actual,
                 "mes_anterior": casos_mes_anterior,
+                "mes_anterior_anterior": casos_mes_ante_anterior,
                 "cambio_porcentual": round(casos_cambio, 2)
             }
         }
 
     async def get_metrics_pathologist(self, pathologist_code: str) -> Dict[str, Any]:
         """Obtener métricas específicas de un patólogo"""
-        now = datetime.now()
-        current_month_start = datetime(now.year, now.month, 1)
+        now = datetime.now(timezone.utc)
+        current_month_start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
         
         # Mes anterior
         if now.month == 1:
-            previous_month_start = datetime(now.year - 1, 12, 1)
+            previous_month_start = datetime(now.year - 1, 12, 1, tzinfo=timezone.utc)
         else:
-            previous_month_start = datetime(now.year, now.month - 1, 1)
+            previous_month_start = datetime(now.year, now.month - 1, 1, tzinfo=timezone.utc)
+
+        # Mes ante-anterior (dos meses atrás)
+        if now.month == 1:
+            two_months_ago_start = datetime(now.year - 1, 11, 1, tzinfo=timezone.utc)
+        elif now.month == 2:
+            two_months_ago_start = datetime(now.year - 1, 12, 1, tzinfo=timezone.utc)
+        else:
+            two_months_ago_start = datetime(now.year, now.month - 2, 1, tzinfo=timezone.utc)
         
         # Próximo mes para el rango
         if now.month == 12:
-            next_month_start = datetime(now.year + 1, 1, 1)
+            next_month_start = datetime(now.year + 1, 1, 1, tzinfo=timezone.utc)
         else:
-            next_month_start = datetime(now.year, now.month + 1, 1)
+            next_month_start = datetime(now.year, now.month + 1, 1, tzinfo=timezone.utc)
         
         # Pipeline para pacientes del patólogo en el mes actual
         current_month_patients_pipeline = [
@@ -417,6 +496,29 @@ class DashboardStatisticsRepository:
                     "created_at": {
                         "$gte": previous_month_start,
                         "$lt": current_month_start
+                    },
+                    "assigned_pathologist.id": pathologist_code
+                }
+            },
+            {"$addFields": {"patient_key": {"$ifNull": ["$patient_info.patient_code", {"$cond": [{"$and": [{"$gt": [{"$strLenCP": {"$ifNull": ["$patient_info.identification_type", ""]}}, 0]}, {"$gt": [{"$strLenCP": {"$ifNull": ["$patient_info.identification_number", ""]}}, 0]}]}, {"$concat": ["$patient_info.identification_type", "-", "$patient_info.identification_number"]}, "$patient_info.identification_number"]}]}}},
+            {
+                "$group": {
+                    "_id": "$patient_key",
+                    "count": {"$sum": 1}
+                }
+            },
+            {
+                "$count": "total"
+            }
+        ]
+
+        # Pipeline para pacientes del patólogo en el mes ante-anterior
+        two_months_ago_patients_pipeline = [
+            {
+                "$match": {
+                    "created_at": {
+                        "$gte": two_months_ago_start,
+                        "$lt": previous_month_start
                     },
                     "assigned_pathologist.id": pathologist_code
                 }
@@ -464,18 +566,38 @@ class DashboardStatisticsRepository:
                 "$count": "total"
             }
         ]
+
+        # Pipeline para casos del patólogo en el mes ante-anterior
+        two_months_ago_cases_pipeline = [
+            {
+                "$match": {
+                    "created_at": {
+                        "$gte": two_months_ago_start,
+                        "$lt": previous_month_start
+                    },
+                    "assigned_pathologist.id": pathologist_code
+                }
+            },
+            {
+                "$count": "total"
+            }
+        ]
         
         # Ejecutar agregaciones
         current_month_patients_result = await self.collection.aggregate(current_month_patients_pipeline).to_list(1)
         previous_month_patients_result = await self.collection.aggregate(previous_month_patients_pipeline).to_list(1)
+        two_months_ago_patients_result = await self.collection.aggregate(two_months_ago_patients_pipeline).to_list(1)
         current_month_cases_result = await self.collection.aggregate(current_month_cases_pipeline).to_list(1)
         previous_month_cases_result = await self.collection.aggregate(previous_month_cases_pipeline).to_list(1)
+        two_months_ago_cases_result = await self.collection.aggregate(two_months_ago_cases_pipeline).to_list(1)
         
         # Procesar resultados
         pacientes_mes_actual = current_month_patients_result[0]["total"] if current_month_patients_result else 0
         pacientes_mes_anterior = previous_month_patients_result[0]["total"] if previous_month_patients_result else 0
+        pacientes_mes_ante_anterior = two_months_ago_patients_result[0]["total"] if two_months_ago_patients_result else 0
         casos_mes_actual = current_month_cases_result[0]["total"] if current_month_cases_result else 0
         casos_mes_anterior = previous_month_cases_result[0]["total"] if previous_month_cases_result else 0
+        casos_mes_ante_anterior = two_months_ago_cases_result[0]["total"] if two_months_ago_cases_result else 0
         
         # Calcular cambios porcentuales con ventanas rodantes de 30 días (filtrando por patólogo)
         from datetime import timedelta
@@ -539,11 +661,13 @@ class DashboardStatisticsRepository:
             "pacientes": {
                 "mes_actual": pacientes_mes_actual,
                 "mes_anterior": pacientes_mes_anterior,
+                "mes_anterior_anterior": pacientes_mes_ante_anterior,
                 "cambio_porcentual": round(pacientes_cambio, 2)
             },
             "casos": {
                 "mes_actual": casos_mes_actual,
                 "mes_anterior": casos_mes_anterior,
+                "mes_anterior_anterior": casos_mes_ante_anterior,
                 "cambio_porcentual": round(casos_cambio, 2)
             }
         }

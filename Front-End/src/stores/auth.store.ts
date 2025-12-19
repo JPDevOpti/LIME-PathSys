@@ -41,7 +41,7 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
-      const response = await authApiService.login(credentials)
+      const response = await authApiService.login({ ...credentials, remember_me: rememberMe })
       
       // Save token and user
       token.value = response.access_token

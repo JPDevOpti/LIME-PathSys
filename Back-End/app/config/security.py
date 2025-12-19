@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from typing import Any, Union, Optional
+from typing import Any, Union, Optional, Dict
 from jose import jwt, JWTError
 from passlib.context import CryptContext
 from app.config.settings import settings
@@ -8,7 +8,9 @@ from app.config.settings import settings
 pwd_context = CryptContext(schemes=["argon2", "bcrypt"], deprecated="auto")
 
 def create_access_token(
-    subject: Union[str, Any], expires_delta: Optional[timedelta] = None
+    subject: Union[str, Any],
+    expires_delta: Optional[timedelta] = None,
+    extra_claims: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Crear token de acceso JWT"""
     if expires_delta:
@@ -18,7 +20,9 @@ def create_access_token(
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
     
-    to_encode = {"exp": expire, "sub": str(subject)}
+    to_encode: Dict[str, Any] = {"exp": expire, "sub": str(subject)}
+    if extra_claims:
+        to_encode.update(extra_claims)
     encoded_jwt = jwt.encode(
         to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
     )
@@ -49,22 +53,30 @@ def decode_token(token: str) -> Optional[dict]:
     except JWTError:
         return None
 
-def verify_token(token: str) -> Optional[str]:
-    """Verificar token y obtener subject"""
+def verify_token_payload(token: str) -> Optional[dict]:
+    """Verificar token y retornar payload"""
     payload = decode_token(token)
     if payload is None:
         return None
-    
-    # Verificar expiración
+
     exp = payload.get("exp")
     if exp is None:
         return None
-    
-    # Convertir timestamp a datetime para comparación
+
     exp_datetime = datetime.fromtimestamp(exp, tz=timezone.utc)
     if datetime.now(timezone.utc) > exp_datetime:
         return None
-    
+
+    if not payload.get("sub"):
+        return None
+
+    return payload
+
+def verify_token(token: str) -> Optional[str]:
+    """Verificar token y obtener subject"""
+    payload = verify_token_payload(token)
+    if payload is None:
+        return None
     return payload.get("sub")
 
 def is_token_expired(token: str) -> bool:
