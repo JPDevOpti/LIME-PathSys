@@ -102,9 +102,9 @@ export interface PatientFilters {
   gender?: Gender
   care_type?: CareType
   
-  // Filtros de fecha de creación
-  date_from?: string
-  date_to?: string
+  // Filtros de fecha de creación (busca en el campo created_at)
+  created_at_from?: string
+  created_at_to?: string
   
   // Paginación
   skip?: number

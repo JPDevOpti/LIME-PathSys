@@ -24,7 +24,6 @@ function checkAndShowOncePerSession(): void {
   const authStore = useAuthStore()
   try {
     const shownKey = 'signature_missing_notified'
-    const alreadyShown = sessionStorage.getItem(shownKey)
     const rawIsPathologist = authStore.isPathologist as any
     const rawIsAuth = authStore.isAuthenticated as any
     const isPatologist = typeof rawIsPathologist === 'object' && rawIsPathologist !== null && 'value' in rawIsPathologist
@@ -34,13 +33,27 @@ function checkAndShowOncePerSession(): void {
       ? Boolean(rawIsAuth.value)
       : Boolean(rawIsAuth)
     const user = authStore.user as any
-    if (!alreadyShown && isAuth && isPatologist && !hasSignature(user)) {
-      visible.value = true
-      sessionStorage.setItem(shownKey, '1')
+    
+    // Solo mostrar si es patólogo autenticado Y realmente no tiene firma
+    if (isAuth && isPatologist && !hasSignature(user)) {
+      // Solo mostrar si no se ha mostrado ya en esta sesión
+      const alreadyShown = sessionStorage.getItem(shownKey)
+      if (!alreadyShown) {
+        visible.value = true
+        sessionStorage.setItem(shownKey, '1')
+      } else {
+        visible.value = false
+      }
     } else {
+      // Si tiene firma o no es patólogo, ocultar y marcar como notificado
       visible.value = false
+      if (hasSignature(user)) {
+        sessionStorage.setItem(shownKey, '1')
+      }
     }
-  } catch {}
+  } catch {
+    visible.value = false
+  }
 }
 
 function close(): void {

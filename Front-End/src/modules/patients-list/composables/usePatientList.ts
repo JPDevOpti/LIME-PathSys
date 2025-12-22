@@ -71,8 +71,8 @@ export function usePatientList() {
     municipality_code: undefined,
     municipality_name: undefined,
     subregion: undefined,
-    date_from: undefined,
-    date_to: undefined,
+    created_at_from: undefined,
+    created_at_to: undefined,
     skip: 0,
     limit: 100
   })

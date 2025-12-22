@@ -215,8 +215,12 @@ class PatientSearch(BaseModel):
     subregion: Optional[str] = Field(None, min_length=1, max_length=100)
     entity: Optional[str] = Field(None, min_length=1, max_length=100)
     care_type: Optional[CareType] = None
-    date_from: Optional[str] = Field(None, description="Fecha desde en formato YYYY-MM-DD")
-    date_to: Optional[str] = Field(None, description="Fecha hasta en formato YYYY-MM-DD")
+    # Nuevos parámetros para búsqueda por created_at (prioritarios)
+    created_at_from: Optional[str] = Field(None, description="Fecha de creación desde en formato YYYY-MM-DD (busca en campo created_at)")
+    created_at_to: Optional[str] = Field(None, description="Fecha de creación hasta en formato YYYY-MM-DD (busca en campo created_at)")
+    # Parámetros legacy para compatibilidad hacia atrás (deprecated, usar created_at_from/created_at_to)
+    date_from: Optional[str] = Field(None, description="[Deprecated] Fecha desde en formato YYYY-MM-DD. Use created_at_from en su lugar.")
+    date_to: Optional[str] = Field(None, description="[Deprecated] Fecha hasta en formato YYYY-MM-DD. Use created_at_to en su lugar.")
     skip: int = Field(0, ge=0)
     limit: int = Field(100, ge=1, le=1000)
 
@@ -242,14 +246,29 @@ class PatientSearch(BaseModel):
                     raise ValueError('La fecha debe estar en formato YYYY-MM-DD')
         return v
 
-    @field_validator('date_from', 'date_to', mode='before')
+    @field_validator('created_at_from', 'created_at_to', 'date_from', 'date_to', mode='before')
     def validate_date_strings(cls, v):
-        if v is not None and v.strip():
-            try:
-                datetime.strptime(v.strip(), '%Y-%m-%d')
-                return v.strip()
-            except ValueError:
-                raise ValueError('La fecha debe estar en formato YYYY-MM-DD')
-        return None
+        if v is None:
+            return None
+        # Convertir a string y limpiar espacios
+        v_str = v.strip() if isinstance(v, str) else str(v).strip()
+        # Si está vacío después de limpiar, retornar None
+        if not v_str:
+            return None
+        # Validar formato de fecha
+        try:
+            datetime.strptime(v_str, '%Y-%m-%d')
+            return v_str
+        except ValueError:
+            raise ValueError('La fecha debe estar en formato YYYY-MM-DD')
+    
+    @model_validator(mode='after')
+    def normalize_created_at_dates(self):
+        """Prioriza created_at_from/created_at_to sobre date_from/date_to para compatibilidad"""
+        if self.created_at_from is None and self.date_from is not None:
+            self.created_at_from = self.date_from
+        if self.created_at_to is None and self.date_to is not None:
+            self.created_at_to = self.date_to
+        return self
     
     model_config = ConfigDict(use_enum_values=True)

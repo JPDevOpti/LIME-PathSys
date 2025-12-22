@@ -43,9 +43,19 @@ export interface BackendEntity {
 export async function searchPatients(params: Partial<PatientFilters> = {}): Promise<{ patients: BackendPatient[], total: number }> {
   try {
     const toISO = (v?: string) => {
-      if (!v) return v
-      const m = /^([0-3]\d)\/(0\d|1[0-2])\/(\d{4})$/.exec(v)
-      return m ? `${m[3]}-${m[2]}-${m[1]}` : v
+      if (!v || !v.trim()) return undefined
+      const trimmed = v.trim()
+      // Si ya está en formato ISO (YYYY-MM-DD), devolverlo tal cual
+      if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        return trimmed
+      }
+      // Si está en formato DD/MM/YYYY, convertirlo a YYYY-MM-DD
+      const m = /^([0-3]\d)\/(0\d|1[0-2])\/(\d{4})$/.exec(trimmed)
+      if (m) {
+        return `${m[3]}-${m[2]}-${m[1]}`
+      }
+      // Si no coincide con ningún formato conocido, devolver el valor original
+      return trimmed
     }
     const queryParams: Record<string, any> = {
       skip: params.skip || 0,
@@ -67,8 +77,19 @@ export async function searchPatients(params: Partial<PatientFilters> = {}): Prom
     if (params.entity) queryParams.entity = params.entity
     if (params.gender) queryParams.gender = params.gender
     if (params.care_type) queryParams.care_type = params.care_type
-    if (params.date_from) queryParams.date_from = toISO(params.date_from)
-    if (params.date_to) queryParams.date_to = toISO(params.date_to)
+    // Parámetros de fecha de creación (mapeados a created_at en el backend)
+    if (params.created_at_from) {
+      const isoDate = toISO(params.created_at_from)
+      if (isoDate) {
+        queryParams.created_at_from = isoDate
+      }
+    }
+    if (params.created_at_to) {
+      const isoDate = toISO(params.created_at_to)
+      if (isoDate) {
+        queryParams.created_at_to = isoDate
+      }
+    }
 
     const data = await apiClient.get(`${PATIENTS_BASE}/search`, { params: queryParams }) as any
 

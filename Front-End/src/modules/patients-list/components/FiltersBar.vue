@@ -123,6 +123,14 @@ const emit = defineEmits<{
   'search': []
 }>()
 
+// Inicializar el campo "created" considerando si hay solo created_at_from o ambos iguales
+const initialCreatedValue = (() => {
+  const hasFromOnly = props.modelValue.created_at_from && !props.modelValue.created_at_to
+  const hasBothEqual = props.modelValue.created_at_from && props.modelValue.created_at_to && 
+                       props.modelValue.created_at_from === props.modelValue.created_at_to
+  return (hasFromOnly || hasBothEqual) ? props.modelValue.created_at_from : ''
+})()
+
 const local = reactive({
   search: props.modelValue.search || '',
   municipality_code: props.modelValue.municipality_code || '',
@@ -131,11 +139,9 @@ const local = reactive({
   entity: props.modelValue.entity || '',
   gender: props.modelValue.gender || '',
   care_type: props.modelValue.care_type || '',
-  created: props.modelValue.date_from && props.modelValue.date_to && props.modelValue.date_from === props.modelValue.date_to 
-    ? props.modelValue.date_from 
-    : '',
-  date_from: props.modelValue.date_from || '',
-  date_to: props.modelValue.date_to || '',
+  created: initialCreatedValue,
+  created_at_from: props.modelValue.created_at_from || '',
+  created_at_to: props.modelValue.created_at_to || '',
   skip: props.modelValue.skip || 0,
   limit: props.modelValue.limit || 100
 })
@@ -168,6 +174,11 @@ const careTypeOptions = [
 ]
 
 watch(() => props.modelValue, (newValue) => {
+  // Si hay created_at_from y no hay created_at_to, o si ambos son iguales, mostrar en el campo "created"
+  const hasFromOnly = newValue.created_at_from && !newValue.created_at_to
+  const hasBothEqual = newValue.created_at_from && newValue.created_at_to && newValue.created_at_from === newValue.created_at_to
+  const createdValue = (hasFromOnly || hasBothEqual) ? newValue.created_at_from : ''
+  
   Object.assign(local, {
     search: newValue.search || '',
     municipality_code: newValue.municipality_code || '',
@@ -176,38 +187,44 @@ watch(() => props.modelValue, (newValue) => {
     entity: newValue.entity || '',
     gender: newValue.gender || '',
     care_type: newValue.care_type || '',
-    created: (newValue.date_from && newValue.date_to && newValue.date_from === newValue.date_to) 
-      ? newValue.date_from 
-      : '',
-    date_from: newValue.date_from || '',
-    date_to: newValue.date_to || '',
+    created: createdValue || '',
+    created_at_from: newValue.created_at_from || '',
+    created_at_to: newValue.created_at_to || '',
     skip: newValue.skip || 0,
     limit: newValue.limit || 100
   })
 })
 
 const buildFilters = (): PatientFilters => {
-  if (local.created) {
-    local.date_from = local.created
-    local.date_to = local.created
-  } else if (!local.date_from && !local.date_to) {
-    local.date_from = ''
-    local.date_to = ''
-  }
-
-  return {
-    search: local.search || undefined,
-    municipality_code: local.municipality_code || undefined,
-    municipality_name: local.municipality_name || undefined,
-    subregion: local.subregion || undefined,
-    entity: local.entity || undefined,
-    gender: (local.gender || undefined) as Gender | undefined,
-    care_type: (local.care_type || undefined) as CareType | undefined,
-    date_from: local.date_from || undefined,
-    date_to: local.date_to || undefined,
+  // Preparar el objeto de filtros, solo incluyendo valores no vacíos
+  const filters: PatientFilters = {
     skip: local.skip,
     limit: local.limit
   }
+
+  if (local.search && local.search.trim()) filters.search = local.search.trim()
+  if (local.municipality_code && local.municipality_code.trim()) filters.municipality_code = local.municipality_code.trim()
+  if (local.municipality_name && local.municipality_name.trim()) filters.municipality_name = local.municipality_name.trim()
+  if (local.subregion && local.subregion.trim()) filters.subregion = local.subregion.trim()
+  if (local.entity && local.entity.trim()) filters.entity = local.entity.trim()
+  if (local.gender && local.gender.trim()) filters.gender = local.gender as Gender
+  if (local.care_type && local.care_type.trim()) filters.care_type = local.care_type as CareType
+  
+  // El campo "created" es "Creado desde", por lo que solo establece created_at_from
+  // Si hay una fecha seleccionada en el campo "created", usarla como created_at_from
+  const createdDate = local.created && local.created.trim() ? local.created.trim() : 
+                      (local.created_at_from && local.created_at_from.trim() ? local.created_at_from.trim() : null)
+  
+  if (createdDate) {
+    filters.created_at_from = createdDate
+  }
+  
+  // Solo incluir created_at_to si se especifica explícitamente (no desde el campo "created")
+  if (local.created_at_to && local.created_at_to.trim() && !local.created) {
+    filters.created_at_to = local.created_at_to.trim()
+  }
+
+  return filters
 }
 
 const handleEntityChange = (value: string) => {
@@ -259,8 +276,8 @@ const handleClear = () => {
     gender: '',
     care_type: '',
     created: '',
-    date_from: '',
-    date_to: '',
+    created_at_from: '',
+    created_at_to: '',
     skip: 0,
     limit: 100
   })

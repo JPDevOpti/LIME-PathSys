@@ -6,6 +6,7 @@ from pymongo import TEXT
 from ..schemas import PatientCreate, PatientUpdate, PatientSearch
 from app.core.exceptions import ConflictError, NotFoundError
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -322,12 +323,28 @@ class PatientRepository:
         if search_params.care_type:
             filter_dict["care_type"] = search_params.care_type
             
-        if search_params.date_from or search_params.date_to:
+        # Filtro por fecha de creación (campo created_at)
+        # Usa created_at_from/created_at_to (prioritarios) o date_from/date_to (legacy)
+        date_from = search_params.created_at_from or search_params.date_from
+        date_to = search_params.created_at_to or search_params.date_to
+        if date_from or date_to:
             date_filter = {}
-            if search_params.date_from:
-                date_filter["$gte"] = datetime.fromisoformat(search_params.date_from)
-            if search_params.date_to:
-                date_filter["$lte"] = datetime.fromisoformat(search_params.date_to + "T23:59:59")
+            if date_from:
+                # Asegurar formato completo con hora (00:00:00) para el inicio del día en UTC
+                date_from_str = date_from if "T" in date_from else f"{date_from}T00:00:00"
+                date_from_dt = datetime.fromisoformat(date_from_str)
+                # Si el datetime no tiene timezone, agregarlo como UTC
+                if date_from_dt.tzinfo is None:
+                    date_from_dt = date_from_dt.replace(tzinfo=timezone.utc)
+                date_filter["$gte"] = date_from_dt
+            if date_to:
+                # Asegurar formato completo con hora (23:59:59) para el final del día en UTC
+                date_to_str = date_to if "T" in date_to else f"{date_to}T23:59:59.999999"
+                date_to_dt = datetime.fromisoformat(date_to_str)
+                # Si el datetime no tiene timezone, agregarlo como UTC
+                if date_to_dt.tzinfo is None:
+                    date_to_dt = date_to_dt.replace(tzinfo=timezone.utc)
+                date_filter["$lte"] = date_to_dt
             filter_dict["created_at"] = date_filter
             
         if hasattr(search_params, 'search') and search_params.search:
@@ -335,14 +352,42 @@ class PatientRepository:
             if search_term.isdigit():
                 filter_dict["identification_number"] = {"$regex": f"^{search_term}", "$options": "i"}
             else:
-                filter_dict["$or"] = [
-                    {"first_name": {"$regex": search_term, "$options": "i"}},
-                    {"first_lastname": {"$regex": search_term, "$options": "i"}},
-                    {"second_name": {"$regex": search_term, "$options": "i"}},
-                    {"second_lastname": {"$regex": search_term, "$options": "i"}},
-                    {"identification_number": {"$regex": search_term, "$options": "i"}},
-                    {"patient_code": {"$regex": search_term, "$options": "i"}}
-                ]
+                # Escapar caracteres especiales de regex
+                escaped_term = re.escape(search_term)
+                
+                # Dividir el término de búsqueda en palabras
+                words = [w.strip() for w in search_term.split() if w.strip()]
+                
+                if len(words) > 1:
+                    # Si hay múltiples palabras, buscar que TODAS las palabras estén presentes
+                    # en alguno de los campos de nombre (cualquier combinación)
+                    name_conditions = []
+                    for word in words:
+                        escaped_word = re.escape(word)
+                        name_conditions.append({
+                            "$or": [
+                                {"first_name": {"$regex": escaped_word, "$options": "i"}},
+                                {"first_lastname": {"$regex": escaped_word, "$options": "i"}},
+                                {"second_name": {"$regex": escaped_word, "$options": "i"}},
+                                {"second_lastname": {"$regex": escaped_word, "$options": "i"}}
+                            ]
+                        })
+                    # Crear condición: (todas las palabras en campos de nombre) O (término completo en identificación/código)
+                    filter_dict["$or"] = [
+                        {"$and": name_conditions},
+                        {"identification_number": {"$regex": escaped_term, "$options": "i"}},
+                        {"patient_code": {"$regex": escaped_term, "$options": "i"}}
+                    ]
+                else:
+                    # Si es una sola palabra, buscar en cualquier campo (comportamiento original)
+                    filter_dict["$or"] = [
+                        {"first_name": {"$regex": escaped_term, "$options": "i"}},
+                        {"first_lastname": {"$regex": escaped_term, "$options": "i"}},
+                        {"second_name": {"$regex": escaped_term, "$options": "i"}},
+                        {"second_lastname": {"$regex": escaped_term, "$options": "i"}},
+                        {"identification_number": {"$regex": escaped_term, "$options": "i"}},
+                        {"patient_code": {"$regex": escaped_term, "$options": "i"}}
+                    ]
             
         pipeline = [
             {"$match": filter_dict},

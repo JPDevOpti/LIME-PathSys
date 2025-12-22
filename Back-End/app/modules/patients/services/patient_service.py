@@ -64,8 +64,11 @@ class PatientService:
         return result
 
     async def search_patients(self, search_params: PatientSearch) -> Dict[str, Any]:
-        if search_params.date_from or search_params.date_to:
-            await self._validate_date_range(search_params.date_from, search_params.date_to)
+        # Validar rango de fechas de creación (usa nuevos campos o legacy)
+        date_from = search_params.created_at_from or search_params.date_from
+        date_to = search_params.created_at_to or search_params.date_to
+        if date_from or date_to:
+            await self._validate_date_range(date_from, date_to)
         result = await self.repository.search(search_params)
         
         valid_patients: List[PatientResponse] = []

@@ -89,10 +89,11 @@ async function ensureSignatureStatus() {
         sessionStorage.setItem('signature_missing_notified', '1')
       } catch {}
       console.log('[Dashboard] Firma encontrada y sincronizada', absoluteUrl)
+      // Cerrar el modal si estaba abierto (por si acaso)
       closeSignatureNotice()
     } else {
       console.warn('[Dashboard] Firma no encontrada para el patólogo', user.pathologist_code)
-      const alreadyWarned = sessionStorage.getItem('signature_missing_notified')
+      // Limpiar referencias a firma del usuario
       delete user.firma
       delete user.firma_url
       delete user.signatureUrl
@@ -100,11 +101,9 @@ async function ensureSignatureStatus() {
       try {
         sessionStorage.removeItem('signature_url')
         localStorage.removeItem('signature_url')
-        sessionStorage.removeItem('signature_missing_notified')
       } catch {}
-      if (!alreadyWarned) {
-        warning('generic', 'Firma digital requerida', 'Sube tu firma digital desde tu perfil para poder firmar informes.', 6000)
-      }
+      // Solo mostrar el modal si realmente no tiene firma (después de verificar con el backend)
+      // La función checkAndShowOncePerSession manejará si ya se mostró en esta sesión
       checkAndShowOncePerSession()
     }
   } catch (error) {

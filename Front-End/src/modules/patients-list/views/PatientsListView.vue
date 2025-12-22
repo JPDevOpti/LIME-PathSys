@@ -126,8 +126,8 @@ const hasActiveFilters = computed(() => {
     filters.value.municipality_code ||
     filters.value.municipality_name ||
     filters.value.subregion ||
-    filters.value.date_from ||
-    filters.value.date_to
+    filters.value.created_at_from ||
+    filters.value.created_at_to
   )
 })
 

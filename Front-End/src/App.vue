@@ -39,18 +39,9 @@ const { visible: signatureNoticeVisible, checkAndShowOncePerSession, close: clos
 
 const handleSignatureNoticeClose = () => closeSignatureNotice()
 
-// Mostrar al finalizar inicialización
-watch(() => isInitialized.value, (ready) => {
-  if (ready) checkAndShowOncePerSession()
-}, { immediate: true })
-
-// Mostrar al entrar al dashboard
-// Comentario: Dispara la verificación solo cuando la ruta es '/dashboard'.
-watch(() => route.path, (path) => {
-  if (path === '/dashboard') {
-    checkAndShowOncePerSession()
-  }
-})
+// No mostrar automáticamente desde App.vue - dejar que DashboardView.vue maneje la verificación
+// después de que ensureSignatureStatus() confirme si hay o no firma
+// Esto evita que el modal aparezca brevemente antes de verificar con el backend
 
 watch(() => signatureNoticeVisible.value, () => {})
 </script>
