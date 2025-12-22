@@ -89,14 +89,6 @@ class CasePdfService:
         return logos
 
     async def generate_case_pdf(self, case_code: str) -> bytes:
-        try:
-            from playwright.async_api import async_playwright  # type: ignore
-        except Exception as e:  # ImportError or runtime errors
-            raise RuntimeError(
-                "Playwright no está instalado o no se han instalado los navegadores. "
-                "Ejecuta: pip install playwright && playwright install chromium"
-            ) from e
-
         # Obtener datos del caso
         case_data = await self._get_case_data(case_code)
         
@@ -116,12 +108,16 @@ class CasePdfService:
             logos=self.logos
         )
 
-        # Generar PDF
-        async with async_playwright() as p:
-            browser = await p.chromium.launch()
-            context = await browser.new_context()
-            page = await context.new_page()
-            await page.set_content(html, wait_until="load")
+        # Generar PDF usando el pool de navegadores (mucho más eficiente)
+        from app.modules.cases.services.browser_pool import BrowserPool
+        
+        browser_pool = await BrowserPool.get_instance()
+        page = await browser_pool.get_page()  # get_page maneja la inicialización si es necesario
+        
+        try:
+            # Usar "domcontentloaded" que es más rápido - solo espera el DOM, no los recursos
+            # Para PDFs estáticos con HTML embebido esto es suficiente y mucho más rápido
+            await page.set_content(html, wait_until="domcontentloaded", timeout=10000)
             pdf_bytes = await page.pdf(
                 format="Letter",
                 margin={"top": "15mm", "right": "12mm", "bottom": "22mm", "left": "12mm"},
@@ -138,8 +134,9 @@ class CasePdfService:
                     "</div>"
                 ),
             )
-            await context.close()
-            await browser.close()
+        finally:
+            # Siempre cerrar la página después de usarla
+            await page.close()
 
         return pdf_bytes
 

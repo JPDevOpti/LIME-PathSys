@@ -172,11 +172,20 @@
                   <InfoListIcon class="w-4 h-4" />
                 </button>
                 <button
+                  v-if="unreadCase.status !== 'Completado'"
                   @click.stop="$emit('edit', unreadCase)"
                   class="p-1.5 rounded-md hover:bg-gray-100 text-gray-600"
                   title="Editar caso sin lectura"
                 >
                   <SettingsIcon class="w-4 h-4" />
+                </button>
+                <button
+                  v-if="unreadCase.status !== 'Completado'"
+                  @click.stop="$emit('manage-delivery', unreadCase)"
+                  class="p-1.5 rounded-md hover:bg-gray-100 text-gray-600"
+                  title="Gestionar Entrega"
+                >
+                  <CheckSquareIcon class="w-4 h-4" />
                 </button>
               </div>
             </td>
@@ -268,11 +277,20 @@
                 Ver detalles
               </button>
               <button
+                v-if="unreadCase.status !== 'Completado'"
                 @click.stop="$emit('edit', unreadCase)"
                 class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-xs font-medium"
               >
                 <SettingsIcon class="w-3 h-3" />
                 Editar
+              </button>
+              <button
+                v-if="unreadCase.status !== 'Completado'"
+                @click.stop="$emit('manage-delivery', unreadCase)"
+                class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-xs font-medium"
+              >
+                <CheckSquareIcon class="w-3 h-3" />
+                Entrega
               </button>
             </div>
           </div>
@@ -323,6 +341,7 @@
 import { ref } from 'vue'
 import InfoListIcon from '@/assets/icons/InfoListIcon.vue'
 import SettingsIcon from '@/assets/icons/SettingsIcon.vue'
+import CheckSquareIcon from '@/assets/icons/CheckSquareIcon.vue'
 import type { UnreadCase } from '../../types'
 import FormCheckbox from '@/shared/components/ui/forms/FormCheckbox.vue'
 import BatchMarkDeliveredDrawer from './BatchMarkDeliveredDrawer.vue'
@@ -364,6 +383,7 @@ const emit = defineEmits<{
   (e: 'refresh'): void
   (e: 'update-unread-case', unreadCaseId: string, updatedUnreadCase: UnreadCase): void
   (e: 'batch-delivered', payload: { caseCodes: string[]; deliveredTo: string; deliveryDate: string }): void
+  (e: 'manage-delivery', unreadCase: UnreadCase): void
 }>()
 
 const showMarkDeliveredDrawer = ref(false)

@@ -142,17 +142,20 @@ const statusOptions = [
   { value: 'Completado', label: 'Completado' }
 ]
 
+const formatDate = (date: Date) => {
+  const d = date.getDate().toString().padStart(2, '0')
+  const m = (date.getMonth() + 1).toString().padStart(2, '0')
+  const y = date.getFullYear()
+  return `${d}/${m}/${y}`
+}
+
 watch(() => props.modelValue, (v) => Object.assign(local, v))
 
 onMounted(() => {
   // Establecer fechas por defecto si no existen
-  if (!local.dateFrom) {
-    const date = new Date()
-    date.setMonth(date.getMonth() - 1)
-    local.dateFrom = date.toLocaleDateString('es-ES')
-  }
+  // dateFrom se deja vacío por defecto
   if (!local.dateTo) {
-    local.dateTo = new Date().toLocaleDateString('es-ES')
+    local.dateTo = formatDate(new Date())
   }
 })
 
@@ -165,10 +168,8 @@ const clearAll = () => {
   local.selectedInstitution = ''
   local.selectedTestType = ''
   local.selectedStatus = ''
-  const date = new Date()
-  date.setMonth(date.getMonth() - 1)
-  local.dateFrom = date.toLocaleDateString('es-ES')
-  local.dateTo = new Date().toLocaleDateString('es-ES')
+  local.dateFrom = ''
+  local.dateTo = formatDate(new Date())
   emit('update:modelValue', { ...local })
   emit('refresh')
 }

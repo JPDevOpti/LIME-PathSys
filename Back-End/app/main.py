@@ -53,9 +53,27 @@ async def on_startup():
     await PatientRepository(db).ensure_indexes()
     # Casos sin lectura
     await UnreadCaseRepository(db).ensure_indexes()
+    
+    # Inicializar pool de navegadores para PDFs (opcional, se inicializa lazy si falla)
+    try:
+        from app.modules.cases.services.browser_pool import BrowserPool
+        browser_pool = await BrowserPool.get_instance()
+        await browser_pool.initialize()
+        logging.getLogger("app.main").info("Pool de navegadores para PDFs inicializado")
+    except Exception as e:
+        logging.getLogger("app.main").warning(f"No se pudo inicializar el pool de navegadores (se inicializará lazy): {e}")
 
 @app.on_event("shutdown")
 async def on_shutdown():
+    # Cerrar pool de navegadores
+    try:
+        from app.modules.cases.services.browser_pool import BrowserPool
+        browser_pool = await BrowserPool.get_instance()
+        await browser_pool.shutdown()
+        logging.getLogger("app.main").info("Pool de navegadores cerrado")
+    except Exception as e:
+        logging.getLogger("app.main").warning(f"Error cerrando pool de navegadores: {e}")
+    
     # Cerrar conexión a Mongo limpiamente
     await close_mongo_connection()
 

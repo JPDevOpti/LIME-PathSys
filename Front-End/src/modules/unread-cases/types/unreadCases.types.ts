@@ -45,7 +45,6 @@ export interface UnreadCase {
   receivedBy?: string
   // Estado y metadatos
   status?: string
-  elaboratedBy?: string
   receipt?: string
   createdAt?: string
   updatedAt?: string

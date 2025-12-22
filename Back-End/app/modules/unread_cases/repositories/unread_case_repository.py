@@ -53,7 +53,6 @@ class UnreadCaseRepository:
         payload["delivered_to"] = payload.get("delivered_to") or ""
         payload["delivery_date"] = payload.get("delivery_date") or ""
         payload["status"] = payload.get("status") or "En proceso"
-        payload["elaborated_by"] = payload.get("elaborated_by") or ""
         payload["receipt"] = payload.get("receipt") or ""
         now = datetime.now(timezone.utc)
         payload["created_at"] = now
@@ -116,12 +115,26 @@ class UnreadCaseRepository:
             query["status"] = filters.selected_status
 
         if filters.date_from or filters.date_to:
-            range_query: Dict[str, Any] = {}
+            conditions = []
+            
             if filters.date_from:
-                range_query["$gte"] = filters.date_from
+                try:
+                    dt_from = datetime.strptime(filters.date_from, "%d/%m/%Y")
+                    iso_from = dt_from.strftime("%Y-%m-%d")
+                    conditions.append({"$gte": ["$entry_date", iso_from]})
+                except ValueError:
+                    pass
+
             if filters.date_to:
-                range_query["$lte"] = filters.date_to
-            query["entry_date"] = range_query
+                try:
+                    dt_to = datetime.strptime(filters.date_to, "%d/%m/%Y")
+                    iso_to = dt_to.strftime("%Y-%m-%d")
+                    conditions.append({"$lte": ["$entry_date", iso_to]})
+                except ValueError:
+                    pass
+
+            if conditions:
+                query["$expr"] = {"$and": conditions}
 
         sort_field_map = {
             "caseCode": "case_code",

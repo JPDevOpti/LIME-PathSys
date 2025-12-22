@@ -31,7 +31,7 @@
 
         <!-- Content -->
         <div class="flex-1 overflow-y-auto overflow-x-visible p-6 space-y-6">
-          <!-- Información del Paciente y Caso -->
+          <!-- Información del Paciente -->
           <div class="bg-gray-50 rounded-2xl border border-gray-200 shadow-sm">
             <div class="px-6 py-4 border-b border-gray-200 bg-white">
               <div class="flex items-start gap-2">
@@ -39,16 +39,29 @@
                   <UserCircleIcon class="w-4 h-4 text-blue-600" />
                 </div>
                 <div>
-                  <h4 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Información del Caso</h4>
-                  <p class="text-xs text-gray-500 mt-0.5">Complete los datos del paciente o marque como caso especial</p>
+                  <h4 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Información del Paciente</h4>
+                  <p class="text-xs text-gray-500 mt-0.5">Datos personales del paciente</p>
                 </div>
               </div>
             </div>
             <div class="p-6 overflow-visible">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="mb-6 flex items-center gap-2 p-3 bg-white border border-gray-200 rounded-lg">
+                <FormCheckbox
+                  v-model="formData.isSpecialCase"
+                  id="specialCase"
+                  :label="'Caso especial (laboratorio externo, sin datos de paciente)'"
+                >
+                  <template #label-prefix>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </template>
+                </FormCheckbox>
+              </div>
+
+              <div v-if="!formData.isSpecialCase" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- Tipo de Documento -->
                 <FormSelect
-                  v-if="!formData.isSpecialCase"
                   v-model="formData.documentType"
                   label="Tipo de Documento"
                   :options="[
@@ -63,7 +76,6 @@
                 />
 
                 <FormInput
-                  v-if="!formData.isSpecialCase"
                   v-model="formData.patientDocument"
                   label="Documento"
                   placeholder="Ej: 70900325"
@@ -73,7 +85,6 @@
                 />
 
                 <FormInput
-                  v-if="!formData.isSpecialCase"
                   v-model="formData.firstName"
                   label="Primer Nombre"
                   placeholder="Ej: FRANCISCO"
@@ -82,7 +93,6 @@
                 />
 
                 <FormInput
-                  v-if="!formData.isSpecialCase"
                   v-model="formData.secondName"
                   label="Segundo Nombre"
                   placeholder="Ej: JAVIER"
@@ -90,7 +100,6 @@
                 />
 
                 <FormInput
-                  v-if="!formData.isSpecialCase"
                   v-model="formData.firstLastName"
                   label="Primer Apellido"
                   placeholder="Ej: ARBELAEZ"
@@ -99,14 +108,34 @@
                 />
 
                 <FormInput
-                  v-if="!formData.isSpecialCase"
                   v-model="formData.secondLastName"
                   label="Segundo Apellido"
                   placeholder="Ej: GÓMEZ"
                   maxlength="50"
                 />
+              </div>
+              <div v-else class="text-center py-2 text-gray-500 text-sm italic bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                No se requieren datos del paciente para casos especiales
+              </div>
+            </div>
+          </div>
 
-                <div :class="formData.isSpecialCase ? 'md:col-span-2' : ''">
+          <!-- Información del Caso -->
+          <div class="bg-gray-50 rounded-2xl border border-gray-200 shadow-sm">
+            <div class="px-6 py-4 border-b border-gray-200 bg-white">
+              <div class="flex items-start gap-2">
+                <div class="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <SpecialCaseIcon class="w-4 h-4 text-indigo-600" />
+                </div>
+                <div>
+                  <h4 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Detalles del Caso</h4>
+                  <p class="text-xs text-gray-500 mt-0.5">Entidad, placas y observaciones</p>
+                </div>
+              </div>
+            </div>
+            <div class="p-6 overflow-visible">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="md:col-span-2">
                   <EntityList
                     v-model="formData.entityCode"
                     label="Entidad"
@@ -120,8 +149,9 @@
                   v-model.number="formData.numberOfPlates"
                   label="Número de Placas"
                   type="number"
-                  min="0"
+                  min="1"
                   placeholder="0"
+                  :errors="errors.numberOfPlates ? [errors.numberOfPlates] : []"
                 />
 
                 <FormTextarea
@@ -132,20 +162,6 @@
                   :maxLength="500"
                   class="md:col-span-2"
                 />
-              </div>
-
-              <div class="mt-4 flex items-center gap-2 p-3 bg-white border border-gray-200 rounded-lg">
-                <FormCheckbox
-                  v-model="formData.isSpecialCase"
-                  id="specialCase"
-                  :label="'Caso especial (laboratorio externo, sin datos de paciente)'"
-                >
-                  <template #label-prefix>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </template>
-                </FormCheckbox>
               </div>
             </div>
           </div>
@@ -244,7 +260,7 @@
             </div>
           </div>
 
-          <!-- Recepción y Entrega -->
+          <!-- Información de Entrega -->
           <div class="bg-gray-50 rounded-2xl border border-gray-200 shadow-sm">
             <div class="px-6 py-4 border-b border-gray-200 bg-white">
               <div class="flex items-start gap-2">
@@ -252,8 +268,8 @@
                   <CalendarIcon class="w-4 h-4 text-green-600" />
                 </div>
                 <div>
-                  <h4 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Información de Recepción</h4>
-                  <p class="text-xs text-gray-500 mt-0.5">Registre la fecha de ingreso y a quién se entregará</p>
+                  <h4 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Información de Entrega</h4>
+                  <p class="text-xs text-gray-500 mt-0.5">Detalles de recepción y entrega del caso</p>
                 </div>
               </div>
             </div>
@@ -265,6 +281,21 @@
                   label="Fecha de Ingreso"
                   :errors="errors.entryDate ? [errors.entryDate] : []"
                   required
+                />
+
+                <!-- Recibido Por -->
+                <FormInput
+                  v-model="formData.receivedBy"
+                  label="Recibido Por"
+                  placeholder="Nombre de quien recibe"
+                  readonly
+                />
+
+                <!-- Fecha de Entrega -->
+                <DateInputField
+                  v-model="formData.deliveryDate"
+                  label="Fecha de Entrega"
+                  :errors="errors.deliveryDate ? [errors.deliveryDate] : []"
                 />
 
                 <!-- Entregado A -->
@@ -473,14 +504,42 @@ const validateForm = (): boolean => {
   let isValid = true
 
   // Validar datos de paciente (solo si no es caso especial)
-  // Información del caso es opcional; limpiar errores previos
-  errors.value.documentType = ''
-  errors.value.patientDocument = ''
-  errors.value.firstName = ''
-  errors.value.firstLastName = ''
-  errors.value.entityCode = ''
-  errors.value.entryDate = ''
-  errors.value.receivedBy = ''
+  if (!formData.value.isSpecialCase) {
+    if (!formData.value.documentType) {
+      errors.value.documentType = 'El tipo de documento es obligatorio'
+      isValid = false
+    }
+    if (!formData.value.patientDocument) {
+      errors.value.patientDocument = 'El documento es obligatorio'
+      isValid = false
+    }
+    if (!formData.value.firstName) {
+      errors.value.firstName = 'El primer nombre es obligatorio'
+      isValid = false
+    }
+    if (!formData.value.firstLastName) {
+      errors.value.firstLastName = 'El primer apellido es obligatorio'
+      isValid = false
+    }
+  }
+
+  // Validar Entidad (Obligatorio siempre)
+  if (!formData.value.entityCode) {
+    errors.value.entityCode = 'La entidad es obligatoria'
+    isValid = false
+  }
+
+  // Validar Fecha de Ingreso (Obligatorio siempre)
+  if (!formData.value.entryDate) {
+    errors.value.entryDate = 'La fecha de ingreso es obligatoria'
+    isValid = false
+  }
+
+  // Validar Número de Placas
+  if (!formData.value.numberOfPlates || formData.value.numberOfPlates <= 0) {
+    errors.value.numberOfPlates = 'El número de placas debe ser mayor a 0'
+    isValid = false
+  }
 
   // Validar que al menos haya una prueba válida
   const hasValidTests = formData.value.testGroups.some(group => 

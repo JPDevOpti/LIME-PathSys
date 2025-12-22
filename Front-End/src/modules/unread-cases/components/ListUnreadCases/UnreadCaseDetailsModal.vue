@@ -36,114 +36,87 @@
 
         <!-- Content -->
         <div class="flex-1 overflow-y-auto p-6 space-y-6">
-          <!-- Encabezado principal -->
+          
+          <!-- Información del Paciente -->
           <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-            <div class="px-6 py-5 border-b border-gray-200">
-              <div class="flex items-start gap-4">
-                <div class="flex-shrink-0">
-                  <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-                    <SpecialCaseIcon class="w-6 h-6 text-blue-600" />
-                  </div>
+            <div class="px-6 py-4 border-b border-gray-200 bg-white">
+              <div class="flex items-start gap-2">
+                <div class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <UserCircleIcon class="w-4 h-4 text-blue-600" />
                 </div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-                    <div class="min-w-0">
-                      <h3 class="text-xl font-bold text-gray-900 mb-2">{{ patientName }}</h3>
-                      <div class="flex items-center flex-wrap gap-3">
-                        <div class="flex items-center gap-1.5">
-                          <span class="text-xs text-gray-500 font-medium uppercase tracking-wide">Caso</span>
-                          <span class="text-lg font-bold text-gray-900 font-mono">{{ caseCode }}</span>
-                        </div>
-                        <div class="flex items-center gap-1.5">
-                          <span class="text-xs text-gray-500 font-medium uppercase tracking-wide">Documento</span>
-                          <span class="text-base font-semibold text-gray-900">{{ patientDocument }}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                      <span :class="['inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold', getStatusClass(unreadCaseStatus)]">
-                        {{ unreadCaseStatus }}
-                      </span>
-                    </div>
-                  </div>
+                <div>
+                  <h4 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Información del Paciente</h4>
+                  <p class="text-xs text-gray-500 mt-0.5">Datos personales del paciente</p>
                 </div>
               </div>
             </div>
-
-            <!-- Información básica -->
             <div class="p-6">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <div class="flex items-center space-x-2">
-                    <div class="flex-shrink-0">
-                      <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center border border-gray-200">
-                        <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                      </div>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">Institución</p>
-                      <p class="text-sm font-bold text-gray-900">{{ institution }}</p>
-                    </div>
-                  </div>
+                <div v-if="unreadCase?.isSpecialCase" class="p-4 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 flex items-center gap-3">
+                    <SpecialCaseIcon class="w-5 h-5" />
+                    <span class="font-medium">Caso Especial (Laboratorio Externo)</span>
                 </div>
-
-                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <div class="flex items-center space-x-2">
-                    <div class="flex-shrink-0">
-                      <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center border border-gray-200">
-                        <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                      </div>
+                <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Paciente</span>
+                        <p class="mt-1 text-base font-semibold text-gray-900">{{ patientName }}</p>
                     </div>
-                    <div class="flex-1 min-w-0">
-                      <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">Número de placas</p>
-                      <p class="text-sm font-bold text-gray-900">{{ numberOfPlates }}</p>
+                    <div>
+                        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Documento</span>
+                        <p class="mt-1 text-base font-medium text-gray-900">{{ patientDocument }}</p>
                     </div>
-                  </div>
                 </div>
-
-                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <div class="flex items-center space-x-2">
-                    <div class="flex-shrink-0">
-                      <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center border border-gray-200">
-                        <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                      </div>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">Entregado a</p>
-                      <p class="text-sm font-bold text-gray-900">{{ deliveredTo }}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <div class="flex items-center space-x-2">
-                    <div class="flex-shrink-0">
-                      <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center border border-gray-200">
-                        <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">Fecha de entrega</p>
-                      <p class="text-sm font-bold text-gray-900">{{ formatDate(deliveryDate) }}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
-          <!-- Pruebas realizadas -->
+          <!-- Detalles del Caso -->
           <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-            <div class="px-6 py-4 border-b border-gray-200">
-              <h4 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Pruebas Realizadas</h4>
+            <div class="px-6 py-4 border-b border-gray-200 bg-white">
+              <div class="flex items-start gap-2">
+                <div class="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <SpecialCaseIcon class="w-4 h-4 text-indigo-600" />
+                </div>
+                <div>
+                  <h4 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Detalles del Caso</h4>
+                  <p class="text-xs text-gray-500 mt-0.5">Entidad, placas y observaciones</p>
+                </div>
+              </div>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="md:col-span-2">
+                        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Entidad / Institución</span>
+                        <p class="mt-1 text-base font-medium text-gray-900">{{ institution }}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Código del Caso</span>
+                        <p class="mt-1 text-base font-mono font-medium text-gray-900">{{ caseCode }}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Número de Placas</span>
+                        <p class="mt-1 text-base font-medium text-gray-900">{{ numberOfPlates }}</p>
+                    </div>
+                    <div v-if="unreadCase?.notes" class="md:col-span-2">
+                        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Observaciones</span>
+                        <div class="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-gray-800">
+                            {{ unreadCase.notes }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+          </div>
+
+          <!-- Pruebas Realizadas -->
+          <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+            <div class="px-6 py-4 border-b border-gray-200 bg-white">
+              <div class="flex items-start gap-2">
+                <div class="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <TestIcon class="w-4 h-4 text-purple-600" />
+                </div>
+                <div>
+                  <h4 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Pruebas Realizadas</h4>
+                  <p class="text-xs text-gray-500 mt-0.5">Listado de pruebas solicitadas</p>
+                </div>
+              </div>
             </div>
             <div class="p-6 space-y-4">
               <!-- Nuevo formato con testGroups -->
@@ -244,44 +217,41 @@
             </div>
           </div>
 
-          <!-- Información adicional -->
+          <!-- Información de Entrega -->
           <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-            <div class="px-6 py-4 border-b border-gray-200">
-              <h4 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Información Adicional</h4>
-            </div>
-            <div class="p-6">
-              <div class="grid grid-cols-1 gap-3">
-                <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span class="text-sm text-gray-600">Fecha de ingreso</span>
-                  <span class="text-sm font-medium text-gray-900">{{ formatDate(entryDate) }}</span>
+            <div class="px-6 py-4 border-b border-gray-200 bg-white">
+              <div class="flex items-start gap-2">
+                <div class="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <CalendarIcon class="w-4 h-4 text-green-600" />
                 </div>
-                <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span class="text-sm text-gray-600">Recibido por</span>
-                  <span class="text-sm font-medium text-gray-900">{{ receivedBy }}</span>
-                </div>
-                <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span class="text-sm text-gray-600">Elaborado por</span>
-                  <span class="text-sm font-medium text-gray-900">{{ elaboratedBy }}</span>
-                </div>
-                <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span class="text-sm text-gray-600">Identificador</span>
-                  <span class="text-sm font-mono text-gray-900">{{ unreadCaseId }}</span>
-                </div>
-                <!-- Notas especiales (cuando existan) -->
-                <div v-if="unreadCase?.notes" class="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <div class="flex items-start gap-2">
-                    <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div>
-                      <p class="text-sm font-semibold text-yellow-800">Nota Especial</p>
-                      <p class="text-sm text-yellow-700 mt-1">{{ unreadCase.notes }}</p>
-                    </div>
-                  </div>
+                <div>
+                  <h4 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Información de Entrega</h4>
+                  <p class="text-xs text-gray-500 mt-0.5">Detalles de recepción y entrega del caso</p>
                 </div>
               </div>
             </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha de Ingreso</span>
+                        <p class="mt-1 text-base font-medium text-gray-900">{{ formatDate(entryDate) }}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Recibido Por</span>
+                        <p class="mt-1 text-base font-medium text-gray-900">{{ receivedBy }}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha de Entrega</span>
+                        <p class="mt-1 text-base font-medium text-gray-900">{{ deliveryDate ? formatDate(deliveryDate) : '—' }}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Entregado A</span>
+                        <p class="mt-1 text-base font-medium text-gray-900">{{ deliveredTo }}</p>
+                    </div>
+                </div>
+            </div>
           </div>
+
         </div>
 
         <!-- Footer -->
@@ -310,7 +280,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { UnreadCase } from '../../types'
-import SpecialCaseIcon from '@/assets/icons/SpecialCaseIcon.vue'
+import { SpecialCaseIcon, UserCircleIcon, CalendarIcon, TestIcon } from '@/assets/icons'
 
 interface Props {
   unreadCase: UnreadCase | null
@@ -333,7 +303,6 @@ const deliveredTo = computed(() => props.unreadCase?.deliveredTo || '—')
 const deliveryDate = computed(() => props.unreadCase?.deliveryDate || '')
 const entryDate = computed(() => props.unreadCase?.entryDate || '')
 const receivedBy = computed(() => props.unreadCase?.receivedBy || '—')
-const elaboratedBy = computed(() => props.unreadCase?.elaboratedBy || '—')
 const unreadCaseStatus = computed(() => props.unreadCase?.status || '—')
 const lowComplexityIHQ = computed(() => props.unreadCase?.lowComplexityIHQ || null)
 const lowComplexityPlates = computed(() => props.unreadCase?.lowComplexityPlates || 0)

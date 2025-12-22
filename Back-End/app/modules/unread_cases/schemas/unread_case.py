@@ -81,7 +81,6 @@ class UnreadCaseBase(CamelModel):
     received_by: Optional[str] = Field(None, max_length=255)
     status: str = Field(default="En proceso", max_length=100)
 
-    elaborated_by: Optional[str] = Field(None, max_length=255)
     receipt: Optional[str] = Field(None, max_length=255)
 
     @validator("case_code", pre=True, always=True)
@@ -102,35 +101,34 @@ class UnreadCaseCreate(UnreadCaseBase):
 
 
 class UnreadCaseUpdate(CamelModel):
-    is_special_case: Optional[bool]
-    document_type: Optional[str]
-    patient_document: Optional[str]
-    first_name: Optional[str]
-    second_name: Optional[str]
-    first_last_name: Optional[str]
-    second_last_name: Optional[str]
-    patient_name: Optional[str]
-    entity_code: Optional[str]
-    entity_name: Optional[str]
-    institution: Optional[str]
-    notes: Optional[str]
-    test_groups: Optional[List[TestGroup]]
-    low_complexity_ihq: Optional[str]
-    low_complexity_plates: Optional[int]
-    high_complexity_ihq: Optional[str]
-    high_complexity_plates: Optional[int]
-    special_ihq: Optional[str]
-    special_plates: Optional[int]
-    histochemistry: Optional[str]
-    histochemistry_plates: Optional[int]
-    number_of_plates: Optional[int]
-    delivered_to: Optional[str]
-    delivery_date: Optional[str]
-    entry_date: Optional[str]
-    received_by: Optional[str]
-    status: Optional[str]
-    elaborated_by: Optional[str]
-    receipt: Optional[str]
+    is_special_case: Optional[bool] = None
+    document_type: Optional[str] = None
+    patient_document: Optional[str] = None
+    first_name: Optional[str] = None
+    second_name: Optional[str] = None
+    first_last_name: Optional[str] = None
+    second_last_name: Optional[str] = None
+    patient_name: Optional[str] = None
+    entity_code: Optional[str] = None
+    entity_name: Optional[str] = None
+    institution: Optional[str] = None
+    notes: Optional[str] = None
+    test_groups: Optional[List[TestGroup]] = None
+    low_complexity_ihq: Optional[str] = None
+    low_complexity_plates: Optional[int] = None
+    high_complexity_ihq: Optional[str] = None
+    high_complexity_plates: Optional[int] = None
+    special_ihq: Optional[str] = None
+    special_plates: Optional[int] = None
+    histochemistry: Optional[str] = None
+    histochemistry_plates: Optional[int] = None
+    number_of_plates: Optional[int] = None
+    delivered_to: Optional[str] = None
+    delivery_date: Optional[str] = None
+    entry_date: Optional[str] = None
+    received_by: Optional[str] = None
+    status: Optional[str] = None
+    receipt: Optional[str] = None
 
 
 class UnreadCaseResponse(UnreadCaseBase):

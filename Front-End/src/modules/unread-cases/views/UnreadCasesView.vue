@@ -56,6 +56,7 @@
             @refresh="loadUnreadCases"
             @update-unread-case="handleUpdateUnreadCaseFromTable"
             @batch-delivered="handleBatchDelivered"
+            @manage-delivery="openDeliveryInfoDrawer"
           />
         </div>
 
@@ -79,6 +80,14 @@
           @close="closeEditUnreadCaseDrawer"
           @save="handleUpdateUnreadCase"
         />
+
+        <!-- Delivery Info Drawer -->
+        <DeliveryInfoDrawer
+          :is-open="isDeliveryInfoDrawerOpen"
+          :unreadCase="unreadCaseToDeliver"
+          @close="closeDeliveryInfoDrawer"
+          @save="handleUpdateDeliveryInfo"
+        />
       </template>
     </div>
   </AdminLayout>
@@ -92,12 +101,14 @@ import Card from '@/shared/components/layout/Card.vue'
 import { BaseButton } from '@/shared/components'
 import LoadingSpinner from '@/shared/components/ui/feedback/LoadingSpinner.vue'
 import { usePermissions } from '@/shared/composables/usePermissions'
+import { useToasts } from '@/shared/composables/useToasts'
 import {
   UnreadCasesTable,
   UnreadCasesFilters,
   UnreadCaseDetailsModal,
   NewUnreadCaseDrawer,
-  EditUnreadCaseDrawer
+  EditUnreadCaseDrawer,
+  DeliveryInfoDrawer
 } from '../components'
 import { unreadCasesService } from '../services'
 import type {
@@ -120,9 +131,12 @@ const selectedUnreadCase = ref<UnreadCase | null>(null)
 const isNewUnreadCaseDrawerOpen = ref(false)
 const isEditUnreadCaseDrawerOpen = ref(false)
 const unreadCaseToEdit = ref<UnreadCase | null>(null)
+const isDeliveryInfoDrawerOpen = ref(false)
+const unreadCaseToDeliver = ref<UnreadCase | null>(null)
 
 // Permisos
 const { isPatologo } = usePermissions()
+const { success: toastSuccess, error: toastError } = useToasts()
 
 // Filters
 const filters = ref<UnreadCaseFilters>({
@@ -315,6 +329,19 @@ const normalizeTestGroupsPayload = (groups: any[]): TestGroup[] => {
     }))
 }
 
+const toISODate = (dateStr: string | undefined): string | undefined => {
+  if (!dateStr) return undefined
+  // Si ya está en formato ISO, retornarlo
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr
+  // Si está en formato DD/MM/YYYY, convertirlo
+  const parts = dateStr.split('/')
+  if (parts.length === 3) {
+    const [d, m, y] = parts
+    return `${y}-${m}-${d}`
+  }
+  return dateStr
+}
+
 const buildCreatePayload = (formData: any): UnreadCaseCreatePayload => {
   const normalizedGroups = normalizeTestGroupsPayload(formData.testGroups)
   const computedPlates = normalizedGroups.reduce((acc, group) => {
@@ -345,10 +372,9 @@ const buildCreatePayload = (formData: any): UnreadCaseCreatePayload => {
     numberOfPlates: formData.numberOfPlates || computedPlates,
     deliveredTo: formData.deliveredTo || undefined,
     deliveryDate: formData.deliveryDate || undefined,
-    entryDate: formData.entryDate,
+    entryDate: toISODate(formData.entryDate),
     receivedBy: formData.receivedBy || undefined,
     status: formData.status || 'En proceso',
-    elaboratedBy: formData.elaboratedBy || undefined,
     receipt: formData.receipt || undefined
   }
 }
@@ -373,10 +399,9 @@ const buildUpdatePayload = (data: any): UnreadCaseUpdatePayload => {
     numberOfPlates: data.numberOfPlates,
     deliveredTo: data.deliveredTo || undefined,
     deliveryDate: data.deliveryDate || undefined,
-    entryDate: data.entryDate,
+    entryDate: toISODate(data.entryDate),
     receivedBy: data.receivedBy || undefined,
     status: data.status || undefined,
-    elaboratedBy: data.elaboratedBy || undefined,
     receipt: data.receipt || undefined
   }
 
@@ -387,15 +412,54 @@ const buildUpdatePayload = (data: any): UnreadCaseUpdatePayload => {
   return payload
 }
 
+const openDeliveryInfoDrawer = (unreadCase: UnreadCase) => {
+  unreadCaseToDeliver.value = unreadCase
+  isDeliveryInfoDrawerOpen.value = true
+}
+
+const closeDeliveryInfoDrawer = () => {
+  isDeliveryInfoDrawerOpen.value = false
+  unreadCaseToDeliver.value = null
+}
+
+const handleUpdateDeliveryInfo = async (updatedData: any) => {
+  if (!unreadCaseToDeliver.value) return
+
+  try {
+    const caseCode = unreadCaseToDeliver.value.caseCode
+    // Merge current case data with updated delivery info and set status to Completed
+    const payload = buildUpdatePayload({
+      ...unreadCaseToDeliver.value,
+      ...updatedData,
+      status: 'Completado'
+    })
+    
+    const saved = await unreadCasesService.update(caseCode, payload)
+    unreadCases.value = unreadCases.value.map(item => (item.id === saved.id ? saved : item))
+    closeDeliveryInfoDrawer()
+    await loadUnreadCases()
+    toastSuccess('update', 'Entrega actualizada', 'La información de entrega se ha guardado correctamente.')
+  } catch (err: any) {
+    console.error('Error updating delivery info:', err)
+    if (err.response?.data) {
+      console.error('Validation errors:', err.response.data)
+    }
+    const errorMessage = err.response?.data?.detail || err.message || 'Error al actualizar la información de entrega'
+    toastError('generic', 'Error al guardar', errorMessage)
+  }
+}
+
 const handleSaveNewUnreadCase = async (formData: any) => {
   try {
     const payload = buildCreatePayload(formData)
     await unreadCasesService.create(payload)
     currentPage.value = 1
     await loadUnreadCases()
+    toastSuccess('create', 'Caso creado', 'El caso sin lectura se ha creado correctamente.')
   } catch (err: any) {
     console.error(err)
-    error.value = err?.message || 'Error al crear el caso sin lectura'
+    const errorMessage = err.response?.data?.detail || err.message || 'Error al crear el caso sin lectura'
+    toastError('generic', 'Error al crear', errorMessage)
   }
 }
 
@@ -411,9 +475,11 @@ const handleUpdateUnreadCase = async (updatedUnreadCase: UnreadCase) => {
     unreadCases.value = unreadCases.value.map(item => (item.id === saved.id ? saved : item))
     closeEditUnreadCaseDrawer()
     await loadUnreadCases()
+    toastSuccess('update', 'Caso actualizado', 'El caso sin lectura se ha actualizado correctamente.')
   } catch (err: any) {
     console.error(err)
-    error.value = err?.message || 'Error al actualizar el caso sin lectura'
+    const errorMessage = err.response?.data?.detail || err.message || 'Error al actualizar el caso sin lectura'
+    toastError('generic', 'Error al actualizar', errorMessage)
   }
 }
 
@@ -432,9 +498,11 @@ const handleBatchDelivered = async (payload: BulkMarkDeliveredPayload) => {
       unreadCases.value = unreadCases.value.map(item => updatedMap.get(item.id) || item)
     }
     await loadUnreadCases()
+    toastSuccess('update', 'Casos actualizados', 'Los casos seleccionados se han marcado como completados.')
   } catch (err: any) {
     console.error(err)
-    error.value = err?.message || 'Error al marcar los casos como completados'
+    const errorMessage = err.response?.data?.detail || err.message || 'Error al marcar los casos como completados'
+    toastError('generic', 'Error al actualizar', errorMessage)
   }
 }
 

@@ -247,41 +247,6 @@
               </div>
             </div>
           </div>
-
-          <!-- Recepción y Entrega -->
-          <div class="bg-gray-50 rounded-2xl border border-gray-200 shadow-sm">
-            <div class="px-6 py-4 border-b border-gray-200 bg-white">
-              <div class="flex items-start gap-2">
-                <div class="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <CalendarIcon class="w-4 h-4 text-green-600" />
-                </div>
-                <div>
-                  <h4 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Información de Recepción</h4>
-                  <p class="text-xs text-gray-500 mt-0.5">Registre la fecha de ingreso y a quién se entregará</p>
-                </div>
-              </div>
-            </div>
-            <div class="p-6">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Fecha de Ingreso -->
-                <DateInputField
-                  v-model="formData.entryDate"
-                  label="Fecha de Ingreso"
-                  :errors="errors.entryDate ? [errors.entryDate] : []"
-                  required
-                />
-
-                <!-- Entregado A -->
-                <FormInputField
-                  v-model="formData.deliveredTo"
-                  label="Entregado A"
-                  placeholder="Ej: IMQ, AMPR"
-                  :errors="errors.deliveredTo ? [errors.deliveredTo] : []"
-                  required
-                />
-              </div>
-            </div>
-          </div>
         </div>
 
         <!-- Footer -->
@@ -511,19 +476,6 @@ const validateForm = (): boolean => {
   // Validar entidad
   if (!formData.value.entityCode.trim()) {
     errors.value.entityCode = 'La entidad es requerida'
-    isValid = false
-  }
-
-  // Validar fecha de ingreso
-  if (!formData.value.entryDate) {
-    errors.value.entryDate = 'La fecha de ingreso es requerida'
-    isValid = false
-  }
-
-  // Validar entregado a
-  // Validar entregado a
-  if (!formData.value.deliveredTo.trim()) {
-    errors.value.deliveredTo = 'Este campo es requerido'
     isValid = false
   }
 
