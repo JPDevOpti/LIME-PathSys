@@ -3,12 +3,21 @@ import type { CaseModel, CaseListItem, CaseStatistics, CaseState } from './case'
 export interface CreateCaseRequest {
   patient_info: {
     patient_code: string
+    identification_type?: number
+    identification_number?: string
     name: string
     age: number
+    birth_date?: string
     gender: string
     entity_info: { id: string; name: string }
     care_type: string
     observations?: string
+    location?: {
+      municipality_code?: string
+      municipality_name?: string
+      subregion?: string
+      address?: string
+    }
   }
   requesting_physician?: string
   service?: string

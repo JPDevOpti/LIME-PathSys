@@ -402,13 +402,32 @@ const caseState = computed(() => translateCaseState(props.caseData.state || prop
 const casePriority = computed(() => translateCasePriority(props.caseData.priority || props.caseData.prioridad))
 
 const patientName = computed(() => activePatient.value.name || activePatient.value.nombre || 'No registrado')
-const patientDocument = computed(() =>
-  activePatient.value.patient_code ||
-  activePatient.value.patientCode ||
-  props.caseData.case_code ||
-  props.caseData.caseCode ||
-  ''
-)
+const patientDocument = computed(() => {
+  // Buscar en activePatient primero
+  const fromPatient = activePatient.value.patient_code || 
+                     activePatient.value.patientCode ||
+                     activePatient.value.paciente_code ||
+                     activePatient.value.documento ||
+                     activePatient.value.cedula
+  
+  if (fromPatient) return fromPatient
+  
+  // Si no está en activePatient, buscar en patient_info del caso
+  const fromPatientInfo = props.caseData.patient_info?.patient_code ||
+                         props.caseData.patient_info?.patientCode ||
+                         props.caseData.patient_info?.paciente_code
+  
+  if (fromPatientInfo) return fromPatientInfo
+  
+  // Si no está en ningún lado, buscar en el objeto paciente del caso
+  const fromPaciente = (props.caseData.paciente as any)?.paciente_code ||
+                       (props.caseData.paciente as any)?.patient_code ||
+                       (props.caseData.paciente as any)?.patientCode ||
+                       (props.caseData.paciente as any)?.documento ||
+                       (props.caseData.paciente as any)?.cedula
+  
+  return fromPaciente || ''
+})
 function computeAgeFrom(dateInput?: string | Date | null): number | '' {
   if (!dateInput) return ''
   const d = typeof dateInput === 'string' || dateInput instanceof Date ? new Date(dateInput) : null

@@ -790,10 +790,11 @@ const onSubmit = async () => {
     const locCode = form.municipality_code.trim()
     const locName = form.municipality_name.trim()
     const locSubregion = form.subregion.trim()
-    const locAddress = form.address.trim() || null
+    const locAddressRaw = form.address.trim()
+    const locAddress = locAddressRaw || null
 
-    const hasLocationFields = locCode || locName || locSubregion || locAddress
-    const hasRequiredLocation = locCode && locName && locSubregion
+    const hasLocationFields = Boolean(locCode || locName || locSubregion || locAddressRaw)
+    const hasRequiredLocation = Boolean(locCode && locName && locSubregion)
     if (hasLocationFields && !hasRequiredLocation) {
       showNotification('error', 'Error de validación', 'Complete código, municipio y subregión para guardar la ubicación', 0)
       isLoading.value = false
@@ -812,12 +813,13 @@ const onSubmit = async () => {
 
     const birthDateIso = toISODateString(form.birth_date)
 
+    // Construir el payload de ubicación: solo incluir address si tiene valor
     const locationPayload: UpdatePatientRequest['location'] = hasRequiredLocation
       ? {
           municipality_code: locCode,
           municipality_name: locName,
           subregion: locSubregion,
-          address: locAddress,
+          ...(locAddressRaw ? { address: locAddressRaw } : {})
         }
       : (hadLocation ? null : undefined)
 
@@ -825,6 +827,7 @@ const onSubmit = async () => {
       locCode,
       locName,
       locSubregion,
+      locAddressRaw,
       locAddress,
       hasLocationFields,
       hasRequiredLocation,

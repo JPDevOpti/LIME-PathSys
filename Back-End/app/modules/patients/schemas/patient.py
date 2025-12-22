@@ -43,6 +43,70 @@ class Location(BaseModel):
     
     model_config = ConfigDict(populate_by_name=True)
 
+class LocationUpdate(BaseModel):
+    """Esquema para actualizaciones parciales de Location"""
+    municipality_code: Optional[str] = Field(None, description="Código del municipio")
+    municipality_name: Optional[str] = Field(None, description="Nombre del municipio")
+    subregion: Optional[str] = Field(None, description="Subregión")
+    address: Optional[str] = Field(None, description="Dirección de residencia")
+    
+    # Normalizar campos de ubicación: convertir cadenas vacías a None
+    @field_validator('municipality_code', mode='before')
+    def normalize_municipality_code(cls, v):
+        if v is None:
+            return None
+        if isinstance(v, str):
+            v_stripped = v.strip()
+            if v_stripped == "":
+                return None
+            if len(v_stripped) < 1 or len(v_stripped) > 10:
+                raise ValueError('El código del municipio debe tener entre 1 y 10 caracteres')
+            return v_stripped
+        return v
+    
+    @field_validator('municipality_name', mode='before')
+    def normalize_municipality_name(cls, v):
+        if v is None:
+            return None
+        if isinstance(v, str):
+            v_stripped = v.strip()
+            if v_stripped == "":
+                return None
+            if len(v_stripped) < 2 or len(v_stripped) > 100:
+                raise ValueError('El nombre del municipio debe tener entre 2 y 100 caracteres')
+            return v_stripped
+        return v
+    
+    @field_validator('subregion', mode='before')
+    def normalize_subregion(cls, v):
+        if v is None:
+            return None
+        if isinstance(v, str):
+            v_stripped = v.strip()
+            if v_stripped == "":
+                return None
+            if len(v_stripped) < 2 or len(v_stripped) > 100:
+                raise ValueError('La subregión debe tener entre 2 y 100 caracteres')
+            return v_stripped
+        return v
+    
+    @field_validator('address', mode='before')
+    def normalize_address(cls, v):
+        if v is None:
+            return None
+        if isinstance(v, str):
+            v_stripped = v.strip()
+            # Si está vacía o tiene menos de 5 caracteres, convertir a None
+            if v_stripped == "" or len(v_stripped) < 5:
+                return None
+            # Validar longitud máxima
+            if len(v_stripped) > 200:
+                raise ValueError('La dirección no puede tener más de 200 caracteres')
+            return v_stripped
+        return v
+    
+    model_config = ConfigDict(populate_by_name=True)
+
 class PatientBase(BaseModel):
     patient_code: str = Field(..., description="Código único del paciente")
     identification_type: IdentificationType = Field(...)
@@ -97,7 +161,7 @@ class PatientUpdate(BaseModel):
     second_lastname: Optional[str] = Field(None, min_length=2, max_length=50)
     birth_date: Optional[date] = None
     gender: Optional[Gender] = None
-    location: Optional[Location] = None
+    location: Optional[LocationUpdate] = None
     entity_info: Optional[EntityInfo] = None
     care_type: Optional[CareType] = None
     observations: Optional[str] = Field(None, max_length=500)

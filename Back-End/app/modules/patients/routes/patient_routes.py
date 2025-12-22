@@ -160,8 +160,11 @@ async def update_patient(patient_code: str, patient_update: PatientUpdate, servi
         raise HTTPException(status_code=404, detail=str(e))
     except BadRequestError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception:
-        raise HTTPException(status_code=500, detail="Error interno del servidor")
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.exception("Error al actualizar paciente %s: %s", patient_code, str(e))
+        raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
 
 @router.put("/{patient_code}/change-identification", response_model=PatientResponse)
 async def change_patient_identification(

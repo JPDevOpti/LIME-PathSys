@@ -38,11 +38,42 @@ export function useCaseAPI() {
     return 'Ambulatorio'
   }
 
+  // Calcular fecha de nacimiento desde edad si no está disponible
+  const calculateBirthDateFromAge = (age: number): string | undefined => {
+    if (!age || age <= 0) return undefined
+    const today = new Date()
+    const estimatedBirthYear = today.getFullYear() - age
+    // Usar el 1 de enero del año estimado como fecha aproximada
+    return `${estimatedBirthYear}-01-01T00:00:00Z`
+  }
+
   // Map form state + verified patient to backend request body
   const transformCaseFormToApiRequest = async (formData: any, verifiedPatient: any): Promise<any> => {
     const entityName = (formData as any).patientEntity
       ? await getEntityNameByCode((formData as any).patientEntity)
       : ((verifiedPatient as any)?.entity || 'Entidad no especificada')
+    
+    // Obtener birth_date del paciente verificado, o calcularlo desde age si no está disponible
+    let birthDate = (verifiedPatient as any)?.birth_date
+    if (!birthDate) {
+      const age = Number.parseInt(String((verifiedPatient as any)?.age || 0))
+      if (age > 0) {
+        birthDate = calculateBirthDateFromAge(age)
+        console.log('[useCaseAPI] birth_date calculado desde age:', birthDate, 'age:', age)
+      }
+    }
+    
+    // Si birth_date es un string en formato DD/MM/YYYY, convertirlo a ISO
+    if (birthDate && typeof birthDate === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(birthDate)) {
+      const [dd, mm, yyyy] = birthDate.split('/')
+      birthDate = `${yyyy}-${mm}-${dd}T00:00:00Z`
+    }
+    
+    // Si birth_date es solo una fecha (YYYY-MM-DD), agregar hora
+    if (birthDate && typeof birthDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+      birthDate = `${birthDate}T00:00:00Z`
+    }
+    
     return {
       patient_info: {
         patient_code: (verifiedPatient as any)?.patientCode || (verifiedPatient as any)?.codigo || '',
@@ -50,7 +81,7 @@ export function useCaseAPI() {
         identification_number: (verifiedPatient as any)?.identification_number || undefined,
         name: (verifiedPatient as any)?.name || '',
         age: Number.parseInt(String((verifiedPatient as any)?.age || 0)) || 0,
-        birth_date: (verifiedPatient as any)?.birth_date || undefined,
+        birth_date: birthDate || undefined,
         gender: normalizeSexo((verifiedPatient as any)?.gender),
         entity_info: {
           id: (formData as any).patientEntity || (verifiedPatient as any)?.entityCode || 'ent_default',

@@ -45,6 +45,7 @@
             <div class="flex-1 min-w-0">
               <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">Edad</p>
               <p class="text-sm font-bold text-gray-900">{{ patient.age }} años</p>
+              <p v-if="formattedBirthDate" class="text-xs text-gray-600 mt-0.5">Nac: {{ formattedBirthDate }}</p>
             </div>
           </div>
         </div>
@@ -233,5 +234,25 @@ const locationSubregion = computed(() => {
 
 const hasLocationInfo = computed(() => {
   return !!(locationMunicipality.value || locationSubregion.value || locationAddress.value)
+})
+
+const formattedBirthDate = computed(() => {
+  const p: any = props.patient || {}
+  const birthDate = p.birth_date
+  if (!birthDate) return ''
+  
+  try {
+    // Si es un string ISO, parsearlo
+    const date = new Date(birthDate)
+    if (isNaN(date.getTime())) return ''
+    
+    // Formatear como DD/MM/YYYY
+    const dd = String(date.getDate()).padStart(2, '0')
+    const mm = String(date.getMonth() + 1).padStart(2, '0')
+    const yyyy = date.getFullYear()
+    return `${dd}/${mm}/${yyyy}`
+  } catch {
+    return ''
+  }
 })
 </script>

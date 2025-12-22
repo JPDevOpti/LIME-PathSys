@@ -83,6 +83,8 @@ class ResultService:
         # Normalize patient_info using only new structure
         patient = doc.get("patient_info") or {}
         entity_info = patient.get("entity_info") or {}
+        location = patient.get("location") or {}
+        
         normalized_patient = {
             "patient_code": patient.get("patient_code") or "",
             "identification_type": patient.get("identification_type") or None,
@@ -97,6 +99,25 @@ class ResultService:
             "care_type": patient.get("care_type") or "",
             "observations": patient.get("observations"),
         }
+        
+        # Agregar birth_date si está presente
+        if patient.get("birth_date"):
+            normalized_patient["birth_date"] = patient.get("birth_date")
+        
+        # Agregar location si está presente y tiene al menos un campo
+        if location and any(location.values()):
+            normalized_location = {}
+            if location.get("municipality_code"):
+                normalized_location["municipality_code"] = location.get("municipality_code")
+            if location.get("municipality_name"):
+                normalized_location["municipality_name"] = location.get("municipality_name")
+            if location.get("subregion"):
+                normalized_location["subregion"] = location.get("subregion")
+            if location.get("address"):
+                normalized_location["address"] = location.get("address")
+            if normalized_location:
+                normalized_patient["location"] = normalized_location
+        
         # Derive patient_code if missing and identification present
         id_type = normalized_patient.get("identification_type")
         id_number = normalized_patient.get("identification_number")

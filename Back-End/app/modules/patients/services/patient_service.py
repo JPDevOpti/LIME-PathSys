@@ -29,8 +29,12 @@ class PatientService:
         return PatientResponse(**patient_data)
 
     async def update_patient(self, patient_code: str, patient_update: PatientUpdate) -> PatientResponse:
-        patient_data = await self.repository.update(patient_code, patient_update)
-        return PatientResponse(**patient_data)
+        try:
+            patient_data = await self.repository.update(patient_code, patient_update)
+            return PatientResponse(**patient_data)
+        except Exception as e:
+            logger.exception("[service:update] Error al actualizar paciente %s: %s", patient_code, str(e))
+            raise
 
     async def change_patient_identification(self, patient_code: str, new_identification_type: IdentificationType | int | str, new_identification_number: str) -> PatientResponse:
         if not new_identification_number or len(new_identification_number.strip()) == 0:

@@ -118,13 +118,19 @@ class PatientRepository:
     async def update(self, patient_code: str, patient_update: PatientUpdate) -> dict:
         query = {"patient_code": patient_code}
             
-        # Check existence first
-        existing_patient = await self.collection.find_one(query, {"_id": 1})
+        # Check existence first and get location field if it exists
+        existing_patient = await self.collection.find_one(query, {"_id": 1, "location": 1})
         if not existing_patient:
             raise NotFoundError("Paciente no encontrado")
             
         # Incluir solo campos explícitamente enviados, incluso si son None (para poder hacer unset)
-        update_data = patient_update.model_dump(exclude_unset=True)
+        try:
+            update_data = patient_update.model_dump(exclude_unset=True)
+            logger.debug("[repo:update] update_data después de model_dump: %s", update_data)
+        except Exception as e:
+            logger.exception("[repo:update] Error al hacer model_dump del PatientUpdate: %s", str(e))
+            raise
+        
         if update_data:
             # Construir operaciones $set y $unset, manejando correctamente nested fields (location)
             set_ops: Dict[str, Any] = {}
@@ -140,14 +146,32 @@ class PatientRepository:
                     if value is None:
                         unset_ops["location"] = ""
                     elif isinstance(value, dict):
-                        # Actualizar campos anidados individualmente
-                        for loc_key, loc_value in value.items():
-                            field_path = f"location.{loc_key}"
-                            if loc_value is None:
-                                unset_ops[field_path] = ""
-                            else:
-                                set_ops[field_path] = loc_value
-                    # Si viene en un tipo inesperado, lo ignoramos para evitar corrupción
+                        # Verificar si el paciente actual tiene location null o no tiene el campo
+                        existing_location = existing_patient.get("location") if existing_patient else None
+                        logger.debug("[repo:update] Procesando location: %s, existing_location: %s", value, existing_location)
+                        
+                        # Si el paciente tiene location: null o no tiene el campo location,
+                        # necesitamos crear el objeto location completo, no campos individuales
+                        if existing_location is None:
+                            # Crear el objeto location completo
+                            location_obj = {}
+                            for loc_key, loc_value in value.items():
+                                if loc_value is not None:
+                                    location_obj[loc_key] = loc_value
+                            if location_obj:
+                                set_ops["location"] = location_obj
+                        else:
+                            # El paciente ya tiene location, actualizar campos individuales
+                            for loc_key, loc_value in value.items():
+                                field_path = f"location.{loc_key}"
+                                if loc_value is None:
+                                    unset_ops[field_path] = ""
+                                else:
+                                    set_ops[field_path] = loc_value
+                    else:
+                        # Si viene en un tipo inesperado, registrar y lanzar error
+                        logger.error("[repo:update] location tiene tipo inesperado: %s (tipo: %s)", value, type(value))
+                        raise ValueError(f"location debe ser un diccionario o None, recibido: {type(value)}")
                 else:
                     if value is None:
                         unset_ops[key] = ""
@@ -165,12 +189,20 @@ class PatientRepository:
                 update_ops["$unset"] = unset_ops
 
             if update_ops:
+                logger.debug("[repo:update] Operaciones de actualización: set_ops=%s, unset_ops=%s", set_ops, unset_ops)
                 await self.collection.update_one(query, update_ops)
             
         updated_patient = await self.collection.find_one(query)
         if not updated_patient:
             raise NotFoundError("Paciente no encontrado después de la actualización")
-        return self._convert_doc_to_response(dict(updated_patient))
+        
+        try:
+            result = self._convert_doc_to_response(dict(updated_patient))
+            logger.debug("[repo:update] Paciente actualizado exitosamente: %s", result.get("patient_code"))
+            return result
+        except Exception as e:
+            logger.exception("[repo:update] Error al convertir documento a respuesta: %s", str(e))
+            raise
 
     async def change_identification(self, old_code: str, new_identification_type: str, new_identification_number: str, cases_collection) -> dict:
         old_query = {"patient_code": old_code}

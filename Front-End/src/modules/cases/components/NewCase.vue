@@ -354,6 +354,20 @@ const searchPatient = async () => {
         }
         calculatedAge = age
       }
+      
+      // Asegurar que birth_date esté en formato ISO si está disponible
+      let birthDateISO = match.birth_date
+      if (birthDateISO) {
+        // Si es un string en formato DD/MM/YYYY, convertirlo
+        if (typeof birthDateISO === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(birthDateISO)) {
+          const [dd, mm, yyyy] = birthDateISO.split('/')
+          birthDateISO = `${yyyy}-${mm}-${dd}`
+        }
+        // Si es solo fecha sin hora, asegurar formato ISO
+        if (typeof birthDateISO === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(birthDateISO)) {
+          birthDateISO = `${birthDateISO}T00:00:00Z`
+        }
+      }
 
       // Normalize gender and care type to cases module expectations
       const genderForm: '' | 'masculino' | 'femenino' = match.gender === 'Masculino' ? 'masculino' : match.gender === 'Femenino' ? 'femenino' : ''
@@ -366,7 +380,7 @@ const searchPatient = async () => {
         name: fullName || '',
         gender: genderForm,
         age: String(calculatedAge),
-        birth_date: match.birth_date,
+        birth_date: birthDateISO || match.birth_date,
         entity: match.entity_info?.name || 'Sin entidad',
         entityCode: match.entity_info?.id,
         careType: careForm,
