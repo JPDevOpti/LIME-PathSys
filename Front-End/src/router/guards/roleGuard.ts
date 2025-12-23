@@ -69,7 +69,8 @@ export function roleGuard(
       '/profile',
       '/reports',
       '/statistics',
-      '/support'
+      '/support',
+      '/pathologist-assignment'
     ],
     resident: [
       '/dashboard',

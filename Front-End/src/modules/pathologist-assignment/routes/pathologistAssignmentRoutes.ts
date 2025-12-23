@@ -8,7 +8,7 @@ export const pathologistAssignmentRoutes: RouteRecordRaw[] = [
     meta: {
       title: 'Asignación de Patólogos',
       requiresAuth: true,
-      roles: ['admin', 'pathologist'] // Ajustar según los roles que necesiten acceso
+      roles: ['admin', 'auxiliar'] // Ajustar según los roles que necesiten acceso
     }
   },
   {
