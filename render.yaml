@@ -1,0 +1,35 @@
+services:
+  # Backend Service
+  - type: web
+    name: lime-pathsys-backend
+    runtime: docker
+    rootDir: Back-End
+    region: oregon
+    plan: free
+    envVars:
+      - key: MONGODB_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ENVIRONMENT
+        value: production
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "480"
+      # CORS: Add the frontend URL here after deployment or use a wildcard temporarily if needed
+      # Render provides the URL in the environment, but we might need to set it manually or use a script
+      - key: BACKEND_CORS_ORIGINS
+        value: '["*"]' 
+
+  # Frontend Service
+  - type: web
+    name: lime-pathsys-frontend
+    runtime: docker
+    rootDir: Front-End
+    region: oregon
+    plan: free
+    envVars:
+      - key: VITE_API_BASE_URL
+        fromService:
+          type: web
+          name: lime-pathsys-backend
+          property: url
