@@ -94,7 +94,8 @@ export function usePathologistAPI() {
   // Minimal payload expected by backend
   const buildPathologistApiData = (pathologist: FormPathologistInfo) => ({
     codigo: (pathologist as any).patologo_code || (pathologist as any).id || '',
-    nombre: (pathologist as any).patologo_name || (pathologist as any).nombre || ''
+    nombre: (pathologist as any).patologo_name || (pathologist as any).nombre || '',
+    medical_license: (pathologist as any).medicalLicense || (pathologist as any).medical_license || ''
   })
 
   // Clear UI state flags

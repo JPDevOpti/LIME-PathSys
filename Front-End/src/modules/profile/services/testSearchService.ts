@@ -110,6 +110,18 @@ class TestSearchService {
       fecha_actualizacion: test.updated_at || test.fecha_actualizacion
     }
   }
+
+  async getAllTests(includeInactive: boolean = false): Promise<any[]> {
+    try {
+      const endpoint = includeInactive ? `${this.endpoint}/inactive` : `${this.endpoint}/`
+      const response = await apiClient.get(endpoint)
+      const list = Array.isArray(response) ? response : []
+      return list.map((t: any) => this.normalizeTest(t))
+    } catch (error: any) {
+      if (error.response?.status === 404) return []
+      throw new Error(error.message || 'Error al obtener pruebas')
+    }
+  }
 }
 
 export const testSearchService = new TestSearchService()

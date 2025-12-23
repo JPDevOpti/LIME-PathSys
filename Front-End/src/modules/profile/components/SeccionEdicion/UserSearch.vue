@@ -1,33 +1,30 @@
 <template>
-  <div class="space-y-4">
+  <div class="space-y-2">
     <h4 class="text-base font-semibold text-gray-800 mb-1" :id="titleId">{{ searchTitle }}</h4>
-    <FormInput
-      v-model="localBusqueda"
-      :id="inputId"
-      :aria-labelledby="titleId"
-      :aria-describedby="error ? errorId : undefined"
-      :placeholder="searchPlaceholder"
-      :disabled="estaBuscando"
-      @keyup.enter="handleSearch"
-    />
-    <div v-if="error" :id="errorId" role="alert" class="text-sm text-red-600">{{ error }}</div>
-    
-    <div class="flex justify-end space-x-3 pt-2 border-t border-gray-200">
-      <ClearButton @click="$emit('limpiar')" :disabled="estaBuscando" />
-      <SearchButton 
-        @click="handleSearch" 
-        :disabled="estaBuscando || !localBusqueda.trim()"
-        :loading="estaBuscando"
-        text="Buscar"
-      />
+    <div class="flex gap-2 items-end">
+      <div class="flex-1">
+        <FormInput
+          v-model="localBusqueda"
+          :id="inputId"
+          :aria-labelledby="titleId"
+          :aria-describedby="error ? errorId : undefined"
+          :placeholder="searchPlaceholder"
+          :disabled="estaBuscando"
+          @input="handleSearch"
+        />
+      </div>
+      <div class="h-12 flex items-center">
+        <ClearButton @click="handleClear" :disabled="estaBuscando" />
+      </div>
     </div>
+    <div v-if="error" :id="errorId" role="alert" class="text-sm text-red-600">{{ error }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { FormInput } from '@/shared/components/ui/forms'
-import { SearchButton, ClearButton } from '@/shared/components/ui/buttons'
+import { ClearButton } from '@/shared/components/ui/buttons'
 
 type TipoBusqueda = 'auxiliar' | 'facturacion' | 'patologo' | 'residente' | 'entidad' | 'pruebas'
 
@@ -51,52 +48,48 @@ const errorId = `buscador-error-${uid}`
 
 const SEARCH_META: Record<TipoBusqueda, { title: string; placeholder: string }> = {
   auxiliar: {
-    title: 'Buscar Auxiliar Administrativo',
-    placeholder: 'Nombre del auxiliar, código o email...'
+    title: 'Filtrar Auxiliares Administrativos',
+    placeholder: 'Filtrar por nombre, código o email...'
   },
   facturacion: {
-    title: 'Buscar Usuario de Facturación',
-    placeholder: 'Nombre del usuario, código o email...'
+    title: 'Filtrar Usuarios de Facturación',
+    placeholder: 'Filtrar por nombre, código o email...'
   },
   patologo: {
-    title: 'Buscar Patólogo',
-    placeholder: 'Nombre del patólogo, código, registro médico o email...'
+    title: 'Filtrar Patólogos',
+    placeholder: 'Filtrar por nombre, código, registro médico o email...'
   },
   residente: {
-    title: 'Buscar Residente',
-    placeholder: 'Nombre del residente, código, registro médico o email...'
+    title: 'Filtrar Residentes',
+    placeholder: 'Filtrar por nombre, código, registro médico o email...'
   },
   entidad: {
-    title: 'Buscar Entidad',
-    placeholder: 'Nombre de la entidad, código o NIT...'
+    title: 'Filtrar Entidades',
+    placeholder: 'Filtrar por nombre, código o NIT...'
   },
   pruebas: {
-    title: 'Buscar Prueba Médica',
-    placeholder: 'Nombre de la prueba o código (80901-1, Biopsia)...'
+    title: 'Filtrar Pruebas Médicas',
+    placeholder: 'Filtrar por nombre o código...'
   }
 }
 
 const tipoActual = computed(() => props.tipoBusqueda)
-const searchTitle = computed(() => SEARCH_META[tipoActual.value]?.title || 'Buscar registros')
-const searchPlaceholder = computed(() => SEARCH_META[tipoActual.value]?.placeholder || 'Buscar...')
-
-const lastPayload = ref<{ query: string; tipo: TipoBusqueda } | null>(null)
+const searchTitle = computed(() => SEARCH_META[tipoActual.value]?.title || 'Filtrar registros')
+const searchPlaceholder = computed(() => SEARCH_META[tipoActual.value]?.placeholder || 'Filtrar...')
 
 const handleSearch = () => {
   const query = localBusqueda.value.trim()
-  if (!query || props.estaBuscando) return
-
   const payload: BuscarEventPayload = {
     query,
     tipo: tipoActual.value,
     includeInactive: true
   }
-
-  if (lastPayload.value && lastPayload.value.query === payload.query && lastPayload.value.tipo === payload.tipo) {
-    return
-  }
-  lastPayload.value = { query: payload.query, tipo: payload.tipo }
   emit('buscar', payload)
+}
+
+const handleClear = () => {
+  localBusqueda.value = ''
+  emit('limpiar')
 }
 
 watch(() => props.busqueda, v => { if (v !== localBusqueda.value) localBusqueda.value = v })

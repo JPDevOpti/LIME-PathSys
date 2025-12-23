@@ -111,13 +111,14 @@ export class CasesApiService {
     return this.putClean<UpdateCaseResponse>(`${this.endpoint}/${caseCode}`, updateData)
   }
 
-  async assignPathologist(caseCode: string, pathologistData: { codigo: string; nombre: string }): Promise<UpdateCaseResponse> {
+  async assignPathologist(caseCode: string, pathologistData: { codigo: string; nombre: string; medical_license?: string }): Promise<UpdateCaseResponse> {
     try {
       // Usar el nuevo endpoint de actualización para asignar patólogo
       const updateData: any = {
         assigned_pathologist: {
           id: pathologistData.codigo,
-          name: pathologistData.nombre
+          name: pathologistData.nombre,
+          ...(pathologistData.medical_license && { medical_license: pathologistData.medical_license })
         }
       }
       return await this.updateCase(caseCode, updateData)

@@ -301,7 +301,7 @@ const deletedCaseData = ref<any>(null)
 const state = ref('')
 const assignedPathologist = ref('')
 const selectedEntity = ref<{ codigo: string; nombre: string } | null>(null)
-const selectedPathologist = ref<{ codigo: string; nombre: string } | null>(null)
+const selectedPathologist = ref<{ codigo: string; nombre: string; medical_license?: string } | null>(null)
 
 const tipoAtencionOptions = [
   { value: 'Ambulatorio', label: 'Ambulatorio' },
@@ -660,19 +660,28 @@ const loadCaseDataFromFound = async (caseData: CaseModel) => {
          const patologoCode = (pathologist as any).patologo_code || codigo
          const patologoData = {
            codigo: patologoCode,
-           nombre: (pathologist as any).patologo_name || (pathologist as any).nombre || ''
+           nombre: (pathologist as any).patologo_name || (pathologist as any).nombre || '',
+           medical_license: (pathologist as any).medicalLicense || (pathologist as any).medical_license || patologoAsignado.medical_license || ''
          }
          selectedPathologist.value = patologoData
          assignedPathologist.value = patologoCode
          onPathologistSelected(patologoData)
        } else {
-         const patologoData = { codigo: codigo, nombre: patologoAsignado.nombre || '' }
+         const patologoData = { 
+           codigo: codigo, 
+           nombre: patologoAsignado.nombre || '',
+           medical_license: patologoAsignado.medical_license || ''
+         }
          selectedPathologist.value = patologoData
          assignedPathologist.value = codigo
          onPathologistSelected(patologoData)
        }
      } catch (error) {
-       const patologoData = { codigo: codigo, nombre: patologoAsignado.nombre || '' }
+       const patologoData = { 
+         codigo: codigo, 
+         nombre: patologoAsignado.nombre || '',
+         medical_license: patologoAsignado.medical_license || ''
+       }
        selectedPathologist.value = patologoData
        assignedPathologist.value = codigo
        onPathologistSelected(patologoData)
@@ -817,7 +826,8 @@ const onSubmit = async () => {
       assigned_pathologist: assignedPathologist.value ? {
         id: assignedPathologist.value,
         pathologist_code: assignedPathologist.value,
-        name: selectedPathologist.value?.nombre || ''
+        name: selectedPathologist.value?.nombre || '',
+        ...(selectedPathologist.value?.medical_license && { medical_license: selectedPathologist.value.medical_license })
       } : undefined,
       samples: allEmptyRegions && existingSamples.length ? undefined : samplesClean,
       patient_info: patientInfoToUpdate
@@ -960,7 +970,12 @@ const onPathologistSelected = (pathologist: any | null) => {
   if (pathologist) {
     const codigo = pathologist.patologo_code || pathologist.codigo || pathologist.code || pathologist.documento || pathologist.id || ''
     const nombre = pathologist.patologo_name || pathologist.nombre || pathologist.name || ''
-    selectedPathologist.value = { codigo, nombre }
+    const medicalLicense = pathologist.medicalLicense || pathologist.medical_license || ''
+    selectedPathologist.value = { 
+      codigo, 
+      nombre,
+      ...(medicalLicense && { medical_license: medicalLicense })
+    }
     assignedPathologist.value = codigo
   } else {
     selectedPathologist.value = null

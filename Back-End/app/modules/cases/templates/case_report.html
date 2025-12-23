@@ -493,7 +493,7 @@
       <img src="{{ pathologist_signature }}" alt="Firma del patólogo" style="height: 15mm; width: auto; object-fit: contain; display: block;"/>
       {% endif %}
       <div class="signature-line"></div>
-      <div><span class="signature-label">Médico Patólogo:</span> {{ case.patologo_asignado.nombre if case.patologo_asignado else '' }}</div>
+      <div><span class="signature-label">Médico Patólogo:</span> {% if case.patologo_asignado %}{{ case.patologo_asignado.nombre }}{% if case.patologo_asignado.registro_medico %} - {{ case.patologo_asignado.registro_medico }}{% endif %}{% endif %}</div>
     </div>
   </div>
 

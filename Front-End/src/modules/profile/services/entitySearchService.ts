@@ -200,6 +200,67 @@ class EntitySearchService {
     const response = await apiClient.get(endpoint)
     return Array.isArray(response) ? response.map(this.normalizeTest) : []
   }
+
+  // Métodos para obtener todos los registros sin búsqueda
+  async getAllEntities(includeInactive: boolean = false): Promise<any[]> {
+    try {
+      const endpoint = includeInactive ? `${this.endpoint}/inactive` : this.endpoint
+      const params: any = { skip: 0, limit: 100 }
+      const response = await apiClient.get(endpoint, { params })
+      return Array.isArray(response) ? response.map(this.normalizeEntity) : []
+    } catch (error: any) {
+      if (error.response?.status === 404) return []
+      throw new Error(error.message || 'Error al obtener entidades')
+    }
+  }
+
+  async getAllResidents(includeInactive: boolean = false): Promise<any[]> {
+    try {
+      const endpoint = includeInactive ? `${API_CONFIG.ENDPOINTS.RESIDENTS}/search` : API_CONFIG.ENDPOINTS.RESIDENTS
+      const params: any = { skip: 0, limit: 1000 }
+      const response = await apiClient.get(endpoint, { params })
+      return Array.isArray(response) ? response.map(this.normalizeResident) : []
+    } catch (error: any) {
+      if (error.response?.status === 404) return []
+      throw new Error(error.message || 'Error al obtener residentes')
+    }
+  }
+
+  async getAllPathologists(includeInactive: boolean = false): Promise<any[]> {
+    try {
+      const endpoint = includeInactive ? `${API_CONFIG.ENDPOINTS.PATHOLOGISTS}/search` : API_CONFIG.ENDPOINTS.PATHOLOGISTS
+      const params: any = { skip: 0, limit: 1000 }
+      const response = await apiClient.get(endpoint, { params })
+      return Array.isArray(response) ? response.map(this.normalizePathologist) : []
+    } catch (error: any) {
+      if (error.response?.status === 404) return []
+      throw new Error(error.message || 'Error al obtener patólogos')
+    }
+  }
+
+  async getAllAuxiliaries(includeInactive: boolean = false): Promise<any[]> {
+    try {
+      const endpoint = includeInactive ? `${API_CONFIG.ENDPOINTS.AUXILIARIES}/search` : API_CONFIG.ENDPOINTS.AUXILIARIES
+      const params: any = { skip: 0, limit: 1000 }
+      const response = await apiClient.get(endpoint, { params })
+      return Array.isArray(response) ? response.map(this.normalizeAuxiliary) : []
+    } catch (error: any) {
+      if (error.response?.status === 404) return []
+      throw new Error(error.message || 'Error al obtener auxiliares')
+    }
+  }
+
+  async getAllFacturacion(includeInactive: boolean = false): Promise<any[]> {
+    try {
+      const endpoint = includeInactive ? `${API_CONFIG.ENDPOINTS.FACTURACION}/search` : API_CONFIG.ENDPOINTS.FACTURACION
+      const params: any = { skip: 0, limit: 1000 }
+      const response = await apiClient.get(endpoint, { params })
+      return Array.isArray(response) ? response.map(this.normalizeBilling) : []
+    } catch (error: any) {
+      if (error.response?.status === 404) return []
+      throw new Error(error.message || 'Error al obtener usuarios de facturación')
+    }
+  }
 }
 
 export const entitySearchService = new EntitySearchService()

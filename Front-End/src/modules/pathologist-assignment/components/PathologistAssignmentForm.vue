@@ -277,9 +277,14 @@ const handleAsignacionExitosa = async (result: any, codigoCaso: string) => {
     const p = result.assignment.pathologist as any
     const codigo = p.patologo_code || p.codigo || p.code || p.documento || formData.patologoId
     const nombre = p.patologo_name || p.nombre || p.name || ''
+    const medicalLicense = p.medicalLicense || p.medical_license || ''
     
     if (casoInfo.value) {
-      (casoInfo.value as any).assigned_pathologist = { id: codigo, name: nombre }
+      (casoInfo.value as any).assigned_pathologist = { 
+        id: codigo, 
+        name: nombre,
+        ...(medicalLicense && { medical_license: medicalLicense })
+      }
     }
   }
 

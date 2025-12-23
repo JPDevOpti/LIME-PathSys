@@ -44,6 +44,7 @@ class SampleInfo(BaseModel):
 class AssignedPathologist(BaseModel):
     id: str = Field(..., max_length=50)
     name: str = Field(..., max_length=200)
+    medical_license: Optional[str] = Field(None, max_length=50, description="Registro médico del patólogo")
 
 
 class CasePriority(str):
