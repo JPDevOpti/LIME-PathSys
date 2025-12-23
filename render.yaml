@@ -18,7 +18,7 @@ services:
       # CORS: Add the frontend URL here after deployment or use a wildcard temporarily if needed
       # Render provides the URL in the environment, but we might need to set it manually or use a script
       - key: BACKEND_CORS_ORIGINS
-        value: '["*"]' 
+        value: "*" 
 
   # Frontend Service
   - type: web
