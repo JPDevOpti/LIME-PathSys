@@ -8,7 +8,7 @@ services:
     plan: free
     envVars:
       - key: MONGODB_URL
-        sync: false
+        value: mongodb+srv://juanrestrepo183:cHp6ewrNmsPxfwfG@cluster0.o8uta.mongodb.net/
       - key: SECRET_KEY
         generateValue: true
       - key: ENVIRONMENT
