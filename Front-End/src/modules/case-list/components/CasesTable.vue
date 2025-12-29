@@ -29,6 +29,19 @@
           </button>
           
           <button
+            @click="handleBatchPrintPdf"
+            :disabled="isPrintingPdf"
+            class="inline-flex items-center gap-2 px-3 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg v-if="isPrintingPdf" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <PrintIcon v-else class="w-4 h-4" />
+            {{ isPrintingPdf ? 'Generando PDFs...' : 'Imprimir PDFs Seleccionados' }}
+          </button>
+          
+          <button
             v-if="!isPatologo && !isResidente && !isFacturacion"
             @click="handleBatchMarkDelivered"
             class="inline-flex items-center gap-2 px-3 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
@@ -350,7 +363,7 @@
 
 <script setup lang="ts">
 import type { Case } from '../types/case.types'
-import { SettingsIcon, DocsIcon } from '@/assets/icons'
+import { SettingsIcon, DocsIcon, PrintIcon } from '@/assets/icons'
 import InfoListIcon from '@/assets/icons/InfoListIcon.vue'
 import { useRouter } from 'vue-router'
 import { ref } from 'vue'
@@ -398,10 +411,13 @@ const emit = defineEmits<{
 
 const router = useRouter()
 const { isPatologo, isResidente, isFacturacion } = usePermissions()
-const { warning } = useToasts()
+const { warning, success, error: showError } = useToasts()
 
 const isDownloadingExcel = ref(false)
+const isPrintingPdf = ref(false)
 const showMarkDeliveredDrawer = ref(false)
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 const showWarningToast = (title: string, message: string) => {
   warning('generic', title, message, 5000)
@@ -455,6 +471,66 @@ const handleBatchDownloadExcel = async () => {
     alert('Error al exportar a Excel. Por favor, intente nuevamente.')
   } finally {
     isDownloadingExcel.value = false
+  }
+}
+
+const handleBatchPrintPdf = async () => {
+  if (props.selectedIds.length === 0) {
+    return
+  }
+  
+  try {
+    const selectedCases = props.cases.filter(c => props.selectedIds.includes(c.id))
+    
+    if (selectedCases.length === 0) {
+      return
+    }
+    
+    isPrintingPdf.value = true
+    
+    // Obtener los códigos de caso válidos
+    const caseCodes = selectedCases
+      .map(c => c.caseCode || c.id)
+      .filter((code): code is string => !!code)
+    
+    if (caseCodes.length === 0) {
+      showError('generic', 'Error', 'No se encontraron códigos de caso válidos')
+      return
+    }
+    
+    // Llamar al endpoint de batch PDF
+    const url = `${API_BASE_URL}/api/v1/cases/batch/pdf`
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ case_codes: caseCodes }),
+    })
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ detail: 'Error desconocido' }))
+      throw new Error(errorData.detail || `Error ${response.status}: ${response.statusText}`)
+    }
+    
+    // Obtener el PDF como blob
+    const blob = await response.blob()
+    
+    // Crear URL del blob y abrir en nueva ventana
+    const blobUrl = URL.createObjectURL(blob)
+    window.open(blobUrl, '_blank', 'noopener,noreferrer')
+    
+    // Limpiar la URL del blob después de un tiempo
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
+    
+    success('generic', 'PDF Generado', `Se generó un PDF combinado con ${caseCodes.length} caso${caseCodes.length > 1 ? 's' : ''}`)
+    
+  } catch (error: any) {
+    console.error('Error generando PDF:', error)
+    const errorMessage = error.message || 'Error desconocido al generar el PDF'
+    showError('generic', 'Error al generar PDF', errorMessage)
+  } finally {
+    isPrintingPdf.value = false
   }
 }
 

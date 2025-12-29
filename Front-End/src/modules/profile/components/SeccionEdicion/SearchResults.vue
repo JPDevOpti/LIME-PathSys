@@ -26,25 +26,25 @@
             <col class="w-1/6">
             <col class="w-1/12">
           </colgroup>
-          <thead class="bg-gray-50">
-            <tr>
-              <th scope="col" class="px-3 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Nombre
-              </th>
-              <th scope="col" class="px-3 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Tipo
-              </th>
-              <th scope="col" class="hidden sm:table-cell px-3 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Código
-              </th>
-              <th scope="col" class="px-3 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Estado
-              </th>
-              <th scope="col" class="relative px-3 md:px-4 py-2">
-                <span class="sr-only">Seleccionar</span>
-              </th>
-            </tr>
-          </thead>
+        <thead class="bg-gray-50">
+          <tr>
+            <th scope="col" class="px-3 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Nombre
+            </th>
+            <th scope="col" class="px-3 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Tipo
+            </th>
+            <th scope="col" class="hidden sm:table-cell px-3 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Código
+            </th>
+            <th scope="col" class="px-3 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Estado
+            </th>
+            <th scope="col" class="relative px-3 md:px-4 py-2">
+              <span class="sr-only">Seleccionar</span>
+            </th>
+          </tr>
+        </thead>
         </table>
       </div>
       <div class="overflow-y-auto max-h-[280px] overflow-x-auto" style="scrollbar-width: thin;">
@@ -56,76 +56,76 @@
             <col class="w-1/6">
             <col class="w-1/12">
           </colgroup>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr 
-              v-for="r in resultados" 
-              :key="r.id"
-              class="cursor-pointer transition-colors"
-              :class="r.id === selectedId 
-                ? 'bg-blue-50 ring-2 ring-blue-400' 
-                : 'hover:bg-gray-50'"
-              @click="$emit('usuario-seleccionado', r)"
-            >
+        <tbody class="bg-white divide-y divide-gray-200">
+          <tr 
+            v-for="r in resultados" 
+            :key="r.id"
+            class="cursor-pointer transition-colors"
+            :class="r.id === selectedId 
+              ? 'bg-blue-50 ring-2 ring-blue-400' 
+              : 'hover:bg-gray-50'"
+            @click="$emit('usuario-seleccionado', r)"
+          >
               <td class="px-3 md:px-4 py-3 max-w-0">
                 <div class="flex items-center min-w-0">
                   <div class="min-w-0 flex-1">
                     <div class="text-sm font-medium text-gray-900 truncate" :title="r.nombre">
-                      {{ r.nombre }}
-                    </div>
+                    {{ r.nombre }}
+                  </div>
                     <div class="sm:hidden text-xs text-gray-500 truncate">
-                      {{ r.documento || r.nit || r.codigo || '-' }}
-                    </div>
+                    {{ r.documento || r.nit || r.codigo || '-' }}
                   </div>
                 </div>
-              </td>
+              </div>
+            </td>
               <td class="px-3 md:px-4 py-3 max-w-0">
                 <div class="min-w-0">
                   <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full max-w-full"
-                    :class="{
-                      'bg-blue-100 text-blue-800': r.tipo === 'auxiliar',
-                      'bg-green-100 text-green-800': r.tipo === 'patologo',
-                      'bg-yellow-100 text-yellow-800': r.tipo === 'residente',
-                      'bg-purple-100 text-purple-800': r.tipo === 'entidad',
+                :class="{
+                  'bg-blue-100 text-blue-800': r.tipo === 'auxiliar',
+                  'bg-green-100 text-green-800': r.tipo === 'patologo',
+                  'bg-yellow-100 text-yellow-800': r.tipo === 'residente',
+                  'bg-purple-100 text-purple-800': r.tipo === 'entidad',
                       'bg-orange-100 text-orange-800': r.tipo === 'pruebas',
                       'bg-pink-100 text-pink-800': r.tipo === 'facturacion'
-                    }">
+                }">
                     <span class="md:hidden truncate">
-                      {{ r.tipo === 'auxiliar' ? 'Aux' : 
-                         r.tipo === 'patologo' ? 'Pat' : 
-                         r.tipo === 'residente' ? 'Res' :
+                  {{ r.tipo === 'auxiliar' ? 'Aux' : 
+                     r.tipo === 'patologo' ? 'Pat' : 
+                     r.tipo === 'residente' ? 'Res' :
                          r.tipo === 'entidad' ? 'Ent' : 
                          r.tipo === 'facturacion' ? 'Fac' : 'Pru' }}
-                    </span>
+                </span>
                     <span class="hidden md:inline truncate">
-                      {{ r.tipo === 'auxiliar' ? 'Auxiliar' : 
-                         r.tipo === 'patologo' ? 'Patólogo' : 
-                         r.tipo === 'residente' ? 'Residente' :
+                  {{ r.tipo === 'auxiliar' ? 'Auxiliar' : 
+                     r.tipo === 'patologo' ? 'Patólogo' : 
+                     r.tipo === 'residente' ? 'Residente' :
                          r.tipo === 'entidad' ? 'Entidad' : 
                          r.tipo === 'facturacion' ? 'Facturación' : 'Pruebas' }}
-                    </span>
-                  </span>
+                </span>
+              </span>
                 </div>
-              </td>
+            </td>
               <td class="hidden sm:table-cell px-3 md:px-4 py-3 max-w-0 text-sm text-gray-500">
                 <div class="truncate" :title="r.documento || r.nit || r.codigo || '-'">
-                  {{ r.documento || r.nit || r.codigo || '-' }}
+              {{ r.documento || r.nit || r.codigo || '-' }}
                 </div>
-              </td>
+            </td>
               <td class="px-3 md:px-4 py-3 max-w-0">
                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap"
-                  :class="r.activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
-                  <span class="md:hidden">{{ r.activo ? '✓' : '✗' }}</span>
-                  <span class="hidden md:inline">{{ r.activo ? 'Activo' : 'Inactivo' }}</span>
-                </span>
-              </td>
+                :class="r.activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+                <span class="md:hidden">{{ r.activo ? '✓' : '✗' }}</span>
+                <span class="hidden md:inline">{{ r.activo ? 'Activo' : 'Inactivo' }}</span>
+              </span>
+            </td>
               <td class="px-3 md:px-4 py-3 max-w-0 text-right text-sm font-medium">
                 <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </td>
+          </tr>
+        </tbody>
+      </table>
       </div>
       <div v-if="resultados.length > 5" class="px-4 py-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-500 text-center">
         Mostrando {{ resultados.length }} perfiles. Desplázate para ver más.

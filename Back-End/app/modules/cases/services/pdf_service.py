@@ -142,6 +142,58 @@ class CasePdfService:
 
         return pdf_bytes
 
+    async def generate_batch_pdf(self, case_codes: list[str]) -> bytes:
+        """
+        Generar un PDF combinado con múltiples casos, cada uno con su propia numeración de páginas
+        
+        Args:
+            case_codes: Lista de códigos de caso a incluir en el PDF
+            
+        Returns:
+            bytes: PDF combinado con todos los casos, cada uno con paginación independiente
+        """
+        if not case_codes:
+            raise ValueError("Se requiere al menos un código de caso")
+        
+        # Generar cada PDF individualmente para que tenga su propia numeración
+        from app.modules.cases.services.browser_pool import BrowserPool
+        from io import BytesIO
+        
+        try:
+            from pypdf import PdfWriter, PdfReader
+        except ImportError:
+            raise RuntimeError("La biblioteca pypdf no está instalada. Instálela con: pip install pypdf")
+        
+        browser_pool = await BrowserPool.get_instance()
+        pdf_writer = PdfWriter()
+        
+        # Generar PDF para cada caso
+        for case_code in case_codes:
+            try:
+                # Generar PDF individual usando el método existente
+                case_pdf_bytes = await self.generate_case_pdf(case_code)
+                
+                # Agregar el PDF al writer
+                pdf_reader = PdfReader(BytesIO(case_pdf_bytes))
+                for page in pdf_reader.pages:
+                    pdf_writer.add_page(page)
+                    
+            except Exception as e:
+                # Si un caso falla, continuar con los demás
+                print(f"Error generando PDF para caso {case_code}: {str(e)}")
+                continue
+        
+        # Verificar que se generó al menos un PDF
+        if len(pdf_writer.pages) == 0:
+            raise ValueError("No se pudo generar ningún caso para el PDF")
+        
+        # Combinar todos los PDFs en uno solo
+        output_buffer = BytesIO()
+        pdf_writer.write(output_buffer)
+        output_buffer.seek(0)
+        
+        return output_buffer.read()
+
     async def _get_case_data(self, case_code: str) -> dict:
         """Obtener datos del caso y convertirlos al formato esperado por la plantilla"""
         case = await self.case_service.get_case(case_code)

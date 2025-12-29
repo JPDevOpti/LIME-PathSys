@@ -3,15 +3,15 @@
     <h4 class="text-base font-semibold text-gray-800 mb-1" :id="titleId">{{ searchTitle }}</h4>
     <div class="flex gap-2 items-end">
       <div class="flex-1">
-        <FormInput
-          v-model="localBusqueda"
-          :id="inputId"
-          :aria-labelledby="titleId"
-          :aria-describedby="error ? errorId : undefined"
-          :placeholder="searchPlaceholder"
-          :disabled="estaBuscando"
+    <FormInput
+      v-model="localBusqueda"
+      :id="inputId"
+      :aria-labelledby="titleId"
+      :aria-describedby="error ? errorId : undefined"
+      :placeholder="searchPlaceholder"
+      :disabled="estaBuscando"
           @input="handleSearch"
-        />
+    />
       </div>
       <div class="h-12 flex items-center">
         <ClearButton @click="handleClear" :disabled="estaBuscando" />
