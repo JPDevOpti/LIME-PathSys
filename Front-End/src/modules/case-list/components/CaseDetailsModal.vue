@@ -163,6 +163,21 @@
               </div>
             </div>
           </div>
+
+          <!-- Observaciones del Caso -->
+          <div v-if="caseItem?.notes" class="bg-gray-50 rounded-lg p-4 border border-gray-200 lg:col-span-2">
+            <div class="flex items-start space-x-3">
+              <div class="flex-shrink-0">
+                <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-gray-200">
+                  <DocsIcon class="w-5 h-5 text-gray-700" />
+                </div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-xs uppercase tracking-wide text-gray-500 font-medium mb-1">Observaciones del Caso</p>
+                <p class="text-sm font-medium text-gray-900 break-words whitespace-pre-wrap">{{ caseItem.notes }}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
