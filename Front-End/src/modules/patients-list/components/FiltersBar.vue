@@ -51,7 +51,7 @@
       <div class="col-span-1">
         <FormSelect
           v-model="local.gender"
-          label="Género"
+          label="Sexo"
           placeholder="Todos"
           :options="genderOptions"
         />

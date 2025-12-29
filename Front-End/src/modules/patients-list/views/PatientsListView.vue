@@ -110,7 +110,7 @@ const router = useRouter()
 const columns = [
   { key: 'identification', label: 'Documento', class: 'w-[10%]' },
   { key: 'full_name', label: 'Nombre', class: 'w-[20%]' },
-  { key: 'gender', label: 'Género / Edad', class: 'w-[12%]' },
+  { key: 'gender', label: 'Sexo / Edad', class: 'w-[12%]' },
   { key: 'entity_info', label: 'Entidad / Tipo', class: 'w-[18%]' },
   { key: 'location', label: 'Municipio / Subregión', class: 'w-[18%]' },
   { key: 'created_at', label: 'Fecha Creación', class: 'w-[12%]' },

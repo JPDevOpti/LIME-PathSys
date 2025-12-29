@@ -201,7 +201,7 @@ export function usePatientForm() {
 
     // Validate gender
     if (!form.gender) {
-      errors.gender.push('El género es obligatorio')
+      errors.gender.push('El sexo es obligatorio')
       isValid = false
     }
 

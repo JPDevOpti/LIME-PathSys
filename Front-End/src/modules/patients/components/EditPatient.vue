@@ -163,8 +163,8 @@
             />
             <FormSelect 
               v-model="form.gender" 
-              label="Género" 
-              placeholder="Seleccione el género" 
+              label="Sexo" 
+              placeholder="Seleccione el sexo" 
               :required="true" 
               :options="genderOptions" 
               :error="getGenderError"
@@ -477,7 +477,7 @@ const validateForm = (): boolean => {
 
   // Validate gender
   if (!form.gender) {
-    errors.gender.push('El género es obligatorio')
+    errors.gender.push('El sexo es obligatorio')
     isValid = false
   }
 

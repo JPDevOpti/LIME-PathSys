@@ -93,7 +93,7 @@
                       </div>
                     </div>
                     <div class="flex-1 min-w-0">
-                      <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">Género</p>
+                      <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">Sexo</p>
                       <p class="text-sm font-bold text-gray-900">{{ patient?.gender }}</p>
                     </div>
                   </div>

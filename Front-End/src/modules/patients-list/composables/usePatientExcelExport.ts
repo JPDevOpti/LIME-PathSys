@@ -26,8 +26,8 @@ export function usePatientExcelExport() {
         'Primer Apellido': patient.first_lastname || '',
         'Segundo Apellido': patient.second_lastname || '',
         'Nombre Completo': patient.full_name || '',
-        'Género': patient.gender || '',
-        'Género (Corto)': getGenderLabel(patient.gender),
+        'Sexo': patient.gender || '',
+        'Sexo (Corto)': getGenderLabel(patient.gender),
         'Fecha Nacimiento': patient.birth_date ? formatDate(patient.birth_date) : '',
         'Edad': patient.age || 0,
         'Municipio Código': patient.location?.municipality_code || '',
@@ -57,8 +57,8 @@ export function usePatientExcelExport() {
         { wch: 15 },  // Primer Apellido
         { wch: 15 },  // Segundo Apellido
         { wch: 30 },  // Nombre Completo
-        { wch: 12 },  // Género
-        { wch: 8 },   // Género (Corto)
+        { wch: 12 },  // Sexo
+        { wch: 8 },   // Sexo (Corto)
         { wch: 15 },  // Fecha Nacimiento
         { wch: 8 },   // Edad
         { wch: 12 },  // Municipio Código
@@ -121,7 +121,7 @@ export function usePatientExcelExport() {
         return acc
       }, {} as Record<string, number>)
 
-      // Estadísticas por género
+      // Estadísticas por sexo
       const byGender = patients.reduce((acc, patient) => {
         const gender = patient.gender || 'No especificado'
         acc[gender] = (acc[gender] || 0) + 1
@@ -177,14 +177,14 @@ export function usePatientExcelExport() {
       const entitySheet = XLSX.utils.json_to_sheet(entityData)
       XLSX.utils.book_append_sheet(workbook, entitySheet, 'Por Entidad')
 
-      // Hoja por género
+      // Hoja por sexo
       const genderData = Object.entries(byGender).map(([gender, count]) => ({
-        Género: gender,
+        Sexo: gender,
         'Cantidad de Pacientes': count,
         'Porcentaje': `${((count / patients.length) * 100).toFixed(1)}%`
       }))
       const genderSheet = XLSX.utils.json_to_sheet(genderData)
-      XLSX.utils.book_append_sheet(workbook, genderSheet, 'Por Género')
+      XLSX.utils.book_append_sheet(workbook, genderSheet, 'Por Sexo')
 
       // Hoja por tipo de atención
       const careData = Object.entries(byCareType).map(([type, count]) => ({

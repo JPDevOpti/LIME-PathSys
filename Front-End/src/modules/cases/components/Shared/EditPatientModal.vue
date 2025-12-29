@@ -722,7 +722,7 @@ const handleSave = async () => {
   
     if (!form.value.gender) {
       console.error('[EditPatientModal] Falta gender')
-      showError('Error de validación', 'El género es obligatorio')
+      showError('Error de validación', 'El sexo es obligatorio')
       return
     }
   

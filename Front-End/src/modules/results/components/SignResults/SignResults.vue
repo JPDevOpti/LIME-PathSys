@@ -84,10 +84,49 @@
 
         </div>
 
+
+
         <div v-if="caseFound" class="flex-1 flex flex-col min-h-0 mt-0">
           <ResultEditor :model-value="sections[activeSection]"
             @update:model-value="updateSectionContent" :active-section="activeSection"
             @update:activeSection="activeSection = $event" :sections="sections" />
+
+        <!-- Región del Cuerpo -->
+        <div v-if="caseFound" class="bg-gray-50 rounded-lg p-3 md:p-4 border border-gray-200 mb-4 mt-4">
+          <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+            <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            Región del Cuerpo
+          </h3>
+          <div v-if="caseDetails?.samples && caseDetails.samples.length > 0" class="space-y-3">
+            <div
+              v-for="(sample, index) in caseDetails.samples"
+              :key="index"
+              class="bg-white rounded-lg p-3 border border-gray-200"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-medium text-gray-500">
+                  Muestra {{ caseDetails.samples.length > 1 ? `#${index + 1}` : '' }}
+                </span>
+              </div>
+              <div>
+                <BodyRegionList
+                  :model-value="sample.body_region"
+                  label=""
+                  placeholder="Buscar región del cuerpo..."
+                  :required="false"
+                  :auto-load="true"
+                  @update:model-value="(value: string) => updateRegionValue(index, value)"
+                  @region-selected="(region: any) => handleRegionSelected(index, region)"
+                />
+              </div>
+            </div>
+          </div>
+          <div v-else class="text-sm text-gray-500 italic">
+            No hay muestras registradas para este caso
+          </div>
+        </div>
 
           <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
             <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
@@ -275,11 +314,11 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, computed } from 'vue'
-import { ComponentCard } from '@/shared/components'
+import { ComponentCard, BaseButton } from '@/shared/components'
 import { ErrorMessage, ValidationAlert } from '@/shared/components/ui/feedback'
 import { FormInputField } from '@/shared/components/ui/forms'
 import { SearchButton, ClearButton, PrintPdfButton } from '@/shared/components/ui/buttons'
-import { DiseaseList } from '@/shared/components/ui/lists'
+import { DiseaseList, BodyRegionList } from '@/shared/components/ui/lists'
 import DocsIcon from '@/assets/icons/DocsIcon.vue'
 import WarningIcon from '@/assets/icons/WarningIcon.vue'
 import ErrorIcon from '@/assets/icons/ErrorIcon.vue'
@@ -803,6 +842,9 @@ const handleSaveProgress = async () => {
       showError('Error al guardar', 'No se pudo obtener el código del caso.', 0)
       return
     }
+
+    // Guardar cambios en las muestras (regiones del cuerpo)
+    await saveSamplesChanges(casoCode)
     
     // Preparar diagnósticos CIE-10 y CIE-O (si están disponibles)
     const cie10Diagnosis = hasDisease.value && primaryDisease.value ? {
@@ -927,6 +969,9 @@ async function handleSign() {
       showError('Error al firmar', 'No se pudo obtener el código del caso.', 0)
       return
     }
+
+    // Guardar cambios en las muestras (regiones del cuerpo)
+    await saveSamplesChanges(casoCode)
     
     // Preparar diagnósticos CIE-10 y CIE-O
     const cie10Diagnosis = hasDisease.value && primaryDisease.value ? {
@@ -1160,6 +1205,9 @@ const handleSignWithChanges = async (data: { details: string; tests: Complementa
       showError('Error al firmar', 'No se pudo obtener el código del caso.', 0)
       return
     }
+
+    // Guardar cambios en las muestras (regiones del cuerpo)
+    await saveSamplesChanges(casoCode)
     
     // Preparar diagnósticos CIE-10 y CIE-O
     const cie10Diagnosis = hasDisease.value && primaryDisease.value ? {
@@ -1222,6 +1270,36 @@ const handleNotificationClose = () => {
   // Limpiar pruebas complementarias para que no se muestren en próximas notificaciones
   requestedComplementaryTests.value = []
   requestedComplementaryTestsReason.value = ''
+}
+
+// Funciones para edición de regiones del cuerpo
+const updateRegionValue = (index: number, value: string) => {
+  if (caseDetails.value?.samples?.[index]) {
+    caseDetails.value.samples[index].body_region = value
+  }
+}
+
+const handleRegionSelected = (index: number, region: any) => {
+  if (region && region.label && caseDetails.value?.samples?.[index]) {
+    caseDetails.value.samples[index].body_region = region.label
+  }
+}
+
+const saveSamplesChanges = async (caseCode: string) => {
+  if (!caseDetails.value?.samples) return
+
+  const updatedSamples = caseDetails.value.samples.map(sample => ({
+    body_region: sample.body_region,
+    tests: sample.tests.map(test => ({
+      id: test.id,
+      name: test.name || test.id,
+      quantity: 1
+    }))
+  }))
+
+  await casesApiService.updateCase(caseCode, {
+    samples: updatedSamples
+  })
 }
 
 
