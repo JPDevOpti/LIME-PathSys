@@ -18,6 +18,8 @@ class CaseRepository:
         await self.collection.create_index("created_at")
         await self.collection.create_index("assigned_pathologist.name")
         await self.collection.create_index("assigned_pathologist.id")
+        await self.collection.create_index("assigned_resident.name")
+        await self.collection.create_index("assigned_resident.id")
         await self.collection.create_index("patient_info.entity_info.name")
         await self.collection.create_index("samples.tests.id")
         await self.collection.create_index("additional_notes.date")

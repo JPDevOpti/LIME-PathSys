@@ -16,6 +16,7 @@
             <div class="inline-block">
               <p class="font-semibold text-gray-900 text-base">{{ headerTitle }}</p>
               <p class="text-gray-500 text-sm">{{ props.caseCode }}</p>
+              <p v-if="props.assignedResident" class="text-gray-600 text-sm mt-1">Residente: {{ props.assignedResident }}</p>
             </div>
           </div>
           <div class="grid grid-cols-1 gap-4 text-sm">
@@ -106,6 +107,7 @@ const props = withDefaults(defineProps<{
   inline?: boolean
   autoClose?: boolean
   caseCode?: string | null
+  assignedResident?: string | null
   savedContent: { method: string[]; macro: string; micro: string; diagnosis: string }
   context?: ContextType
   diagnoses?: { cie10?: { codigo: string; nombre: string }, cieo?: { codigo: string; nombre: string } }
@@ -115,7 +117,8 @@ const props = withDefaults(defineProps<{
   inline: true,
   autoClose: false,
   context: 'save',
-  caseCode: ''
+  caseCode: '',
+  assignedResident: null
 })
 
 defineEmits<{ (e: 'close'): void }>()

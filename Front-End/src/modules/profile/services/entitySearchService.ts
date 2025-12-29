@@ -39,10 +39,11 @@ class EntitySearchService {
 
   // Data normalization for residents
   private normalizeResident(residente: any) {
+    // Mapear campos del backend (ResidentResponse) a formato normalizado
     const residenteName = residente.resident_name || residente.residente_name || residente.residenteName || residente.nombre || residente.name || ''
     const residenteCode = residente.resident_code || residente.residente_code || residente.residenteCode || residente.codigo || residente.code || residente.documento || ''
     const email = residente.resident_email || residente.residente_email || residente.ResidenteEmail || residente.email || ''
-    const activo = residente.is_active !== undefined ? residente.is_active : (residente.isActive !== undefined ? residente.isActive : residente.activo)
+    const activo = residente.is_active !== undefined ? residente.is_active : (residente.isActive !== undefined ? residente.isActive : (residente.activo !== undefined ? residente.activo : true))
     const iniciales = residente.initials || residente.iniciales_residente || residente.InicialesResidente || ''
     return {
       id: residente.id || residente._id || residenteCode,
@@ -52,8 +53,8 @@ class EntitySearchService {
       activo,
       email,
       documento: residenteCode,
-      fecha_creacion: residente.fecha_creacion,
-      fecha_actualizacion: residente.fecha_actualizacion,
+      fecha_creacion: residente.created_at || residente.fecha_creacion,
+      fecha_actualizacion: residente.updated_at || residente.fecha_actualizacion,
       residenteName,
       residenteCode,
       InicialesResidente: iniciales,
@@ -216,11 +217,18 @@ class EntitySearchService {
 
   async getAllResidents(includeInactive: boolean = false): Promise<any[]> {
     try {
-      const endpoint = includeInactive ? `${API_CONFIG.ENDPOINTS.RESIDENTS}/search` : API_CONFIG.ENDPOINTS.RESIDENTS
-      const params: any = { skip: 0, limit: 1000 }
+      // El endpoint /residents/ tiene un límite máximo de 100
+      // Para obtener más registros, usar el endpoint /search sin parámetros de búsqueda
+      const endpoint = `${API_CONFIG.ENDPOINTS.RESIDENTS}/search`
+      const params: any = includeInactive 
+        ? { skip: 0, limit: 1000, is_active: false }
+        : { skip: 0, limit: 1000, is_active: true }
       const response = await apiClient.get(endpoint, { params })
-      return Array.isArray(response) ? response.map(this.normalizeResident) : []
+      // La respuesta puede ser un array directamente o estar envuelta
+      const residentsArray = Array.isArray(response) ? response : (response?.data || response?.residents || [])
+      return Array.isArray(residentsArray) ? residentsArray.map(this.normalizeResident) : []
     } catch (error: any) {
+      console.error('Error al obtener residentes:', error)
       if (error.response?.status === 404) return []
       throw new Error(error.message || 'Error al obtener residentes')
     }

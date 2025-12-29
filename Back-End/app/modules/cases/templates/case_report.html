@@ -506,6 +506,9 @@
       {% endif %}
       <div class="signature-line"></div>
       <div><span class="signature-label">Médico Patólogo:</span> {% if case.patologo_asignado %}{{ case.patologo_asignado.nombre }}{% if case.patologo_asignado.registro_medico %} - {{ case.patologo_asignado.registro_medico }}{% endif %}{% endif %}</div>
+      {% if case.residente_asignado %}
+      <div><span class="signature-label">Residente:</span> {{ case.residente_asignado.nombre }}{% if case.residente_asignado.registro_medico %} - {{ case.residente_asignado.registro_medico }}{% endif %}</div>
+      {% endif %}
     </div>
   </div>
 

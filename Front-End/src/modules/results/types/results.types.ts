@@ -87,6 +87,11 @@ export interface CasePatologoAsignado {
   name: string
 }
 
+export interface CaseResidenteAsignado {
+  id: string
+  name: string
+}
+
 export interface CaseDetails {
   _id: string
   case_code: string
@@ -100,6 +105,7 @@ export interface CaseDetails {
   observations?: string
   active?: boolean
   assigned_pathologist?: CasePatologoAsignado
+  assigned_resident?: CaseResidenteAsignado
   updated_by?: string
   entity_info?: CaseEntidadInfo
   service?: string

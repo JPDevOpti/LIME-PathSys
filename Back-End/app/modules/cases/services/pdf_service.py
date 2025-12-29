@@ -13,10 +13,12 @@ class CasePdfService:
         from app.modules.cases.services.case_service import CaseService
         from app.modules.pathologists.services.pathologist_service import PathologistService
         from app.modules.approvals.services.approval_service import ApprovalService
+        from app.modules.residents.services.resident_service import ResidentService
         
         self.case_service = CaseService(database)
         self.pathologist_service = PathologistService(database)
         self.approval_service = ApprovalService(database)
+        self.resident_service = ResidentService(database)
         self.database = database
         
         templates_dir = Path(__file__).parent.parent / "templates"
@@ -186,6 +188,9 @@ class CasePdfService:
                 'registro_medico': case_dict.get('assigned_pathologist', {}).get('medical_license', '')
             } if case_dict.get('assigned_pathologist') else None,
             
+            # Residente asignado (mapear de assigned_resident)
+            'residente_asignado': None,
+            
             # Muestras (mapear de samples)
             'muestras': self._map_samples(case_dict.get('samples', [])),
             
@@ -201,6 +206,26 @@ class CasePdfService:
             # Observaciones generales
             'observaciones_generales': case_dict.get('observations', '')
         }
+        
+        # Obtener información completa del residente si está asignado
+        if case_dict.get('assigned_resident'):
+            resident_id = case_dict.get('assigned_resident', {}).get('id', '')
+            if resident_id:
+                try:
+                    resident = await self.resident_service.get_resident(resident_id)
+                    if resident:
+                        mapped_case['residente_asignado'] = {
+                            'nombre': case_dict.get('assigned_resident', {}).get('name', ''),
+                            'codigo': resident_id,
+                            'registro_medico': resident.medical_license or ''
+                        }
+                except Exception:
+                    # Si no se puede obtener el residente, usar solo los datos del caso
+                    mapped_case['residente_asignado'] = {
+                        'nombre': case_dict.get('assigned_resident', {}).get('name', ''),
+                        'codigo': resident_id,
+                        'registro_medico': ''
+                    }
         
         return mapped_case
 

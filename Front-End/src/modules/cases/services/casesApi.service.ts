@@ -137,6 +137,31 @@ export class CasesApiService {
     }
   }
 
+  async assignResident(caseCode: string, residentData: { codigo: string; nombre: string }): Promise<UpdateCaseResponse> {
+    try {
+      // Usar el nuevo endpoint de actualización para asignar residente
+      const updateData: any = {
+        assigned_resident: {
+          id: residentData.codigo,
+          name: residentData.nombre
+        }
+      }
+      return await this.updateCase(caseCode, updateData)
+    } catch (error: any) {
+      throw new Error(error.message || `Error al asignar residente al caso ${caseCode}`)
+    }
+  }
+
+  async unassignResident(caseCode: string): Promise<UpdateCaseResponse> {
+    try {
+      // Usar el nuevo endpoint de actualización para desasignar residente
+      const updateData: any = { assigned_resident: null }
+      return await this.updateCase(caseCode, updateData)
+    } catch (error: any) {
+      throw new Error(error.message || `Error al desasignar residente del caso ${caseCode}`)
+    }
+  }
+
   async deleteCase(caseCode: string): Promise<any> {
     return this.deleteRaw<DeleteCaseResponse>(`${this.endpoint}/${caseCode}`)
   }

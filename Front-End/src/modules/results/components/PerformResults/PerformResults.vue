@@ -101,6 +101,29 @@
             :show-validation="showValidation"
           >
             <template #footer>
+              <!-- Asignación de Residente - Antes de los botones -->
+              <div v-if="caseFound && caseDetails?.case_code" class="mb-4 pb-4 border-b border-gray-200">
+                <div class="p-4 bg-white border border-gray-200 rounded-lg">
+                  <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                    </svg>
+                    Residente Asignado
+                  </h3>
+                  <ResidentList
+                    :model-value="assignedResidentCode"
+                    @update:model-value="handleResidentChange"
+                    label="Seleccionar Residente"
+                    placeholder="Buscar y seleccionar residente..."
+                    :required="false"
+                    :disabled="!canTranscribeByStatus || saving"
+                    help-text="Asigne un residente responsable de este caso (opcional)"
+                    @resident-selected="handleResidentSelected"
+                  />
+                </div>
+              </div>
+
+              <!-- Botones de acción -->
               <div class="flex flex-wrap items-center gap-3 justify-end">
                 <ClearButton :disabled="loading" @click="() => { showValidation = false; handleClearResults() }" />
                 <PrintPdfButton 
@@ -157,6 +180,7 @@
           :inline="true"
           :auto-close="false"
           :case-code="savedCaseCode || caseDetails?.case_code || props.sampleId"
+          :assigned-resident="assignedResidentName || (caseDetails as any)?.assigned_resident?.name || null"
           :saved-content="savedContent"
           context="save"
           @close="closeAndClearNotification"
@@ -209,6 +233,8 @@ import casesApiService from '@/modules/cases/services/casesApi.service'
 import resultsApiService from '../../services/resultsApiService'
 import { usePermissions } from '@/shared/composables/usePermissions'
 import { useAuthStore } from '@/stores/auth.store'
+import { ResidentList } from '@/shared/components/ui/lists'
+import type { FormResidentInfo } from '@/modules/cases/composables/useResidentAPI'
 
 interface Props { 
   sampleId: string
@@ -308,6 +334,11 @@ const caseInfo = ref<CaseInfo | null>(null)
 
 // Estado para el modal de casos anteriores
 const selectedPreviousCase = ref<CaseData | null>(null)
+
+// Estado para residente asignado
+const assignedResidentCode = ref('')
+const selectedResident = ref<FormResidentInfo | null>(null)
+const assignedResidentName = ref('')
 
 // Normaliza estados a formato de BD (mayúsculas y guiones bajos)
 const normalizeStatus = (status: string): string => {
@@ -481,6 +512,26 @@ const searchCase = async () => {
     
     caseInfo.value = data
     caseFound.value = true
+    
+    // Cargar residente asignado si existe
+    const assignedResident = (data as any)?.assigned_resident
+    if (assignedResident) {
+      assignedResidentCode.value = assignedResident.id || assignedResident.codigo || ''
+      assignedResidentName.value = assignedResident.name || ''
+      selectedResident.value = assignedResident.name ? {
+        id: assignedResident.id || '',
+        resident_code: assignedResident.id || '',
+        nombre: assignedResident.name,
+        documento: assignedResident.id || '',
+        email: '',
+        isActive: true
+      } as FormResidentInfo : null
+    } else {
+      assignedResidentCode.value = ''
+      assignedResidentName.value = ''
+      selectedResident.value = null
+    }
+    
     // Poblar paneles desde el composable
     await loadCaseByCode(caseCode.value.trim())
   } catch (error: unknown) {
@@ -508,6 +559,11 @@ const clearSearch = () => {
   // Limpiar secciones del editor
   sections.value = { method: [], macro: '', micro: '', diagnosis: '' }
   activeSection.value = 'method'
+  
+  // Limpiar residente asignado
+  assignedResidentCode.value = ''
+  assignedResidentName.value = ''
+  selectedResident.value = null
   
   // NO cerrar la notificación - se mantiene visible
 }
@@ -639,6 +695,61 @@ const handleCaseClick = async (caseItem: any) => {
     console.error('Error al cargar caso completo:', error)
     // Si falla, usar el caso básico
     selectedPreviousCase.value = caseItem
+  }
+}
+
+// Manejar cambio de residente
+const handleResidentChange = (value: string) => {
+  assignedResidentCode.value = value
+}
+
+// Manejar selección de residente
+const handleResidentSelected = (resident: FormResidentInfo | null) => {
+  selectedResident.value = resident
+  if (resident) {
+    assignedResidentCode.value = resident.resident_code || resident.id || ''
+    assignedResidentName.value = resident.nombre || ''
+  } else {
+    assignedResidentCode.value = ''
+    assignedResidentName.value = ''
+  }
+  
+  // Guardar automáticamente el residente asignado si hay un caso cargado
+  if (caseDetails.value?.case_code && resident) {
+    saveResidentAssignment()
+  } else if (caseDetails.value?.case_code && !resident) {
+    // Si se deselecciona, desasignar
+    unassignResident()
+  }
+}
+
+// Guardar asignación de residente
+const saveResidentAssignment = async () => {
+  if (!caseDetails.value?.case_code || !selectedResident.value) return
+  
+  try {
+    await casesApiService.assignResident(caseDetails.value.case_code, {
+      codigo: selectedResident.value.resident_code || selectedResident.value.id || '',
+      nombre: selectedResident.value.nombre
+    })
+    // Actualizar el nombre del residente asignado
+    assignedResidentName.value = selectedResident.value.nombre || ''
+  } catch (error: any) {
+    console.error('Error al asignar residente:', error)
+    // No mostrar error al usuario, solo log
+  }
+}
+
+// Desasignar residente
+const unassignResident = async () => {
+  if (!caseDetails.value?.case_code) return
+  
+  try {
+    await casesApiService.unassignResident(caseDetails.value.case_code)
+    assignedResidentName.value = ''
+  } catch (error: any) {
+    console.error('Error al desasignar residente:', error)
+    // No mostrar error al usuario, solo log
   }
 }
 </script>

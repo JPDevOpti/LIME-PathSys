@@ -15,6 +15,7 @@
         <div v-if="details.entity_info"><span class="font-bold">Entidad:</span> {{ details.entity_info?.name }} ({{ details.entity_info?.id }})</div>
         <div v-if="details.requesting_physician"><span class="font-bold">Médico solicitante:</span> {{ details.requesting_physician }}</div>
         <div v-if="details.assigned_pathologist"><span class="font-bold">Patólogo asignado:</span> {{ details.assigned_pathologist?.name }} ({{ details.assigned_pathologist?.id }})</div>
+        <div v-if="details.assigned_resident"><span class="font-bold">Residente asignado:</span> {{ details.assigned_resident?.name }} ({{ details.assigned_resident?.id }})</div>
       </div>
 
       <div class="space-y-2">

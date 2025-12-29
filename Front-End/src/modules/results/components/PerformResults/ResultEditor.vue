@@ -34,6 +34,11 @@
         />
       </div>
     </div>
+
+    <!-- Footer con botones -->
+    <div v-if="$slots.footer" class="px-4 pb-4 border-t border-gray-200 pt-4 flex-shrink-0">
+      <slot name="footer"></slot>
+    </div>
   </div>
 </template>
 

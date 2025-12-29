@@ -76,6 +76,9 @@ export function mapCaseToCaseDetails(beCase: CaseModel): CaseDetails {
     assigned_pathologist: beCase.assigned_pathologist
       ? { id: beCase.assigned_pathologist.id || '', name: beCase.assigned_pathologist.name || '' }
       : undefined,
+    assigned_resident: beCase.assigned_resident
+      ? { id: beCase.assigned_resident.id || '', name: beCase.assigned_resident.name || '' }
+      : undefined,
     updated_by: undefined,
     entity_info: beCase.patient_info?.entity_info
       ? { id: beCase.patient_info.entity_info.id || '', name: beCase.patient_info.entity_info.name || '' }

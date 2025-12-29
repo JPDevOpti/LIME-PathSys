@@ -52,6 +52,11 @@ export interface PathologistInfo {
   name: string
 }
 
+export interface ResidentInfo {
+  id: string
+  name: string
+}
+
 export interface CaseResult {
   method?: string[]
   macro_result?: string
@@ -93,6 +98,7 @@ export interface CaseModel {
   updated_at: string
   observations?: string
   assigned_pathologist?: PathologistInfo
+  assigned_resident?: ResidentInfo
   entity_info?: EntityInfo
   result?: CaseResult
   created_by?: string

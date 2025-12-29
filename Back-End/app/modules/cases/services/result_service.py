@@ -141,6 +141,7 @@ class ResultService:
             "updated_at": doc.get("updated_at"),
             "signed_at": doc.get("signed_at"),
             "assigned_pathologist": doc.get("assigned_pathologist"),
+            "assigned_resident": doc.get("assigned_resident"),
             "result": doc.get("result"),
             "delivered_to": doc.get("delivered_to"),
             "delivered_at": doc.get("delivered_at"),

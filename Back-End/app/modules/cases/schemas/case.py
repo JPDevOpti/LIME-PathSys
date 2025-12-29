@@ -47,6 +47,11 @@ class AssignedPathologist(BaseModel):
     medical_license: Optional[str] = Field(None, max_length=50, description="Registro médico del patólogo")
 
 
+class AssignedResident(BaseModel):
+    id: str = Field(..., max_length=50)
+    name: str = Field(..., max_length=200)
+
+
 class CasePriority(str):
     NORMAL = "Normal"
     PRIORITARIO = "Prioritario"
@@ -85,6 +90,7 @@ class CaseUpdate(BaseModel):
     priority: Optional[str] = None
     observations: Optional[str] = Field(None, max_length=1000)
     assigned_pathologist: Optional[AssignedPathologist] = None
+    assigned_resident: Optional[AssignedResident] = None
     delivered_to: Optional[str] = Field(None, max_length=200)
     delivered_at: Optional[datetime] = None
     business_days: Optional[int] = Field(None, ge=0, description="Días hábiles transcurridos")
@@ -119,6 +125,7 @@ class CaseResponse(BaseModel):
     updated_at: datetime
     signed_at: Optional[datetime] = None
     assigned_pathologist: Optional[AssignedPathologist] = None
+    assigned_resident: Optional[AssignedResident] = None
     result: Optional[CaseResult] = None
     delivered_to: Optional[str] = None
     delivered_at: Optional[datetime] = None
