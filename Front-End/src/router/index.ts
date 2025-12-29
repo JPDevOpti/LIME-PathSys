@@ -37,6 +37,16 @@ const router = createRouter({
     ...patientListRoutes,
     ...pathologistAssignmentRoutes,
     {
+      path: '/403',
+      name: 'forbidden',
+      component: () => import('@/shared/pages/ForbiddenPage.vue')
+    },
+    {
+      path: '/500',
+      name: 'server-error',
+      component: () => import('@/shared/pages/ServerErrorPage.vue')
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       component: () => import('@/shared/pages/NotFoundPage.vue')

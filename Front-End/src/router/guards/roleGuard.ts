@@ -20,8 +20,8 @@ export function roleGuard(
   const rawRole = authStore.userRole || ''
   const userRole = rawRole.toString().trim().toLowerCase()
   
-  // SIEMPRE permitir acceso al dashboard para evitar bucles infinitos
-  if (to.path === '/dashboard') {
+  // SIEMPRE permitir acceso al dashboard y páginas de error
+  if (to.path === '/dashboard' || to.path === '/403' || to.path === '/500') {
     next()
     return
   }
@@ -215,8 +215,8 @@ export function roleGuard(
   }
 
   if (!isRouteAllowed) {
-    // Redirigir al dashboard sin mensaje de error
-    next({ path: '/dashboard' })
+    // Redirigir a página de acceso denegado
+    next({ path: '/403' })
     return
   }
   

@@ -123,8 +123,8 @@ Front-End/.env
 # =============================
 # Uploads & User Content
 # =============================
-Back-End/uploads/signatures/*
-!Back-End/uploads/signatures/.gitkeep
+# Back-End/uploads/signatures/*
+# !Back-End/uploads/signatures/.gitkeep
 
 # =============================
 # Database Files
