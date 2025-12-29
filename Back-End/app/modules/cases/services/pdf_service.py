@@ -30,6 +30,9 @@ class CasePdfService:
         )
         assets_dir = self.templates_path.parent / "assets"
         self.logos = self._load_logos(assets_dir)
+        
+        # Caché de firmas de patólogos (las firmas raramente cambian)
+        self._signature_cache: Dict[str, Optional[str]] = {}
 
     # Sanitizador básico de HTML para PDF
     def _sanitize_html(self, html: Optional[str]) -> Markup:
@@ -90,10 +93,11 @@ class CasePdfService:
                 logos[key] = ""
         return logos
 
-    async def generate_case_pdf(self, case_code: str) -> bytes:
-        # Obtener datos del caso
-        case_data = await self._get_case_data(case_code)
-        
+    async def _render_and_generate_pdf(self, case_data: dict, case_code: str) -> bytes:
+        """
+        Método interno para renderizar HTML y generar PDF.
+        Permite reutilización con datos pre-cargados para optimización en batch.
+        """
         # Obtener pruebas complementarias pendientes de aprobación
         complementary_tests = await self._get_complementary_tests(case_code)
         
@@ -137,14 +141,21 @@ class CasePdfService:
                 ),
             )
         finally:
-            # Siempre cerrar la página después de usarla
-            await page.close()
+            # Devolver la página al pool para reutilización
+            await browser_pool.return_page(page)
 
         return pdf_bytes
+
+    async def generate_case_pdf(self, case_code: str) -> bytes:
+        # Obtener datos del caso
+        case_data = await self._get_case_data(case_code)
+        # Usar método interno para renderizar y generar PDF
+        return await self._render_and_generate_pdf(case_data, case_code)
 
     async def generate_batch_pdf(self, case_codes: list[str]) -> bytes:
         """
         Generar un PDF combinado con múltiples casos, cada uno con su propia numeración de páginas
+        Optimizado con paralelización y pre-carga de datos para mejorar rendimiento en servidor
         
         Args:
             case_codes: Lista de códigos de caso a incluir en el PDF
@@ -155,8 +166,6 @@ class CasePdfService:
         if not case_codes:
             raise ValueError("Se requiere al menos un código de caso")
         
-        # Generar cada PDF individualmente para que tenga su propia numeración
-        from app.modules.cases.services.browser_pool import BrowserPool
         from io import BytesIO
         
         try:
@@ -164,35 +173,126 @@ class CasePdfService:
         except ImportError:
             raise RuntimeError("La biblioteca pypdf no está instalada. Instálela con: pip install pypdf")
         
-        browser_pool = await BrowserPool.get_instance()
-        pdf_writer = PdfWriter()
-        
-        # Generar PDF para cada caso
-        for case_code in case_codes:
+        # Pre-cargar todos los datos de casos en paralelo para optimizar consultas a BD
+        # Esto reduce el número de consultas individuales
+        async def preload_case_data(case_code: str) -> tuple[str, dict | Exception]:
+            """Pre-cargar datos del caso"""
             try:
-                # Generar PDF individual usando el método existente
-                case_pdf_bytes = await self.generate_case_pdf(case_code)
-                
-                # Agregar el PDF al writer
-                pdf_reader = PdfReader(BytesIO(case_pdf_bytes))
-                for page in pdf_reader.pages:
-                    pdf_writer.add_page(page)
-                    
+                case_data = await self._get_case_data(case_code)
+                return (case_code, case_data)
             except Exception as e:
-                # Si un caso falla, continuar con los demás
-                print(f"Error generando PDF para caso {case_code}: {str(e)}")
-                continue
+                return (case_code, e)
         
-        # Verificar que se generó al menos un PDF
-        if len(pdf_writer.pages) == 0:
-            raise ValueError("No se pudo generar ningún caso para el PDF")
+        # Pre-cargar datos de todos los casos en paralelo
+        preload_tasks = [preload_case_data(code) for code in case_codes]
+        preloaded_data = await asyncio.gather(*preload_tasks, return_exceptions=False)
         
-        # Combinar todos los PDFs en uno solo
-        output_buffer = BytesIO()
-        pdf_writer.write(output_buffer)
-        output_buffer.seek(0)
+        # Crear un diccionario de datos pre-cargados
+        case_data_cache: Dict[str, dict] = {}
+        for case_code, data in preloaded_data:
+            if isinstance(data, Exception):
+                print(f"Error pre-cargando datos del caso {case_code}: {str(data)}")
+            else:
+                case_data_cache[case_code] = data
         
-        return output_buffer.read()
+        # Limitar paralelismo para evitar sobrecarga del servidor
+        # 5-8 PDFs simultáneos es un buen balance entre velocidad y recursos
+        max_concurrent = min(8, len(case_codes))
+        semaphore = asyncio.Semaphore(max_concurrent)
+        
+        async def generate_one_pdf(case_code: str) -> tuple[str, bytes | Exception]:
+            """Generar un PDF individual con manejo de errores"""
+            async with semaphore:
+                try:
+                    # Usar datos pre-cargados si están disponibles para optimización
+                    if case_code in case_data_cache:
+                        case_data = case_data_cache[case_code]
+                        # Usar método interno con datos pre-cargados
+                        pdf_bytes = await self._render_and_generate_pdf(case_data, case_code)
+                    else:
+                        # Fallback al método normal si no hay datos pre-cargados
+                        pdf_bytes = await self.generate_case_pdf(case_code)
+                    return (case_code, pdf_bytes)
+                except Exception as e:
+                    print(f"Error generando PDF para caso {case_code}: {str(e)}")
+                    return (case_code, e)
+        
+        # Generar todos los PDFs en paralelo
+        tasks = [generate_one_pdf(code) for code in case_codes]
+        results = await asyncio.gather(*tasks, return_exceptions=False)
+        
+        # Combinar PDFs exitosos de forma optimizada
+        # Para grandes volúmenes, procesar en chunks para evitar cargar todo en memoria
+        successful_count = 0
+        chunk_size = 50  # Procesar en chunks de 50 PDFs
+        
+        if len(case_codes) <= chunk_size:
+            # Para volúmenes pequeños, procesar todo de una vez
+            pdf_writer = PdfWriter()
+            for case_code, result in results:
+                if isinstance(result, Exception):
+                    continue
+                
+                try:
+                    pdf_reader = PdfReader(BytesIO(result))
+                    for page in pdf_reader.pages:
+                        pdf_writer.add_page(page)
+                    successful_count += 1
+                except Exception as e:
+                    print(f"Error procesando PDF del caso {case_code}: {str(e)}")
+                    continue
+            
+            # Generar PDF final
+            output_buffer = BytesIO()
+            pdf_writer.write(output_buffer)
+            output_buffer.seek(0)
+            return output_buffer.read()
+        else:
+            # Para grandes volúmenes, procesar en chunks y combinar incrementalmente
+            pdf_writer = PdfWriter()
+            pdf_chunks = []
+            
+            for i in range(0, len(results), chunk_size):
+                chunk = results[i:i + chunk_size]
+                chunk_writer = PdfWriter()
+                
+                for case_code, result in chunk:
+                    if isinstance(result, Exception):
+                        continue
+                    
+                    try:
+                        pdf_reader = PdfReader(BytesIO(result))
+                        for page in pdf_reader.pages:
+                            chunk_writer.add_page(page)
+                        successful_count += 1
+                    except Exception as e:
+                        print(f"Error procesando PDF del caso {case_code}: {str(e)}")
+                        continue
+                
+                # Guardar chunk en memoria temporal
+                chunk_buffer = BytesIO()
+                chunk_writer.write(chunk_buffer)
+                chunk_buffer.seek(0)
+                pdf_chunks.append(chunk_buffer)
+            
+            # Combinar todos los chunks
+            for chunk_buffer in pdf_chunks:
+                chunk_reader = PdfReader(chunk_buffer)
+                for page in chunk_reader.pages:
+                    pdf_writer.add_page(page)
+                chunk_buffer.close()
+            
+            # Generar PDF final
+            output_buffer = BytesIO()
+            pdf_writer.write(output_buffer)
+            output_buffer.seek(0)
+            result_bytes = output_buffer.read()
+            output_buffer.close()
+            
+            if successful_count == 0:
+                raise ValueError("No se pudo generar ningún caso para el PDF")
+            
+            return result_bytes
 
     async def _get_case_data(self, case_code: str) -> dict:
         """Obtener datos del caso y convertirlos al formato esperado por la plantilla"""
@@ -277,7 +377,7 @@ class CasePdfService:
                         'nombre': case_dict.get('assigned_resident', {}).get('name', ''),
                         'codigo': resident_id,
                         'registro_medico': ''
-                    }
+        }
         
         return mapped_case
 
@@ -397,7 +497,8 @@ class CasePdfService:
             return None
 
     async def _get_pathologist_signature(self, case_data: dict) -> Optional[str]:
-        """Obtener firma del patólogo asignado desde la carpeta uploads/signatures/"""
+        """Obtener firma del patólogo asignado desde la carpeta uploads/signatures/
+        Usa caché en memoria para evitar I/O repetido del disco"""
         try:
             patologo_asignado = case_data.get('patologo_asignado')
             if not patologo_asignado:
@@ -410,8 +511,14 @@ class CasePdfService:
                     return None
                 print(f"DEBUG: Patólogo asignado encontrado: {pathologist_id}")
             
-            # Buscar archivo de firma en la carpeta uploads/signatures/
-            import os
+            # Verificar caché primero
+            if pathologist_id in self._signature_cache:
+                cached_signature = self._signature_cache[pathologist_id]
+                if cached_signature is not None:
+                    print(f"DEBUG: Firma obtenida desde caché para ID: {pathologist_id}")
+                return cached_signature
+            
+            # Si no está en caché, cargar desde disco
             from pathlib import Path
             
             # Obtener la ruta base del proyecto
@@ -424,6 +531,7 @@ class CasePdfService:
             print(f"DEBUG: Directorio: {signatures_dir}")
             print(f"DEBUG: Archivos encontrados: {signature_files}")
             
+            result = None
             if signature_files:
                 # Tomar el primer archivo encontrado
                 signature_file = signature_files[0]
@@ -440,19 +548,22 @@ class CasePdfService:
                     if file_ext == '.png':
                         result = f"data:image/png;base64,{img_base64}"
                         print(f"DEBUG: Firma cargada exitosamente (PNG): {len(img_base64)} chars")
-                        return result
                     elif file_ext == '.jpg' or file_ext == '.jpeg':
                         result = f"data:image/jpeg;base64,{img_base64}"
                         print(f"DEBUG: Firma cargada exitosamente (JPEG): {len(img_base64)} chars")
-                        return result
                     else:
                         result = f"data:image/png;base64,{img_base64}"
                         print(f"DEBUG: Firma cargada exitosamente (default PNG): {len(img_base64)} chars")
-                        return result
+            else:
+                print(f"DEBUG: No se encontraron archivos de firma para ID: {pathologist_id}")
             
-            print(f"DEBUG: No se encontraron archivos de firma para ID: {pathologist_id}")
-            return None
+            # Guardar en caché (incluso si es None para evitar búsquedas repetidas)
+            self._signature_cache[pathologist_id] = result
+            return result
             
         except Exception as e:
             print(f"Error obteniendo firma del patólogo: {e}")
+            # Cachear el error también para evitar intentos repetidos
+            if 'pathologist_id' in locals():
+                self._signature_cache[pathologist_id] = None
             return None

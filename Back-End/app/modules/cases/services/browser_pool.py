@@ -26,6 +26,9 @@ class BrowserPool:
         self.context: Optional[BrowserContext] = None
         self._initialized = False
         self._shutting_down = False
+        # Pool de páginas reutilizables para reducir overhead
+        self._page_pool: Optional[asyncio.Queue[Page]] = None
+        self._max_pool_size = 5  # Máximo 5 páginas en el pool
         
     @classmethod
     async def get_instance(cls) -> BrowserPool:
@@ -108,6 +111,9 @@ class BrowserPool:
                 # Esto puede acelerar mucho pero comentado por si afecta el renderizado
                 # await self.context.route("**/*.{png,jpg,jpeg,gif,svg,woff,woff2,ttf}", lambda route: route.abort())
                 
+                # Inicializar pool de páginas
+                self._page_pool = asyncio.Queue(maxsize=self._max_pool_size)
+                
                 self._initialized = True
                 logger.info("Pool de navegadores inicializado correctamente")
                 
@@ -118,8 +124,8 @@ class BrowserPool:
     
     async def get_page(self) -> Page:
         """
-        Obtener una página nueva del contexto compartido.
-        La página debe ser cerrada después de usarse.
+        Obtener una página del pool o crear una nueva si no hay disponibles.
+        La página debe ser devuelta con return_page() después de usarse.
         """
         if not self._initialized or self._shutting_down:
             await self.initialize()
@@ -127,8 +133,26 @@ class BrowserPool:
         if not self.context:
             raise RuntimeError("Browser context no está inicializado")
         
-        # Crear una nueva página para cada PDF (más seguro que reutilizar)
-        # pero reutilizamos el contexto y navegador que son los más pesados
+        # Intentar obtener una página del pool
+        if self._page_pool and not self._page_pool.empty():
+            try:
+                page = self._page_pool.get_nowait()
+                # Verificar que la página sigue siendo válida
+                if not page.is_closed():
+                    # Limpiar la página antes de reutilizarla
+                    try:
+                        await page.goto("about:blank", wait_until="domcontentloaded", timeout=1000)
+                    except Exception:
+                        # Si falla, crear una nueva
+                        page = await self.context.new_page()
+                    else:
+                        return page
+            except asyncio.QueueEmpty:
+                pass
+            except Exception as e:
+                logger.warning(f"Error obteniendo página del pool: {e}")
+        
+        # Crear una nueva página si no hay disponibles en el pool
         page = await self.context.new_page()
         
         # Optimizaciones adicionales para la página
@@ -138,9 +162,67 @@ class BrowserPool:
         
         return page
     
+    async def return_page(self, page: Page) -> None:
+        """
+        Devolver una página al pool para reutilización.
+        Si el pool está lleno o la página está cerrada, simplemente la cerramos.
+        """
+        if self._shutting_down or not self._page_pool:
+            try:
+                if not page.is_closed():
+                    await page.close()
+            except Exception:
+                pass
+            return
+        
+        try:
+            # Verificar que la página sigue siendo válida
+            if page.is_closed():
+                return
+            
+            # Limpiar la página
+            try:
+                await page.goto("about:blank", wait_until="domcontentloaded", timeout=1000)
+            except Exception:
+                # Si falla al limpiar, cerrar la página en lugar de devolverla al pool
+                try:
+                    await page.close()
+                except Exception:
+                    pass
+                return
+            
+            # Intentar devolver al pool
+            try:
+                self._page_pool.put_nowait(page)
+            except asyncio.QueueFull:
+                # Si el pool está lleno, cerrar la página
+                try:
+                    await page.close()
+                except Exception:
+                    pass
+        except Exception as e:
+            logger.warning(f"Error devolviendo página al pool: {e}")
+            # En caso de error, cerrar la página
+            try:
+                if not page.is_closed():
+                    await page.close()
+            except Exception:
+                pass
+    
     async def _cleanup(self) -> None:
         """Limpiar recursos del pool"""
         try:
+            # Cerrar todas las páginas del pool
+            if self._page_pool:
+                while not self._page_pool.empty():
+                    try:
+                        page = self._page_pool.get_nowait()
+                        if not page.is_closed():
+                            await page.close()
+                    except Exception:
+                        pass
+                self._page_pool = None
+            
             if self.context:
                 await self.context.close()
                 self.context = None
