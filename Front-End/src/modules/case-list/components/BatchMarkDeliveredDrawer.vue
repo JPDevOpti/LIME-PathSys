@@ -154,38 +154,56 @@
                             :key="sIdx"
                             class="bg-white border border-gray-200 rounded-lg p-3"
                           >
-                            <div class="mb-2">
+                            <div class="mb-3 flex items-center justify-between">
                               <p class="text-xs font-semibold text-gray-700">{{ s.bodyRegion || 'Sin región' }}</p>
+                              <BaseButton
+                                variant="outline"
+                                size="xs"
+                                text="Agregar Prueba"
+                                custom-class="bg-white border-blue-600 text-blue-600 hover:bg-blue-50"
+                                @click="addTestToSample(c.id, sIdx)"
+                              />
                             </div>
-                            <div class="space-y-2">
+                            <div class="space-y-3">
                               <div
                                 v-for="(test, tIdx) in s.tests"
                                 :key="tIdx"
-                                class="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded"
+                                class="p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2"
                               >
                                 <div class="flex-1">
-                                  <p class="text-xs font-medium text-gray-900">{{ test.id }} - {{ test.name }}</p>
+                                  <TestList
+                                    :model-value="test.id"
+                                    :label="`Prueba #${tIdx + 1}`"
+                                    :placeholder="`Buscar y seleccionar prueba ${tIdx + 1}...`"
+                                    :required="true"
+                                    :auto-load="true"
+                                    @update:model-value="(value: string) => updateTestCode(c.id, sIdx, tIdx, value)"
+                                    @test-selected="(selectedTest: any) => updateTestDetails(c.id, sIdx, tIdx, selectedTest)"
+                                  />
                                 </div>
-                                <div class="flex items-center gap-2">
-                                  <label class="text-xs text-gray-500">Cantidad:</label>
+                                <div class="flex items-center gap-2 mt-2">
+                                  <label class="text-xs text-gray-500 font-medium">Cantidad:</label>
                                   <input
                                     v-model.number="test.quantity"
                                     type="number"
                                     min="1"
                                     max="20"
-                                    class="w-12 px-1 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    class="w-16 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                                   />
                                   <button
                                     @click="removeTestFromSample(c.id, sIdx, tIdx)"
-                                    class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                                    class="ml-auto p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
                                     title="Eliminar prueba"
                                   >
-                                    <svg class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor">
+                                    <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
                                       <path fill-rule="evenodd" d="M10 8.586l4.95-4.95 1.414 1.414L11.414 10l4.95 4.95-1.414 1.414L10 11.414l-4.95 4.95-1.414-1.414L8.586 10l-4.95-4.95L5.05 3.636 10 8.586z" clip-rule="evenodd" />
                                     </svg>
                                   </button>
                                 </div>
                               </div>
+                              <p v-if="!s.tests || s.tests.length === 0" class="text-xs text-gray-500 italic text-center py-2">
+                                No hay pruebas. Haz clic en "Agregar Prueba" para agregar una.
+                              </p>
                             </div>
                           </div>
                           
@@ -260,6 +278,7 @@
 import { computed, ref } from 'vue'
 import type { Case } from '../types/case.types'
 import { BaseButton } from '@/shared/components'
+import { TestList } from '@/shared/components/ui/lists'
 import { useSidebar } from '@/shared/composables/SidebarControl'
 import { casesApiService } from '@/modules/cases/services'
 import { getHolidaysForRange, formatISODate } from '../utils/holidayUtils'
@@ -536,6 +555,46 @@ const removeTestFromSample = (caseId: string, sampleIndex: number, testIndex: nu
   if (!samples || !samples[sampleIndex]) return
   
   samples[sampleIndex].tests.splice(testIndex, 1)
+  editableSamples.value = { ...editableSamples.value }
+}
+
+const addTestToSample = (caseId: string, sampleIndex: number) => {
+  const samples = editableSamples.value[caseId]
+  if (!samples || !samples[sampleIndex]) return
+  
+  if (!samples[sampleIndex].tests) {
+    samples[sampleIndex].tests = []
+  }
+  
+  samples[sampleIndex].tests.push({
+    id: '',
+    name: '',
+    quantity: 1
+  })
+  
+  editableSamples.value = { ...editableSamples.value }
+}
+
+const updateTestCode = (caseId: string, sampleIndex: number, testIndex: number, code: string) => {
+  const samples = editableSamples.value[caseId]
+  if (!samples || !samples[sampleIndex] || !samples[sampleIndex].tests[testIndex]) return
+  
+  samples[sampleIndex].tests[testIndex].id = code
+  if (!code && !samples[sampleIndex].tests[testIndex].name) {
+    samples[sampleIndex].tests[testIndex].name = ''
+  }
+  editableSamples.value = { ...editableSamples.value }
+}
+
+const updateTestDetails = (caseId: string, sampleIndex: number, testIndex: number, testDetails: any) => {
+  const samples = editableSamples.value[caseId]
+  if (!samples || !samples[sampleIndex] || !samples[sampleIndex].tests[testIndex]) return
+  
+  if (testDetails) {
+    samples[sampleIndex].tests[testIndex].id = testDetails.pruebaCode || testDetails.id || ''
+    samples[sampleIndex].tests[testIndex].name = testDetails.pruebasName || testDetails.name || ''
+  }
+  
   editableSamples.value = { ...editableSamples.value }
 }
 

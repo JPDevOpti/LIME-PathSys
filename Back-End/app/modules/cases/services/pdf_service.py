@@ -136,7 +136,12 @@ class CasePdfService:
                     "Los informes de resultados, las placas y bloques de estudios anatomopatológicos se archivan por 15 años"
                     "</div>"
                     "<div style='border-top:1px solid #000; margin:2mm 0 0 0;'></div>"
-                    "<div style='text-align:right; font-weight:bold;'>Página <span class='pageNumber'></span> de <span class='totalPages'></span></div>"
+                    "<div style='position:relative; margin-top:1mm;'>"
+                    "<div style='text-align:center; font-weight:bold; white-space:nowrap;'>"
+                    f"Informe No {case_data.get('caso_code') or case_data.get('id') or case_code}"
+                    "</div>"
+                    "<div style='position:absolute; right:0; top:0; font-weight:bold; white-space:nowrap;'>Página <span class='pageNumber'></span> de <span class='totalPages'></span></div>"
+                    "</div>"
                     "</div>"
                 ),
             )

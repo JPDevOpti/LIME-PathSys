@@ -19,24 +19,16 @@
         white-space: nowrap;
       }
       @bottom-center {
-        content: "Los informes de resultados, las placas y bloques de estudios anatomopatológicos se archivan por 15 años";
+        content: "Los informes de resultados, las placas y bloques de estudios anatomopatológicos se archivan por 15 años\A Informe No {{ case.caso_code or case.id }}";
         font-size: 10px;
         font-family: Arial, sans-serif;
         color: #000;
         margin-top: 0mm;
-        white-space: nowrap;
+        white-space: pre-line;
         text-align: center;
       }
     }
     @page :not(:first) {
-      @top-left {
-        content: "Caso N°: {{ case.caso_code or case.id }}";
-        font-size: 11px;
-        font-family: Arial, sans-serif;
-        color: #000;
-        font-weight: bold;
-        margin-left: 0;
-      }
       margin-top: 18mm;
     }
     

@@ -225,9 +225,9 @@ class ApprovalService:
         if not approval:
             return None
         
-        # Solo permitir edición si está en estado "request_made"
-        if approval.approval_state != ApprovalStateEnum.REQUEST_MADE:
-            raise BadRequestError("Solo se pueden editar las solicitudes en estado 'request_made'")
+        # Permitir edición si está en estado "request_made" o "pending_approval"
+        if approval.approval_state not in (ApprovalStateEnum.REQUEST_MADE, ApprovalStateEnum.PENDING_APPROVAL):
+            raise BadRequestError("Solo se pueden editar las solicitudes en estado 'request_made' o 'pending_approval'")
         
         # Actualizar
         updated = await self.repository.update_by_approval_code(approval_code, update_data.model_dump(exclude_unset=True))
@@ -240,8 +240,9 @@ class ApprovalService:
         if not approval:
             return None
         
-        if approval.approval_state != ApprovalStateEnum.REQUEST_MADE:
-            raise BadRequestError("Solo se pueden editar las pruebas cuando la solicitud está en estado 'request_made'")
+        # Permitir edición si está en estado "request_made" o "pending_approval"
+        if approval.approval_state not in (ApprovalStateEnum.REQUEST_MADE, ApprovalStateEnum.PENDING_APPROVAL):
+            raise BadRequestError("Solo se pueden editar las pruebas cuando la solicitud está en estado 'request_made' o 'pending_approval'")
         
         updated = await self.repository.update_complementary_tests(approval_code, complementary_tests)
         return await self.get_approval_by_code(approval_code) if updated else None

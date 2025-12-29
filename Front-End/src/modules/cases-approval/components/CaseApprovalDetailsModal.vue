@@ -67,7 +67,7 @@
 						<div class="flex items-center justify-between">
 							<h5 class="text-xs font-medium text-gray-600">Pruebas Complementarias Solicitadas</h5>
 							<BaseButton
-								v-if="!isEditingTests"
+								v-if="!isEditingTests && canEditTests"
 								variant="outline"
 								size="xs"
 								text="Editar"
@@ -99,22 +99,40 @@
 						</div>
 
 						<div v-else class="space-y-3">
+							<div class="flex items-center justify-end">
+								<BaseButton
+									variant="outline"
+									size="xs"
+									text="Agregar Prueba"
+									custom-class="bg-white border-blue-600 text-blue-600 hover:bg-blue-50"
+									@click="addTest"
+								/>
+							</div>
+
 							<div v-if="editableTests.length === 0" class="text-center py-4">
 								<p class="text-sm text-gray-500">No hay pruebas complementarias configuradas</p>
-								<p class="text-xs text-gray-400 mt-1">Las pruebas se configuran al crear la solicitud</p>
+								<p class="text-xs text-gray-400 mt-1">Haz clic en "Agregar Prueba" para agregar una</p>
 							</div>
               
-							<div v-else class="space-y-2">
+							<div v-else class="space-y-3">
 								<div
 									v-for="(test, index) in editableTests"
 									:key="index"
-									class="flex items-center gap-2 p-3 bg-white border border-gray-200 rounded-lg"
+									class="p-3 bg-white border border-gray-200 rounded-lg space-y-2"
 								>
 									<div class="flex-1">
-										<p class="text-sm font-medium text-gray-900">{{ test.code }} - {{ test.name }}</p>
+										<TestList
+											:model-value="test.code"
+											:label="`Prueba #${index + 1}`"
+											:placeholder="`Buscar y seleccionar prueba ${index + 1}...`"
+											:required="true"
+											:auto-load="true"
+											@update:model-value="(value: string) => updateTestCode(index, value)"
+											@test-selected="(selectedTest: any) => updateTestDetails(index, selectedTest)"
+										/>
 									</div>
-									<div class="flex items-center gap-2">
-										<label class="text-xs text-gray-500">Cantidad:</label>
+									<div class="flex items-center gap-2 mt-2">
+										<label class="text-xs text-gray-500 font-medium">Cantidad:</label>
 										<input
 											v-model.number="test.quantity"
 											type="number"
@@ -124,7 +142,7 @@
 										/>
 										<button
 											@click="removeTest(index)"
-											class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+											class="ml-auto p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
 											title="Eliminar prueba"
 										>
 											<svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
@@ -190,6 +208,7 @@
 
 <script setup lang="ts">
 import { BaseButton } from '@/shared/components'
+import { TestList } from '@/shared/components/ui/lists'
 import { ConfirmDialog } from '@/shared/components/ui/feedback'
 import { computed, ref } from 'vue'
 import { useSidebar } from '@/shared/composables/SidebarControl'
@@ -266,14 +285,50 @@ const getComplementaryTests = () => {
 	return props.caseItem?.complementary_tests || []
 }
 
+const canEditTests = computed(() => {
+	const status = props.caseItem?.approval_state
+	// Permitir editar cuando está en solicitud hecha o pendiente de aprobación
+	return status === 'request_made' || status === 'pending_approval'
+})
+
 const startEditingTests = () => {
-	editableTests.value = [...(getComplementaryTests() || [])]
+	const tests = getComplementaryTests() || []
+	editableTests.value = tests.map(test => ({
+		code: test.code || '',
+		name: test.name || '',
+		quantity: test.quantity || 1
+	}))
 	isEditingTests.value = true
 }
 
 const cancelEditingTests = () => {
 	isEditingTests.value = false
 	editableTests.value = []
+}
+
+const addTest = () => {
+	editableTests.value.push({
+		code: '',
+		name: '',
+		quantity: 1
+	})
+}
+
+const updateTestCode = (index: number, code: string) => {
+	if (!editableTests.value[index]) return
+	editableTests.value[index].code = code
+	if (!code && !editableTests.value[index].name) {
+		editableTests.value[index].name = ''
+	}
+}
+
+const updateTestDetails = (index: number, testDetails: any) => {
+	if (!editableTests.value[index]) return
+	
+	if (testDetails) {
+		editableTests.value[index].code = testDetails.pruebaCode || testDetails.code || ''
+		editableTests.value[index].name = testDetails.pruebasName || testDetails.name || ''
+	}
 }
 
 const removeTest = (index: number) => {
