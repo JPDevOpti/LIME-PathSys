@@ -35,7 +35,12 @@ const router = createRouter({
     ...casesApprovalRoutes,
     ...patientsRoutes,
     ...patientListRoutes,
-    ...pathologistAssignmentRoutes
+    ...pathologistAssignmentRoutes,
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('@/shared/pages/NotFoundPage.vue')
+    }
   ]
 })
 
