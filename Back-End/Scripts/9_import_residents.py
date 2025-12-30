@@ -25,6 +25,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.config.database import get_database, close_mongo_connection
 from app.modules.residents.schemas.resident import ResidentCreate
 from app.modules.residents.services.resident_service import ResidentService
+from app.shared.services.user_management import UserManagementService
 
 
 def derive_initials(raw_name: str) -> str:
@@ -122,6 +123,7 @@ async def import_residents(dry_run: bool) -> Tuple[int, int]:
     db = await get_database()
     try:
         service = ResidentService(db)
+        user_service = UserManagementService(db)
 
         for i, row in enumerate(RESIDENTS_DATA, 1):
             raw_code = str(row.get("documento", "")).strip()
@@ -179,6 +181,19 @@ async def import_residents(dry_run: bool) -> Tuple[int, int]:
 
                 # Create resident (this also creates the user account automatically)
                 await service.create_resident(payload)
+                
+                # Ensure user is created
+                if not await user_service.check_email_exists_in_users(email):
+                    print(f"  [INFO] User not created by service. Creating explicitly...")
+                    await user_service.create_user_for_resident(
+                        name=raw_name,
+                        email=email,
+                        password=password,
+                        resident_code=raw_code,
+                        is_active=True
+                    )
+                    print(f"  [OK] User created explicitly")
+
                 print(f"  [OK] Resident created successfully")
                 print(f"    - Code: {raw_code}")
                 print(f"    - Email: {email}")

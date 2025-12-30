@@ -157,9 +157,10 @@ class TicketService:
         if not existing_ticket:
             raise NotFoundError(f"Ticket with code {ticket_code} not found")
         
-        # If has image, delete it from disk
-        if existing_ticket.image:
-            await self._delete_image_file(existing_ticket.image)
+        # If has images, delete them from disk (if applicable)
+        if existing_ticket.images:
+            for img in existing_ticket.images:
+                await self._delete_image_file(img)
         
         return await self.repository.delete_by_ticket_code(ticket_code)
     
@@ -182,15 +183,15 @@ class TicketService:
         # Validate file
         self._validate_image(file)
         
-        # Delete previous image if exists
-        if existing_ticket.image:
-            await self._delete_image_file(existing_ticket.image)
-        
         # Save new image
         image_url = await self._save_image(file, ticket_code)
         
-        # Update ticket with new URL
-        update_data = TicketUpdate(image=image_url)
+        # Append to images list
+        current_images = existing_ticket.images or []
+        current_images.append(image_url)
+        
+        # Update ticket with new list
+        update_data = TicketUpdate(images=current_images)
         await self.repository.update_by_ticket_code(ticket_code, update_data)
         
         return ImageUploadResponse(
@@ -202,6 +203,7 @@ class TicketService:
         self, 
         ticket_code: str,
         user_id: str,
+        image_index: int,
         is_admin: bool = False
     ) -> dict:
         """Delete image from a ticket."""
@@ -213,14 +215,17 @@ class TicketService:
         if not is_admin and existing_ticket.created_by != user_id:
             raise BadRequestError("You don't have permission to delete images from this ticket")
         
-        if not existing_ticket.image:
-            raise BadRequestError("The ticket has no attached image")
+        if not existing_ticket.images:
+            raise BadRequestError("The ticket has no attached images")
+            
+        if image_index < 0 or image_index >= len(existing_ticket.images):
+             raise BadRequestError("Invalid image index")
         
-        # Delete file from disk
-        await self._delete_image_file(existing_ticket.image)
+        # Remove image from list
+        existing_ticket.images.pop(image_index)
         
         # Update ticket removing the image
-        update_data = TicketUpdate(image=None)
+        update_data = TicketUpdate(images=existing_ticket.images)
         await self.repository.update_by_ticket_code(ticket_code, update_data)
         
         return {"message": "Image deleted successfully"}
@@ -263,7 +268,7 @@ class TicketService:
             title=ticket.title,
             category=ticket.category,
             description=ticket.description,
-            image=ticket.image,
+            images=ticket.images,
             ticket_date=ticket.ticket_date,
             status=ticket.status,
             created_by=ticket.created_by
@@ -277,6 +282,6 @@ class TicketService:
             category=ticket.category,
             description=ticket.description,
             status=ticket.status,
-            image=ticket.image,
+            images=ticket.images,
             ticket_date=ticket.ticket_date
         )

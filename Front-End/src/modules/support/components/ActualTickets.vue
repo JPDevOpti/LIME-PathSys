@@ -73,7 +73,7 @@
               <div class="flex items-center gap-4 text-xs text-gray-500">
                 <span>Ticket {{ ticket.ticket_code }}</span>
                 <span>{{ ticket.ticket_date ? formatDate(ticket.ticket_date) : '' }}</span>
-                <span v-if="ticket.image">1 imagen adjunta</span>
+                <span v-if="ticket.images && ticket.images.length > 0">{{ ticket.images.length }} imágenes adjuntas</span>
               </div>
               
               <!-- Controles de administración (solo para administradores) -->
@@ -207,7 +207,7 @@ const filteredTickets = computed(() => {
       title: (t as any).title ?? (t as any).titulo ?? '',
       category: (t as any).category ?? (t as any).categoria ?? '',
       description: (t as any).description ?? (t as any).descripcion ?? '',
-      image: (t as any).image ?? (t as any).imagen ?? (Array.isArray((t as any).attachments) && (t as any).attachments.length ? (t as any).attachments[0]?.previewUrl : undefined),
+      images: (t as any).images ?? ((t as any).image ? [(t as any).image] : []),
       ticket_date: (t as any).ticket_date ?? (t as any).fecha_ticket ?? (t as any).createdAt ?? '',
       status: (t as any).status ?? (t as any).estado ?? 'open'
     }))

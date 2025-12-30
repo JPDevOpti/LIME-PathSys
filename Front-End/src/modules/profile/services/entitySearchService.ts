@@ -217,16 +217,10 @@ class EntitySearchService {
 
   async getAllResidents(includeInactive: boolean = false): Promise<any[]> {
     try {
-      // El endpoint /residents/ tiene un límite máximo de 100
-      // Para obtener más registros, usar el endpoint /search sin parámetros de búsqueda
-      const endpoint = `${API_CONFIG.ENDPOINTS.RESIDENTS}/search`
-      const params: any = includeInactive 
-        ? { skip: 0, limit: 1000, is_active: false }
-        : { skip: 0, limit: 1000, is_active: true }
+      const endpoint = includeInactive ? `${API_CONFIG.ENDPOINTS.RESIDENTS}/search` : API_CONFIG.ENDPOINTS.RESIDENTS
+      const params: any = { skip: 0, limit: 1000 }
       const response = await apiClient.get(endpoint, { params })
-      // La respuesta puede ser un array directamente o estar envuelta
-      const residentsArray = Array.isArray(response) ? response : (response?.data || response?.residents || [])
-      return Array.isArray(residentsArray) ? residentsArray.map(this.normalizeResident) : []
+      return Array.isArray(response) ? response.map(this.normalizeResident) : []
     } catch (error: any) {
       console.error('Error al obtener residentes:', error)
       if (error.response?.status === 404) return []

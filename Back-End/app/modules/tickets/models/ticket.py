@@ -1,6 +1,6 @@
 """Models for ticket management."""
 
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 from pydantic import BaseModel, Field, field_validator
@@ -31,7 +31,7 @@ class Ticket(BaseModel):
     title: str = Field(..., max_length=100, min_length=1, description="Ticket title")
     category: TicketCategoryEnum = Field(..., description="Ticket category")
     description: str = Field(..., max_length=500, min_length=1, description="Detailed description")
-    image: Optional[str] = Field(None, description="Attached image URL")
+    images: List[str] = Field(default=[], description="List of attached image URLs")
     ticket_date: datetime = Field(default_factory=datetime.utcnow, description="Ticket creation date")
     status: TicketStatusEnum = Field(default=TicketStatusEnum.OPEN, description="Current ticket status")
     created_by: str = Field(..., description="ID of the user who created the ticket")

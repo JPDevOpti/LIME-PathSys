@@ -1,6 +1,6 @@
 """Pydantic schemas for the tickets API."""
 
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
 from app.modules.tickets.models.ticket import TicketCategoryEnum, TicketStatusEnum
@@ -11,7 +11,7 @@ class TicketCreate(BaseModel):
     title: str = Field(..., max_length=100, min_length=1, description="Ticket title")
     category: TicketCategoryEnum = Field(..., description="Ticket category")
     description: str = Field(..., max_length=500, min_length=1, description="Detailed description")
-    image: Optional[str] = Field(None, description="Attached image URL")
+    images: Optional[List[str]] = Field(default=[], description="Attached image URLs")
 
     @field_validator('title', mode='before')
     @classmethod
@@ -36,7 +36,7 @@ class TicketUpdate(BaseModel):
     title: Optional[str] = Field(None, max_length=100, min_length=1)
     category: Optional[TicketCategoryEnum] = None
     description: Optional[str] = Field(None, max_length=500, min_length=1)
-    image: Optional[str] = None
+    images: Optional[List[str]] = None
     status: Optional[TicketStatusEnum] = None
 
     @field_validator('title', mode='before')
@@ -84,7 +84,7 @@ class TicketResponse(BaseModel):
     title: str = Field(..., description="Ticket title")
     category: TicketCategoryEnum = Field(..., description="Ticket category")
     description: str = Field(..., description="Detailed description")
-    image: Optional[str] = Field(None, description="Attached image URL")
+    images: List[str] = Field(default=[], description="Attached image URLs")
     ticket_date: datetime = Field(..., description="Ticket creation date")
     status: TicketStatusEnum = Field(..., description="Current ticket status")
     created_by: Optional[str] = Field(None, description="ID of the user who created the ticket")
@@ -100,7 +100,7 @@ class TicketListResponse(BaseModel):
     category: TicketCategoryEnum = Field(..., description="Ticket category")
     description: str = Field(..., description="Brief ticket description")
     status: TicketStatusEnum = Field(..., description="Current ticket status")
-    image: Optional[str] = Field(None, description="Attached image URL")
+    images: List[str] = Field(default=[], description="Attached image URLs")
     ticket_date: datetime = Field(..., description="Ticket creation date")
 
     class Config:

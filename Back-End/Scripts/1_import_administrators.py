@@ -42,6 +42,12 @@ ADMINISTRATORS = [
         "name": "System Administrator",
         "email": "admin@lime.edu.co",
         "password": "admin123"
+    },
+    {
+        "name": "Ana Milena Patiño Ramirez",
+        "email": "milena.patino@udea.edu.co",
+        "password": "39213383",
+        "code": "39213383"
     }
 ]
 
@@ -69,6 +75,7 @@ async def create_administrators(dry_run: bool = False):
             name = admin_data["name"]
             email = admin_data["email"]
             password = admin_data["password"]
+            custom_code = admin_data.get("code")
             
             print(f"\n[{i}/{len(ADMINISTRATORS)}] Processing: {name}")
             print(f"  Email: {email}")
@@ -116,7 +123,11 @@ async def create_administrators(dry_run: bool = False):
                     created += 1
                 else:
                     # Create administrator, using name as default administrative code
-                    admin_code = admin_schema.name.replace(" ", "_").lower()[:20]
+                    if custom_code:
+                        admin_code = custom_code
+                    else:
+                        admin_code = admin_schema.name.replace(" ", "_").lower()[:20]
+                        
                     user = await user_service.create_user_for_administrator(
                         name=admin_schema.name,
                         email=admin_schema.email,

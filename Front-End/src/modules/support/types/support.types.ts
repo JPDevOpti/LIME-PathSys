@@ -19,7 +19,7 @@ export interface SupportTicket {
   title: string                          // ✅ Campo en inglés del nuevo backend
   category: TicketCategoryEnum           // ✅ Campo en inglés del nuevo backend
   description: string                    // ✅ Campo en inglés del nuevo backend
-  image?: string                         // ✅ Campo en inglés del nuevo backend
+  images?: string[]                      // ✅ Campo en inglés del nuevo backend (Lista de imágenes)
   ticket_date: string                    // ✅ Campo en inglés del nuevo backend
   status: TicketStatusEnum               // ✅ Campo en inglés del nuevo backend
   created_by?: string                    // ✅ ID del creador
@@ -30,7 +30,7 @@ export interface NewTicketForm {
   title: string                          // ✅ Campo en inglés del nuevo backend
   category: TicketCategoryEnum           // ✅ Campo en inglés del nuevo backend
   description: string                    // ✅ Campo en inglés del nuevo backend
-  image?: File                           // ✅ Campo en inglés del nuevo backend
+  images?: File[]                        // ✅ Campo en inglés del nuevo backend (Lista de archivos)
 }
 
 // ✅ FILTROS actualizados (campos en inglés para nuevo backend)

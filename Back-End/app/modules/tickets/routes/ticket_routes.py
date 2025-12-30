@@ -199,6 +199,7 @@ async def upload_ticket_image(
 @handle_exceptions
 async def delete_ticket_image(
     ticket_code: str,
+    image_index: int = Query(..., ge=0, description="Index of the image to delete"),
     ticket_service: TicketService = Depends(get_ticket_service),
     current_user_id: str = Depends(get_current_user_id)
 ):
@@ -206,5 +207,6 @@ async def delete_ticket_image(
     return await ticket_service.delete_ticket_image(
         ticket_code,
         current_user_id,
+        image_index,
         is_admin=True  # For now, allow all authenticated users
     )

@@ -41,10 +41,10 @@
         :showCounter="true"
       />
 
-      <!-- Imagen adjunta (simplificado) -->
+      <!-- Imágenes adjuntas -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">
-          Imagen adjunta (opcional)
+          Imágenes adjuntas (opcional)
         </label>
         <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
           <div class="space-y-1 text-center">
@@ -54,12 +54,13 @@
               class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-800"
             >
               <PaperclipIcon class="w-4 h-4 mr-2" />
-              Seleccionar imagen
+              Seleccionar imágenes
             </button>
             <input
               ref="fileInput"
               type="file"
               accept="image/*"
+              multiple
               @change="handleImageUpload"
               class="hidden"
             />
@@ -70,26 +71,26 @@
         </div>
       </div>
 
-      <!-- Imagen seleccionada -->
-      <div v-if="formData.image || imagePreview" class="space-y-2">
-        <h4 class="text-sm font-medium text-gray-700">Imagen seleccionada:</h4>
-        <div class="flex items-center justify-between p-3 bg-gray-50 rounded border">
+      <!-- Imágenes seleccionadas -->
+      <div v-if="formData.images && formData.images.length > 0" class="space-y-2">
+        <h4 class="text-sm font-medium text-gray-700">Imágenes seleccionadas:</h4>
+        <div v-for="(img, index) in formData.images" :key="index" class="flex items-center justify-between p-3 bg-gray-50 rounded border">
           <div class="flex items-center">
             <img 
-              v-if="imagePreview" 
-              :src="imagePreview" 
+              v-if="imagePreviews[index]" 
+              :src="imagePreviews[index]" 
               alt="Preview" 
               class="w-12 h-12 object-cover rounded mr-3"
             />
             <div>
-              <span class="text-sm text-gray-700">{{ formData.image?.name || 'Imagen' }}</span>
-              <span v-if="formData.image" class="text-xs text-gray-500 block">
-                ({{ (formData.image.size / 1024).toFixed(1) }} KB)
+              <span class="text-sm text-gray-700">{{ img.name }}</span>
+              <span class="text-xs text-gray-500 block">
+                ({{ (img.size / 1024).toFixed(1) }} KB)
               </span>
             </div>
           </div>
           <button
-            @click="removeImage"
+            @click="removeImage(index)"
             class="text-red-600 hover:text-red-800"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -137,11 +138,11 @@ const formData = reactive<NewTicketForm>({
   title: '',
   category: '' as TicketCategoryEnum,
   description: '',
-  image: undefined
+  images: []
 })
 
 // Estado adicional para preview de imagen
-const imagePreview = ref<string | null>(null)
+const imagePreviews = ref<string[]>([])
 const isSubmitting = ref(false)
 
 // Toasts
@@ -171,25 +172,28 @@ const isFormValid = computed(() => {
 // Función para manejar la carga de imagen
 const handleImageUpload = (event: Event) => {
   const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
+  const files = target.files
   
-  if (file) {
-    // Validar imagen usando el servicio
-    const validation = ticketsService.validateImage(file)
-    if (!validation.valid) {
-      showError(validation.error || 'Archivo inválido')
-      target.value = ''
-      return
-    }
+  if (files) {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      // Validar imagen usando el servicio
+      const validation = ticketsService.validateImage(file)
+      if (!validation.valid) {
+        showError(validation.error || 'Archivo inválido')
+        continue
+      }
 
-    formData.image = file
-    
-    // Crear preview
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      imagePreview.value = e.target?.result as string
+      formData.images = formData.images || []
+      formData.images.push(file)
+      
+      // Crear preview
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        imagePreviews.value.push(e.target?.result as string)
+      }
+      reader.readAsDataURL(file)
     }
-    reader.readAsDataURL(file)
     
     // Limpiar el input
     target.value = ''
@@ -197,9 +201,11 @@ const handleImageUpload = (event: Event) => {
 }
 
 // Función para remover imagen
-const removeImage = () => {
-  formData.image = undefined
-  imagePreview.value = null
+const removeImage = (index: number) => {
+  if (formData.images) {
+    formData.images.splice(index, 1)
+    imagePreviews.value.splice(index, 1)
+  }
 }
 
 // Función para limpiar el formulario
@@ -207,8 +213,8 @@ const clearForm = () => {
   formData.title = ''
   formData.category = '' as TicketCategoryEnum
   formData.description = ''
-  formData.image = undefined
-  imagePreview.value = null
+  formData.images = []
+  imagePreviews.value = []
 }
 
 // Función para enviar el ticket

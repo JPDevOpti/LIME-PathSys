@@ -25,7 +25,7 @@ write_env_files() {
   local mode=${1:-local}
   local mongo_url
   if [ "$mode" = "atlas" ]; then
-    mongo_url="mongodb+srv://juanrestrepo183:whbyaZSbhn4H7PpO@cluster0.o8uta.mongodb.net/"
+    mongo_url="mongodb+srv://juanrestrepo183:cHp6ewrNmsPxfwfG@cluster0.o8uta.mongodb.net/"
   else
     mongo_url="mongodb://localhost:27017/"
   fi
@@ -527,6 +527,7 @@ function help() {
   echo " Inicio:"
   echo "  local        - Inicia servicios en LOCAL (MongoDB local)"
   echo "  atlas        - Inicia servicios en LOCAL con MongoDB Atlas"
+  echo "  config-atlas - Configura archivos .env para usar MongoDB Atlas (sin iniciar servicios)"
   echo "  docker       - Inicia servicios en DOCKER"
   echo ""
   echo " Datos:"
@@ -549,6 +550,7 @@ function help() {
   echo " Ejemplos de uso:"
   echo "  ./Run.sh setup        # Primera vez - instalar todo"
   echo "  ./Run.sh local        # Iniciar todo en LOCAL"
+  echo "  ./Run.sh atlas        # Iniciar todo con MongoDB Atlas"
   echo "  ./Run.sh status       # Ver estado actual"
   echo "  ./Run.sh stop         # Detener todo"
   echo "  ./Run.sh clean        # Limpiar configuración"
@@ -576,6 +578,10 @@ case "$1" in
     ;;
   atlas)
     start_atlas
+    ;;
+  config-atlas)
+    write_env_files atlas
+    echo "✅ Configuración de entorno actualizada para MongoDB Atlas"
     ;;
   status)
     status

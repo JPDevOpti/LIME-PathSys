@@ -54,10 +54,12 @@ export class TicketsService {
     const response = await apiClient.post(this.baseURL, ticketData)
     const newTicket = response
 
-    // Si hay imagen, subirla después
-    if (data.image) {
+    // Si hay imágenes, subirlas después
+    if (data.images && data.images.length > 0) {
       try {
-        await this.uploadImage(newTicket.ticket_code, data.image)
+        for (const image of data.images) {
+          await this.uploadImage(newTicket.ticket_code, image)
+        }
         return await this.getTicketByCode(newTicket.ticket_code)
       } catch {
         return newTicket
@@ -145,8 +147,10 @@ export class TicketsService {
   /**
    * Eliminar imagen de ticket
    */
-  async deleteImage(ticketCode: string): Promise<void> {
-    await apiClient.delete(`${this.baseURL}${ticketCode}/image`)
+  async deleteImage(ticketCode: string, imageIndex: number): Promise<void> {
+    await apiClient.delete(`${this.baseURL}${ticketCode}/image`, {
+        params: { image_index: imageIndex }
+    })
   }
 
   /**

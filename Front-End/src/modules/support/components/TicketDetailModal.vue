@@ -59,20 +59,22 @@
               </div>
             </div>
 
-            <!-- Columna derecha: imagen -->
+            <!-- Columna derecha: imágenes -->
             <div class="space-y-4">
               <div class="bg-gray-50 rounded-xl p-4 h-full">
-                <h5 class="text-sm font-medium text-gray-700 mb-3">Imagen</h5>
-                <div v-if="ticket.image" class="cursor-pointer group" @click="openImageModal(getImageSrc(ticket.image))">
-                  <img
-                    :src="getImageSrc(ticket.image)"
-                    alt="Imagen del ticket"
-                    class="w-full h-56 object-cover rounded-lg border border-gray-200 group-hover:border-blue-300 transition-colors"
-                  />
-                  <p class="mt-2 text-xs text-gray-500">Click para ver en grande</p>
+                <h5 class="text-sm font-medium text-gray-700 mb-3">Imágenes</h5>
+                <div v-if="ticket.images && ticket.images.length > 0" class="space-y-4 max-h-[500px] overflow-y-auto">
+                  <div v-for="(img, index) in ticket.images" :key="index" class="cursor-pointer group" @click="openImageModal(getImageSrc(img))">
+                    <img
+                      :src="getImageSrc(img)"
+                      alt="Imagen del ticket"
+                      class="w-full h-40 object-cover rounded-lg border border-gray-200 group-hover:border-blue-300 transition-colors"
+                    />
+                  </div>
+                  <p class="mt-2 text-xs text-gray-500 text-center">Click para ver en grande</p>
                 </div>
                 <div v-else class="w-full h-56 rounded-lg border border-dashed border-gray-200 flex items-center justify-center text-xs text-gray-400">
-                  Sin imagen adjunta
+                  Sin imágenes adjuntas
                 </div>
               </div>
             </div>
