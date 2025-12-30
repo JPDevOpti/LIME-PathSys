@@ -138,6 +138,20 @@ async def get_signature(
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error interno del servidor")
 
+@router.delete("/{pathologist_code}/signature", response_model=dict)
+async def delete_signature(
+    pathologist_code: str,
+    pathologist_service: PathologistService = Depends(get_pathologist_service)
+):
+    try:
+        return await pathologist_service.delete_signature_file(pathologist_code)
+    except NotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except BadRequestError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error interno del servidor")
+
 @router.put("/{pathologist_code}/upload-signature", response_model=PathologistResponse)
 async def upload_signature_file(
     pathologist_code: str,

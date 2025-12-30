@@ -145,7 +145,7 @@ class PathologistService:
         }
 
     async def upload_signature_file(self, pathologist_code: str, file_content: bytes, filename: str) -> PathologistResponse:
-        """Subir archivo de firma y actualizar la URL en la base de datos"""
+        """Subir archivo de firma con mismas reglas que imágenes de tickets (una sola)."""
         import os
         import uuid
         from datetime import datetime, timezone
@@ -154,47 +154,84 @@ class PathologistService:
         existing = await self.repo.get_by_pathologist_code(pathologist_code)
         if not existing:
             raise NotFoundError(f"Pathologist with code {pathologist_code} not found")
-        
-        # Validar tipo de archivo
-        allowed_extensions = ['.png', '.jpg', '.jpeg', '.svg']
+
+        # Validar tipo/tamaño como en tickets
+        allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
         file_ext = os.path.splitext(filename)[1].lower()
         if file_ext not in allowed_extensions:
             raise BadRequestError(f"File type not allowed. Allowed types: {', '.join(allowed_extensions)}")
-        
-        # Validar tamaño (1MB máximo)
-        max_size = 1024 * 1024  # 1MB
+
+        max_size = 5 * 1024 * 1024  # 5MB
         if len(file_content) > max_size:
-            raise BadRequestError("File size too large. Maximum size is 1MB")
+            raise BadRequestError("File size too large. Maximum size is 5MB")
         
-        # Crear directorio de firmas si no existe
-        signatures_dir = "uploads/signatures"
+        # Directorio configurable como en tickets
+        signatures_dir = os.getenv("SIGNATURES_UPLOAD_DIR", "uploads/signatures")
         os.makedirs(signatures_dir, exist_ok=True)
         
-        # Generar nombre único para el archivo
+        # Guardar nuevo archivo
         unique_filename = f"{pathologist_code}_{uuid.uuid4().hex}{file_ext}"
         file_path = os.path.join(signatures_dir, unique_filename)
-        
-        # Guardar archivo
         try:
             with open(file_path, "wb") as f:
                 f.write(file_content)
         except Exception as e:
             raise BadRequestError(f"Failed to save file: {str(e)}")
-        
-        # Generar URL relativa
+
+        # URL relativa
         signature_url = f"/uploads/signatures/{unique_filename}"
-        
+
         # Actualizar en base de datos
         updated = await self.repo.update_signature_by_code(pathologist_code, signature_url)
         if not updated:
-            # Si falla la actualización, eliminar el archivo
             try:
                 os.remove(file_path)
-            except:
+            except Exception:
                 pass
             raise BadRequestError("Failed to update signature in database")
-        
+
+        # Si existía una firma previa, eliminar el archivo para no dejar huérfanos
+        previous_signature = existing.get("signature")
+        if previous_signature:
+            await self._delete_signature_file(previous_signature)
+
         return self._to_response(updated)
+
+    async def delete_signature_file(self, pathologist_code: str) -> Dict[str, Any]:
+        """Eliminar la firma del patólogo y borrar el archivo asociado."""
+        import os
+
+        existing = await self.repo.get_by_pathologist_code(pathologist_code)
+        if not existing:
+            raise NotFoundError(f"Pathologist with code {pathologist_code} not found")
+
+        current_signature = existing.get("signature")
+        # Limpia en BD
+        updated = await self.repo.update_signature_by_code(pathologist_code, "")
+        if not updated:
+            raise BadRequestError("Failed to clear signature")
+
+        # Borra archivo si existe
+        if current_signature:
+            await self._delete_signature_file(current_signature)
+
+        return {"message": "Signature deleted"}
+
+    async def _delete_signature_file(self, signature_url: str) -> None:
+        """Eliminar archivo físico si existe."""
+        import os
+
+        # signature_url suele ser /uploads/signatures/filename.ext
+        if not signature_url:
+            return
+        # Quitar prefijo inicial si viene con slash
+        rel_path = signature_url[1:] if signature_url.startswith('/') else signature_url
+        try:
+            if os.path.exists(rel_path):
+                os.remove(rel_path)
+        except Exception:
+            # Silenciar para no bloquear flujo principal
+            pass
 
     def _to_response(self, doc: Dict[str, Any]) -> PathologistResponse:
         """Convertir documento a respuesta"""

@@ -129,6 +129,7 @@ watch(
 )
 
 const handleFileWithErrorHandling = async (file: File) => {
+  if (isUploading) return
   try {
     await handleFile(file)
     emitChange()

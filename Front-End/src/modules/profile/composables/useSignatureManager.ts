@@ -53,19 +53,24 @@ export function useSignatureManager(userRole?: string, pathologistCode?: string)
    * Handle file processing
    */
   const handleFile = async (file: File) => {
-    if (!isPatologo.value || !pathologistCode) return
-    
-    const isValidType = ['image/png', 'image/jpeg', 'image/svg+xml'].includes(file.type)
-    const isValidSize = file.size <= 1024 * 1024 // 1MB
-    
+    if (!isPatologo.value || !pathologistCode || isUploading.value) return
+
+    // Validaciones alineadas con las imágenes de tickets (mismo helper lógico)
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+    const maxSize = 5 * 1024 * 1024 // 5MB
+
+    const ext = file.name.toLowerCase().substring(file.name.lastIndexOf('.'))
+    const isValidType = file.type.startsWith('image/') && allowedExtensions.includes(ext)
+    const isValidSize = file.size <= maxSize
+
     if (!isValidType) {
-      throw new Error('Formato de archivo no válido. Solo se permiten PNG, JPG y SVG.')
+      throw new Error('Formato no permitido. Usa JPG, JPEG, PNG, GIF o WEBP.')
     }
-    
+
     if (!isValidSize) {
-      throw new Error('El archivo es demasiado grande. El tamaño máximo es 1MB.')
+      throw new Error('La imagen no puede superar 5MB.')
     }
-    
+
     isUploading.value = true
     selectedFile.value = file
     
