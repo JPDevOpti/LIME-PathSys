@@ -145,11 +145,10 @@ class PathologistService:
         }
 
     async def upload_signature_file(self, pathologist_code: str, file_content: bytes, filename: str) -> PathologistResponse:
-        """Subir archivo de firma con mismas reglas que imágenes de tickets (una sola)."""
+        """Subir archivo de firma guardando base64 en BD (igual que imágenes de tickets)."""
         import os
-        import uuid
-        from datetime import datetime, timezone
-        
+        import base64
+
         # Verificar que el patólogo existe
         existing = await self.repo.get_by_pathologist_code(pathologist_code)
         if not existing:
@@ -164,35 +163,30 @@ class PathologistService:
         max_size = 5 * 1024 * 1024  # 5MB
         if len(file_content) > max_size:
             raise BadRequestError("File size too large. Maximum size is 5MB")
-        
-        # Directorio configurable como en tickets
-        signatures_dir = os.getenv("SIGNATURES_UPLOAD_DIR", "uploads/signatures")
-        os.makedirs(signatures_dir, exist_ok=True)
-        
-        # Guardar nuevo archivo
-        unique_filename = f"{pathologist_code}_{uuid.uuid4().hex}{file_ext}"
-        file_path = os.path.join(signatures_dir, unique_filename)
+
+        mime_map = {
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.gif': 'image/gif',
+            '.webp': 'image/webp'
+        }
+        mime = mime_map.get(file_ext, 'image/png')
+
         try:
-            with open(file_path, "wb") as f:
-                f.write(file_content)
+            b64 = base64.b64encode(file_content).decode('utf-8')
+            signature_data = f"data:{mime};base64,{b64}"
         except Exception as e:
-            raise BadRequestError(f"Failed to save file: {str(e)}")
+            raise BadRequestError(f"Failed to process signature: {str(e)}")
 
-        # URL relativa
-        signature_url = f"/uploads/signatures/{unique_filename}"
+        previous_signature = existing.get("signature")
 
-        # Actualizar en base de datos
-        updated = await self.repo.update_signature_by_code(pathologist_code, signature_url)
+        updated = await self.repo.update_signature_by_code(pathologist_code, signature_data)
         if not updated:
-            try:
-                os.remove(file_path)
-            except Exception:
-                pass
             raise BadRequestError("Failed to update signature in database")
 
-        # Si existía una firma previa, eliminar el archivo para no dejar huérfanos
-        previous_signature = existing.get("signature")
-        if previous_signature:
+        # Si había una firma previa guardada en disco, limpiarla
+        if previous_signature and previous_signature.startswith("/uploads"):
             await self._delete_signature_file(previous_signature)
 
         return self._to_response(updated)
@@ -211,8 +205,8 @@ class PathologistService:
         if not updated:
             raise BadRequestError("Failed to clear signature")
 
-        # Borra archivo si existe
-        if current_signature:
+        # Borra archivo físico solo si la firma anterior era una ruta
+        if current_signature and current_signature.startswith("/uploads"):
             await self._delete_signature_file(current_signature)
 
         return {"message": "Signature deleted"}

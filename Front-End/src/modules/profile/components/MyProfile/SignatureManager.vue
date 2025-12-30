@@ -60,9 +60,9 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
           </svg>
           Seleccionar archivo
-          <input ref="fileInput" type="file" class="hidden" accept="image/png,image/jpeg,image/svg+xml" @change="(e) => { onFileChange(e); const files = (e.target as HTMLInputElement).files; if (files && files.length > 0) handleFileWithErrorHandling(files[0]) }" />
+          <input ref="fileInput" type="file" class="hidden" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp" @change="(e) => { onFileChange(e); const files = (e.target as HTMLInputElement).files; if (files && files.length > 0) handleFileWithErrorHandling(files[0]) }" />
         </label>
-        <p class="mt-3 text-xs text-gray-500">Formatos aceptados: PNG, JPG, SVG. Tamaño máximo: 1MB</p>
+        <p class="mt-3 text-xs text-gray-500">Formatos: JPG, JPEG, PNG, GIF, WEBP. Tamaño máximo: 5MB</p>
       </div>
     </div>
   </ComponentCard>

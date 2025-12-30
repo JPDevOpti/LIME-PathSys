@@ -81,9 +81,14 @@ export function useSignatureManager(userRole?: string, pathologistCode?: string)
         // Get signature URL from response
         const signatureUrl = response.signature
         if (signatureUrl) {
-          previewUrl.value = signatureUrl.startsWith('http') 
-            ? signatureUrl 
-            : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${signatureUrl}`
+          if (signatureUrl.startsWith('data:')) {
+            previewUrl.value = signatureUrl
+          } else if (signatureUrl.startsWith('http')) {
+            previewUrl.value = signatureUrl
+          } else {
+            const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+            previewUrl.value = `${base}${signatureUrl}`
+          }
         } else {
           // Fallback: show local preview
           const reader = new FileReader()
@@ -131,7 +136,12 @@ export function useSignatureManager(userRole?: string, pathologistCode?: string)
    */
   const setCurrentUrl = (url: string | null) => {
     if (url && isPatologo.value) {
-      previewUrl.value = url
+      if (url.startsWith('data:') || url.startsWith('http')) {
+        previewUrl.value = url
+      } else {
+        const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+        previewUrl.value = `${base}${url}`
+      }
     } else if (!url) {
       previewUrl.value = null
     }
