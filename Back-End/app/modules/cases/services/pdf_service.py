@@ -502,73 +502,88 @@ class CasePdfService:
             return None
 
     async def _get_pathologist_signature(self, case_data: dict) -> Optional[str]:
-        """Obtener firma del patólogo asignado desde la carpeta uploads/signatures/
-        Usa caché en memoria para evitar I/O repetido del disco"""
+        """Obtener la firma del patólogo asignado. Soporta firmas base64 en BD y rutas antiguas."""
         try:
             patologo_asignado = case_data.get('patologo_asignado')
-            if not patologo_asignado:
-                # Para pruebas, usar un patólogo fijo que sabemos que tiene firma
-                pathologist_id = "1129564009"
-                print(f"DEBUG: No hay patólogo asignado, usando patólogo de prueba: {pathologist_id}")
-            else:
+            pathologist_id = None
+
+            if patologo_asignado:
                 pathologist_id = patologo_asignado.get('codigo') or patologo_asignado.get('id')
-                if not pathologist_id:
-                    return None
-                print(f"DEBUG: Patólogo asignado encontrado: {pathologist_id}")
-            
-            # Verificar caché primero
+                if pathologist_id:
+                    print(f"DEBUG: Patólogo asignado encontrado: {pathologist_id}")
+
+            if not pathologist_id:
+                print("DEBUG: No hay patólogo asignado para obtener firma")
+                return None
+
+            # Verificar caché
             if pathologist_id in self._signature_cache:
                 cached_signature = self._signature_cache[pathologist_id]
                 if cached_signature is not None:
                     print(f"DEBUG: Firma obtenida desde caché para ID: {pathologist_id}")
                 return cached_signature
-            
-            # Si no está en caché, cargar desde disco
+
+            # Obtener patólogo desde la BD
+            try:
+                pathologist = await self.pathologist_service.get_pathologist(pathologist_id)
+            except Exception as e:
+                print(f"DEBUG: No se pudo obtener el patólogo {pathologist_id}: {e}")
+                self._signature_cache[pathologist_id] = None
+                return None
+
+            signature_value = getattr(pathologist, "signature", None)
+
+            # Sin firma registrada
+            if not signature_value:
+                self._signature_cache[pathologist_id] = None
+                print(f"DEBUG: Patólogo {pathologist_id} no tiene firma registrada")
+                return None
+
+            # Si ya es data URL, usar tal cual
+            if signature_value.startswith("data:"):
+                self._signature_cache[pathologist_id] = signature_value
+                print(f"DEBUG: Firma base64 obtenida desde BD para ID: {pathologist_id}")
+                return signature_value
+
+            # Si es URL absoluta, devolver directamente
+            if signature_value.startswith("http"):
+                self._signature_cache[pathologist_id] = signature_value
+                print(f"DEBUG: Firma URL absoluta para ID: {pathologist_id}")
+                return signature_value
+
+            # Si es una ruta relativa (legacy /uploads/signatures/xxx), leer y convertir a base64
+            import base64
             from pathlib import Path
-            
-            # Obtener la ruta base del proyecto
+
+            rel_path = signature_value[1:] if signature_value.startswith('/') else signature_value
             project_root = Path(__file__).parent.parent.parent.parent.parent
-            signatures_dir = project_root / "uploads" / "signatures"
-            
-            # Buscar archivos que contengan el ID del patólogo
-            signature_files = list(signatures_dir.glob(f"*{pathologist_id}*"))
-            print(f"DEBUG: Buscando firmas para ID: {pathologist_id}")
-            print(f"DEBUG: Directorio: {signatures_dir}")
-            print(f"DEBUG: Archivos encontrados: {signature_files}")
-            
-            result = None
-            if signature_files:
-                # Tomar el primer archivo encontrado
-                signature_file = signature_files[0]
-                
-                # Convertir a base64 para usar en HTML
-                import base64
-                
-                with open(signature_file, "rb") as img_file:
-                    img_data = img_file.read()
-                    img_base64 = base64.b64encode(img_data).decode('utf-8')
-                    
-                    # Obtener la extensión del archivo
-                    file_ext = signature_file.suffix.lower()
-                    if file_ext == '.png':
-                        result = f"data:image/png;base64,{img_base64}"
-                        print(f"DEBUG: Firma cargada exitosamente (PNG): {len(img_base64)} chars")
-                    elif file_ext == '.jpg' or file_ext == '.jpeg':
-                        result = f"data:image/jpeg;base64,{img_base64}"
-                        print(f"DEBUG: Firma cargada exitosamente (JPEG): {len(img_base64)} chars")
-                    else:
-                        result = f"data:image/png;base64,{img_base64}"
-                        print(f"DEBUG: Firma cargada exitosamente (default PNG): {len(img_base64)} chars")
-            else:
-                print(f"DEBUG: No se encontraron archivos de firma para ID: {pathologist_id}")
-            
-            # Guardar en caché (incluso si es None para evitar búsquedas repetidas)
-            self._signature_cache[pathologist_id] = result
-            return result
-            
+            file_path = project_root / rel_path
+
+            if not file_path.exists():
+                print(f"DEBUG: Ruta de firma no encontrada en disco: {file_path}")
+                self._signature_cache[pathologist_id] = None
+                return None
+
+            mime_map = {
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.png': 'image/png',
+                '.gif': 'image/gif',
+                '.webp': 'image/webp'
+            }
+            file_ext = file_path.suffix.lower()
+            mime = mime_map.get(file_ext, 'image/png')
+
+            with open(file_path, "rb") as img_file:
+                img_data = img_file.read()
+                img_base64 = base64.b64encode(img_data).decode('utf-8')
+                data_url = f"data:{mime};base64,{img_base64}"
+                self._signature_cache[pathologist_id] = data_url
+                print(f"DEBUG: Firma convertida desde archivo legacy para ID: {pathologist_id}")
+                return data_url
+
         except Exception as e:
             print(f"Error obteniendo firma del patólogo: {e}")
-            # Cachear el error también para evitar intentos repetidos
-            if 'pathologist_id' in locals():
+            if 'pathologist_id' in locals() and pathologist_id:
                 self._signature_cache[pathologist_id] = None
             return None
