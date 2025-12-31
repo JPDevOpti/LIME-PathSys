@@ -89,8 +89,8 @@
         />
       </div>
 
-      <!-- Number of samples (only in create mode) -->
-      <div v-if="!editMode" class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+      <!-- Number of samples -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
         <FormInputField
           v-model.number="formData.numberOfSamples"
           label="Número de Muestras"
@@ -232,9 +232,7 @@ const emit = defineEmits<{
 }>()
 
 const onNumberOfSamplesChange = (value: string) => {
-  if (!props.editMode) {
-    emit('numberOfSamplesChange', Number(value))
-  }
+  emit('numberOfSamplesChange', Number(value))
 }
 
 const onAddTest = (sampleIndex: number) => emit('addTest', sampleIndex)

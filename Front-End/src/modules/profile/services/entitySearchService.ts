@@ -220,7 +220,17 @@ class EntitySearchService {
       const endpoint = includeInactive ? `${API_CONFIG.ENDPOINTS.RESIDENTS}/search` : API_CONFIG.ENDPOINTS.RESIDENTS
       const params: any = { skip: 0, limit: 1000 }
       const response = await apiClient.get(endpoint, { params })
-      return Array.isArray(response) ? response.map(this.normalizeResident) : []
+
+      // El backend puede responder como array directo o como objeto con data/items
+      const list = Array.isArray(response)
+        ? response
+        : Array.isArray((response as any)?.data)
+          ? (response as any).data
+          : Array.isArray((response as any)?.items)
+            ? (response as any).items
+            : []
+
+      return list.map(this.normalizeResident)
     } catch (error: any) {
       console.error('Error al obtener residentes:', error)
       if (error.response?.status === 404) return []

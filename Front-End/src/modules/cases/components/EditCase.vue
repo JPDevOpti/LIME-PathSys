@@ -130,6 +130,7 @@
             @pathologist-selected="onPathologistSelected"
             @update:state="(value: string) => state = value"
             @update:assigned-pathologist="(value: string) => assignedPathologist = value"
+            @number-of-samples-change="(v: number) => handleNumberOfSamplesChange(String(v))"
           />
 
           <template #footer>
@@ -275,7 +276,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const { notification, showError, closeNotification } = useNotifications()
-const { formData, errors, clearForm: clearCaseForm, addTestToSample, removeTestFromSample, createEmptySubSample } = useCaseForm()
+const { formData, errors, clearForm: clearCaseForm, addTestToSample, removeTestFromSample, createEmptySubSample, handleNumberOfSamplesChange } = useCaseForm()
 
 // UI and data state
 const isLoading = ref(false)

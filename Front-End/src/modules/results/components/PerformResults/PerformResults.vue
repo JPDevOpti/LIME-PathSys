@@ -101,28 +101,6 @@
             :show-validation="showValidation"
           >
             <template #footer>
-              <!-- Asignación de Residente - Antes de los botones -->
-              <div v-if="caseFound && caseDetails?.case_code" class="mb-4 pb-4 border-b border-gray-200">
-                <div class="p-4 bg-white border border-gray-200 rounded-lg">
-                  <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                    <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-                    </svg>
-                    Residente Asignado
-                  </h3>
-                  <ResidentList
-                    :model-value="assignedResidentCode"
-                    @update:model-value="handleResidentChange"
-                    label="Seleccionar Residente"
-                    placeholder="Buscar y seleccionar residente..."
-                    :required="false"
-                    :disabled="!canTranscribeByStatus || saving"
-                    help-text="Asigne un residente responsable de este caso (opcional)"
-                    @resident-selected="handleResidentSelected"
-                  />
-                </div>
-              </div>
-
               <!-- Botones de acción -->
               <div class="flex flex-wrap items-center gap-3 justify-end">
                 <ClearButton :disabled="loading" @click="() => { showValidation = false; handleClearResults() }" />
@@ -143,6 +121,29 @@
               </div>
             </template>
           </ResultEditor>
+
+          <!-- Asignación de residente en posición fija debajo del editor -->
+          <div
+            v-if="caseFound && caseDetails?.case_code"
+            class="mt-4 p-4 bg-white border border-gray-200 rounded-lg"
+          >
+            <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+              <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+              </svg>
+              Residente Asignado
+            </h3>
+            <ResidentList
+              :model-value="assignedResidentCode"
+              @update:model-value="handleResidentChange"
+              label="Seleccionar Residente"
+              placeholder="Buscar y seleccionar residente..."
+              :required="false"
+              :disabled="!canTranscribeByStatus || saving"
+              help-text="Asigne un residente responsable de este caso (opcional)"
+              @resident-selected="handleResidentSelected"
+            />
+          </div>
 
           <!-- Advertencia para casos que no están en proceso -->
           <div v-if="caseInfo?.case_code && !canTranscribeByStatus"
