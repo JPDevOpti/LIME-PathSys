@@ -1,4 +1,5 @@
 // Entities API: small fetch wrapper + mappers to normalized EntityInfo
+// Refactored to use apiClient (Axios) to ensure HTTPS and correct base URL
 import type { EntityInfo } from '../types'
 import { API_CONFIG } from '@/core/config/api.config'
 import apiClient from '@/core/config/axios.config'
