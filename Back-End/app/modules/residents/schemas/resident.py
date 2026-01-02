@@ -35,8 +35,8 @@ class ResidentUpdate(BaseModel):
 class ResidentResponse(ResidentBase):
     """Esquema para respuesta de residente"""
     id: str = Field(..., description="ID único del residente")
-    created_at: datetime = Field(..., description="Fecha de creación")
-    updated_at: datetime = Field(..., description="Fecha de última actualización")
+    created_at: Optional[datetime] = Field(None, description="Fecha de creación")
+    updated_at: Optional[datetime] = Field(None, description="Fecha de última actualización")
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 

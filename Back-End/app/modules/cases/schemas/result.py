@@ -29,10 +29,10 @@ class ResultUpdate(BaseModel):
                 raise ValueError('Los métodos no pueden estar vacíos')
             return non_empty if non_empty else None
         return v
-    macro_result: Optional[str] = Field(None, max_length=5000, description="Resultado macroscópico")
-    micro_result: Optional[str] = Field(None, max_length=5000, description="Resultado microscópico")
-    diagnosis: Optional[str] = Field(None, max_length=2000, description="Diagnóstico")
-    observations: Optional[str] = Field(None, max_length=1000, description="Observaciones adicionales")
+    macro_result: Optional[str] = Field(None, max_length=10000, description="Resultado macroscópico")
+    micro_result: Optional[str] = Field(None, max_length=10000, description="Resultado microscópico")
+    diagnosis: Optional[str] = Field(None, max_length=10000, description="Diagnóstico")
+    observations: Optional[str] = Field(None, max_length=5000, description="Observaciones adicionales")
     cie10_diagnosis: Optional[DiagnosisInfo] = Field(
         None, description="Diagnóstico CIE-10 en el nuevo formato"
     )

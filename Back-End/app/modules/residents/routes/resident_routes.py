@@ -39,7 +39,7 @@ async def create_resident(
 @router.get("/", response_model=List[ResidentResponse])
 async def list_residents(
     skip: int = Query(0, ge=0, description="Número de registros a omitir"),
-    limit: int = Query(10, ge=1, le=100, description="Número máximo de registros a devolver"),
+    limit: int = Query(10, ge=1, le=1000, description="Número máximo de registros a devolver"),
     resident_service: ResidentService = Depends(get_resident_service)
 ):
     """Listar residentes activos"""
