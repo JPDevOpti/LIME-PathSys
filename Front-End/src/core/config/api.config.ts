@@ -1,9 +1,8 @@
 // Configuración de la API del Backend
 export const API_CONFIG = {
   // URL base de la API - Forzamos HTTPS en producción para evitar Mixed Content
-  BASE_URL: (import.meta as any).env?.PROD 
-    ? 'https://lime-pathsys-backend.onrender.com'
-    : ((import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8000'),
+  // Si VITE_API_BASE_URL no está definida, usamos la URL de producción por defecto en lugar de localhost
+  BASE_URL: (import.meta as any).env?.VITE_API_BASE_URL || 'https://lime-pathsys-backend.onrender.com',
   
   // Versión de la API
   VERSION: '/api/v1',
