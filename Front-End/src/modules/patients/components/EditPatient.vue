@@ -836,7 +836,7 @@ const onSubmit = async () => {
       second_name: secondName,
       first_lastname: form.first_lastname.trim(),
       second_lastname: secondLastname,
-      birth_date: birthDateIso,
+      birth_date: birthDateIso || null,
       gender: form.gender as Gender,
       location: locationPayload,
       entity_info: {

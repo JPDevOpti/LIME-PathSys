@@ -593,7 +593,7 @@ const handleSaveClick = async () => {
       second_name: formData.second_name.trim() || undefined,
       first_lastname: formData.first_lastname.trim(),
       second_lastname: formData.second_lastname.trim() || undefined,
-      birth_date: toIsoDate(formData.birth_date),
+      birth_date: toIsoDate(formData.birth_date) || null,
       gender: formData.gender as Gender,
       location: hasLocation ? {
         municipality_code: formData.municipality_code.trim(),

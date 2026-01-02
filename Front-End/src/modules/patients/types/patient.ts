@@ -57,7 +57,7 @@ export interface CreatePatientRequest {
   second_name?: string | null
   first_lastname: string
   second_lastname?: string | null
-  birth_date: string
+  birth_date?: string | null
   gender: Gender
   location?: Location | null
   entity_info: EntityInfo
@@ -71,7 +71,7 @@ export interface UpdatePatientRequest {
   second_name?: string | null
   first_lastname?: string
   second_lastname?: string | null
-  birth_date?: string
+  birth_date?: string | null
   gender?: Gender
   location?: Partial<Location> | null
   entity_info?: Partial<EntityInfo>
