@@ -80,7 +80,7 @@
           <DateInputField 
             v-model="formData.birth_date" 
             label="Fecha de Nacimiento" 
-            :required="true" 
+            :required="false" 
             :max="maxBirthDate" 
             :errors="getBirthDateErrors" 
             @update:model-value="handleBirthDateInput" 
@@ -350,10 +350,7 @@ const validateForm = (): boolean => {
   }
 
   // Validate birth date
-  if (!formData.birth_date) {
-    errors.birth_date.push('La fecha de nacimiento es obligatoria')
-    isValid = false
-  } else {
+  if (formData.birth_date) {
     const birthDate = new Date(formData.birth_date)
     const today = new Date()
     const age = today.getFullYear() - birthDate.getFullYear()

@@ -156,7 +156,7 @@
             <DateInputField 
               v-model="form.birth_date" 
               label="Fecha de Nacimiento" 
-              :required="true" 
+              :required="false" 
               :max="maxBirthDate" 
               :errors="getBirthDateErrors"
               @update:model-value="handleBirthDateInput"
@@ -452,10 +452,7 @@ const validateForm = (): boolean => {
   }
 
   // Validate birth date
-  if (!form.birth_date) {
-    errors.birth_date.push('La fecha de nacimiento es obligatoria')
-    isValid = false
-  } else {
+  if (form.birth_date) {
     const iso = toISODateString(form.birth_date)
     if (!iso) {
       errors.birth_date.push('La fecha de nacimiento no es válida')
@@ -627,7 +624,6 @@ const isFormValid = computed(() => {
   return form.first_name.trim() !== '' && 
          form.first_lastname.trim() !== '' && 
          form.gender !== '' && 
-         form.birth_date !== '' && 
          form.entity_id && 
          form.care_type !== ''
 })

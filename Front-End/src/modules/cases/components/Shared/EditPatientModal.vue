@@ -101,7 +101,7 @@
               <DateInputField 
                 v-model="form.birth_date" 
                 label="Fecha de nacimiento" 
-                :required="true"
+                :required="false"
                 :max="maxBirthDate"
               />
               <FormSelect 
