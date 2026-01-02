@@ -122,6 +122,14 @@ class PatientBase(BaseModel):
     care_type: CareType = Field(...)
     observations: Optional[str] = Field(None, max_length=500)
 
+    @field_validator('birth_date', mode='before')
+    def parse_birth_date(cls, v):
+        if not v:
+            return None
+        if isinstance(v, str) and not v.strip():
+            return None
+        return v
+
     @field_validator('identification_number', mode='before')
     def validate_identification_number(cls, v):
         if not v or not v.strip():
@@ -165,6 +173,14 @@ class PatientUpdate(BaseModel):
     entity_info: Optional[EntityInfo] = None
     care_type: Optional[CareType] = None
     observations: Optional[str] = Field(None, max_length=500)
+
+    @field_validator('birth_date', mode='before')
+    def parse_birth_date(cls, v):
+        if not v:
+            return None
+        if isinstance(v, str) and not v.strip():
+            return None
+        return v
 
     @field_validator('identification_number', mode='before')
     def validate_identification_number(cls, v):
