@@ -191,7 +191,8 @@ export class TestsApiService {
 
   async getEntities(): Promise<EntitySelection[]> {
     try {
-      const endpoint = `/entities?limit=100`
+      // Add trailing slash to avoid 307 redirect
+      const endpoint = `/entities/?limit=100`
       const response = await this.makeRequest<any>(endpoint)
       
       if (Array.isArray(response)) {

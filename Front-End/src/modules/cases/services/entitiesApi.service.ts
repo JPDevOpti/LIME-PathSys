@@ -15,7 +15,8 @@ export class EntitiesApiService {
 
   // Active entities only
   async getEntities(): Promise<EntityInfo[]> {
-    const response = await apiClient.get<any>(`${API_CONFIG.ENDPOINTS.ENTITIES}?limit=100`)
+    // Add trailing slash to avoid 307 redirect which might cause Mixed Content issues on Render
+    const response = await apiClient.get<any>(`${API_CONFIG.ENDPOINTS.ENTITIES}/?limit=100`)
     return Array.isArray(response) ? response.map(this.mapEntity) : []
   }
 

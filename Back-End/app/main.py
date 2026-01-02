@@ -5,6 +5,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.encoders import jsonable_encoder
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 import os, logging
 from app.config.settings import settings
 from app.config.database import connect_to_mongo, close_mongo_connection, get_database
@@ -16,6 +17,8 @@ from app.modules.patients.repositories.patient_repository import PatientReposito
 from app.modules.unread_cases.repositories.unread_case_repository import UnreadCaseRepository
 
 app = FastAPI(title="WEB-LIS PathSys - New Backend", version="1.0.0")
+
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])
 
 app.add_middleware(
     CORSMiddleware,
