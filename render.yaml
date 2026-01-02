@@ -18,7 +18,7 @@ services:
       # CORS: Add the frontend URL here after deployment or use a wildcard temporarily if needed
       # Render provides the URL in the environment, but we might need to set it manually or use a script
       - key: BACKEND_CORS_ORIGINS
-        value: "*" 
+        value: "https://lime-pathsys-frontend.onrender.com"
 
   # Frontend Service
   - type: web
@@ -29,7 +29,4 @@ services:
     plan: free
     envVars:
       - key: VITE_API_BASE_URL
-        fromService:
-          type: web
-          name: lime-pathsys-backend
-          property: url
+        value: "https://lime-pathsys-backend.onrender.com"
