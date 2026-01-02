@@ -343,8 +343,8 @@ const searchPatient = async () => {
         .trim()
 
       // Calculate age from birth_date if age is not provided
-      let calculatedAge = match.age ?? ''
-      if (!calculatedAge && match.birth_date) {
+      let calculatedAge = match.age ?? 0
+      if ((calculatedAge === 0 || calculatedAge === '') && match.birth_date) {
         const birthDate = new Date(match.birth_date)
         const today = new Date()
         let age = today.getFullYear() - birthDate.getFullYear()

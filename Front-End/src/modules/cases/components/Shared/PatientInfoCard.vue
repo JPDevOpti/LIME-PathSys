@@ -44,7 +44,7 @@
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">Edad</p>
-              <p class="text-sm font-bold text-gray-900">{{ patient.age }} años</p>
+              <p class="text-sm font-bold text-gray-900">{{ (patient.age === 0 || patient.age === '0') ? 'N/A' : patient.age + ' años' }}</p>
               <p v-if="formattedBirthDate" class="text-xs text-gray-600 mt-0.5">Nac: {{ formattedBirthDate }}</p>
             </div>
           </div>
