@@ -35,6 +35,7 @@ import UrgentCaseDetailsModal from '../components/UrgentCaseDetailsModal.vue'
 import type { CasoUrgente } from '../types/dashboard.types'
 import { useAuthStore } from '@/stores/auth.store'
 import { profileApiService } from '@/modules/profile/services/profileApiService'
+import { API_CONFIG } from '@/core/config/api.config'
 import { useToasts } from '@/shared/composables/useToasts'
 import { useSignatureNotifier } from '@/shared/composables/useSignatureNotifier'
 
@@ -77,7 +78,7 @@ async function ensureSignatureStatus() {
     const rawSignature = (profile?.firma || (profile as any)?.signature || '').toString().trim()
 
     if (rawSignature) {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+      const baseUrl = API_CONFIG.BASE_URL
       const absoluteUrl = rawSignature.startsWith('http') ? rawSignature : `${baseUrl}${rawSignature}`
       user.firma = absoluteUrl
       user.firma_url = absoluteUrl

@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import { profileApiService } from '../services/profileApiService'
+import { API_CONFIG } from '@/core/config/api.config'
 
 /**
  * Composable for signature management functionality
@@ -86,7 +87,7 @@ export function useSignatureManager(userRole?: string, pathologistCode?: string)
           } else if (signatureUrl.startsWith('http')) {
             previewUrl.value = signatureUrl
           } else {
-            const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+            const base = API_CONFIG.BASE_URL
             previewUrl.value = `${base}${signatureUrl}`
           }
         } else {
@@ -139,7 +140,7 @@ export function useSignatureManager(userRole?: string, pathologistCode?: string)
       if (url.startsWith('data:') || url.startsWith('http')) {
         previewUrl.value = url
       } else {
-        const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+        const base = API_CONFIG.BASE_URL
         previewUrl.value = `${base}${url}`
       }
     } else if (!url) {

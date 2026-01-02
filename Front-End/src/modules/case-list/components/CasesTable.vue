@@ -417,8 +417,6 @@ const isDownloadingExcel = ref(false)
 const isPrintingPdf = ref(false)
 const showMarkDeliveredDrawer = ref(false)
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-
 const showWarningToast = (title: string, message: string) => {
   warning('generic', title, message, 5000)
 }
@@ -499,22 +497,12 @@ const handleBatchPrintPdf = async () => {
     }
     
     // Llamar al endpoint de batch PDF
-    const url = `${API_BASE_URL}/api/v1/cases/batch/pdf`
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ case_codes: caseCodes }),
+    const response = await apiClient.post('/cases/batch/pdf', { case_codes: caseCodes }, {
+      responseType: 'blob'
     })
     
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ detail: 'Error desconocido' }))
-      throw new Error(errorData.detail || `Error ${response.status}: ${response.statusText}`)
-    }
-    
     // Obtener el PDF como blob
-    const blob = await response.blob()
+    const blob = new Blob([response], { type: 'application/pdf' })
     
     // Crear URL del blob y abrir en nueva ventana
     const blobUrl = URL.createObjectURL(blob)

@@ -18,8 +18,9 @@
 import { computed, ref } from 'vue'
 import { PrintIcon } from '@/assets/icons'
 import { useToasts } from '@/shared/composables/useToasts'
+import { API_CONFIG } from '@/core/config/api.config'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const API_BASE_URL = API_CONFIG.BASE_URL
 
 interface Props {
   text?: string
