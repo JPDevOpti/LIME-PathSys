@@ -259,7 +259,6 @@ class PatientRepository:
             "identification_number": {"$exists": True, "$ne": None},
             "first_name": {"$exists": True, "$ne": None},
             "first_lastname": {"$exists": True, "$ne": None},
-            "birth_date": {"$exists": True, "$ne": None},
             "gender": {"$exists": True, "$ne": None},
             "entity_info": {"$exists": True, "$ne": None},
             "care_type": {"$exists": True, "$ne": None}
