@@ -102,7 +102,7 @@ export interface BackendTest {
   isActive?: boolean
 }
 
-const CASES_BASE = `${API_CONFIG.BASE_URL}${API_CONFIG.VERSION}/cases`
+const CASES_BASE = '/cases'
 
 export async function listCases(params: Record<string, any> = {}) {
   // Usar los parámetros directamente ya que vienen con los nombres correctos del backend
