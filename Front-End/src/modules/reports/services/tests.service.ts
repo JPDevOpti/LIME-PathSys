@@ -1,29 +1,15 @@
 import type { TestsReportData, TestDetails, EntitySelection } from '../types/tests.types'
-import { buildApiUrl, getAuthHeaders } from '@/core/config/api.config'
+import apiClient from '@/core/config/axios.config'
 
 export class TestsApiService {
-  private baseCases = `/cases`
+  private baseCases = '/cases'
 
   private async makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = buildApiUrl(endpoint)
-    
-    const defaultOptions: RequestInit = {
-      headers: getAuthHeaders(),
-      ...options,
-    }
-
     try {
-      const response = await fetch(url, defaultOptions)
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`)
-      }
-      
-      return await response.json()
-    } catch (error) {
-        console.warn(`API request fallida (${endpoint}). Causa:`, error)
-      throw error
+      const response = await apiClient.get<T>(endpoint, options)
+      return response as T
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || error.message || 'Error en la petición')
     }
   }
 
