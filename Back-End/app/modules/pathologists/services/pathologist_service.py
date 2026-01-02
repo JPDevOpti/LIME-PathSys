@@ -240,6 +240,15 @@ class PathologistService:
         if updated_at is None:
             updated_at = datetime.now(timezone.utc)
         
+        # Sanitize signature URL to remove localhost references (fix for Mixed Content on Render)
+        signature = doc.get("signature", "")
+        if signature and isinstance(signature, str) and "localhost" in signature and "/uploads" in signature:
+            try:
+                # Convert http://localhost:port/uploads/... to /uploads/...
+                signature = signature[signature.find("/uploads"):]
+            except Exception:
+                pass
+
         return PathologistResponse(
             id=doc["id"],
             pathologist_code=doc["pathologist_code"],
@@ -248,7 +257,7 @@ class PathologistService:
             pathologist_email=doc["pathologist_email"],
             medical_license=doc["medical_license"],
             is_active=doc["is_active"],
-            signature=doc.get("signature", ""),
+            signature=signature,
             observations=doc.get("observations"),
             created_at=created_at,
             updated_at=updated_at
