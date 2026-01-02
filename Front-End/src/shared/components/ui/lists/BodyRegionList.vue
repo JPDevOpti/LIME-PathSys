@@ -565,6 +565,7 @@ const bodyRegions: BodyRegion[] = [
   { value: 'multiple', label: 'Múltiples Regiones', category: 'Misceláneos' },
   { value: 'sistémico', label: 'Sistémico', category: 'Misceláneos' },
   { value: 'bilateral', label: 'Bilateral', category: 'Misceláneos' },
+  { value: 'caso_previo', label: 'Caso previo', category: 'Misceláneos' },
   { value: 'otro', label: 'Otro (Especificar)', category: 'Misceláneos' },
   { value: 'no_especificado', label: 'No Especificado', category: 'Misceláneos' },
   { value: 'no_aplica', label: 'No Aplica', category: 'Misceláneos' }
