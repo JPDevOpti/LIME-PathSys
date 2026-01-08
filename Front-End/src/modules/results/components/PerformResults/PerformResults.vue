@@ -50,7 +50,7 @@
                 placeholder="Ejemplo: 2025-00001"
                 maxlength="10"
                 autocomplete="off"
-                :disabled="isLoadingSearch"
+                :disabled="isLoadingSearch || caseFound"
                 @keydown.enter.prevent="searchCase"
                 @keydown="keydownHandler"
                 @paste="handlePaste"
@@ -65,6 +65,7 @@
                 text="Buscar"
                 loading-text="Buscando..."
                 :loading="isLoadingSearch"
+                :disabled="!caseCode.trim() || isLoadingSearch"
                 @click="searchCase"
                 size="md"
                 variant="primary"
@@ -572,7 +573,7 @@ const clearSearch = () => {
 // ------------------------
 // Notificaciones de guardado
 // ------------------------
-const { notification, showSuccess, showError, closeNotification } = useNotifications()
+const { notification, showSuccess, showInfo, showError, closeNotification } = useNotifications()
 
 const handleClearResults = () => {
   // Limpiar solo las secciones del editor, pero mantener la notificación
@@ -622,8 +623,8 @@ const handleSaveAction = async () => {
       if (currentState.isComplete) {
         showSuccess('Caso listo para firmar', `El caso ${currentState.caseCode} ha sido completado y está listo para firma.`, 0)
       } else {
-        // Mostrar solo título de éxito al guardar el progreso (sin mensaje detallado)
-        showSuccess('¡Progreso guardado!', '', 0)
+        // Mostrar notificación azul al guardar el progreso
+        showInfo('¡Progreso guardado!', `Los cambios del caso ${currentState.caseCode} han sido guardados exitosamente.`, 0)
       }
       
       // Mantener los datos visibles tras guardar/completar

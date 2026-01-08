@@ -58,13 +58,14 @@
           <div class="flex flex-col md:flex-row gap-3 md:gap-4 items-start md:items-center">
             <div class="flex-1">
               <FormInputField id="codigo-caso" :model-value="caseCode" @update:model-value="handleCaseCodeChange"
-                type="text" placeholder="Ejemplo: 2025-00001" maxlength="10" autocomplete="off" :disabled="isLoadingSearch"
+                type="text" placeholder="Ejemplo: 2025-00001" maxlength="10" autocomplete="off" :disabled="isLoadingSearch || caseFound"
                 @keydown.enter.prevent="searchCase" @keydown="keydownHandler" @paste="handlePaste" class="flex-1" />
 
             </div>
 
             <div class="flex gap-2 md:gap-3 md:mt-0 mt-2">
               <SearchButton v-if="!caseFound" text="Buscar" loading-text="Buscando..." :loading="isLoadingSearch"
+                :disabled="!caseCode.trim() || isLoadingSearch"
                 @click="searchCase" size="md" variant="primary" />
 
               <ClearButton v-if="caseFound" text="Limpiar" @click="clearSearch" />
@@ -338,7 +339,7 @@ const props = defineProps<Props>()
 const { loading, patient, caseDetails, activeSection, errorMessage, validationMessage, initialize, previousCases, sections, loadCaseByCode, primaryDiseaseCIEO, hasDiseaseCIEO, showCIEODiagnosis, setPrimaryDiseaseCIEO, clearPrimaryDiseaseCIEO } = usePerformResults(props.sampleId)
 const { isPatologo } = usePermissions()
 const authStore = useAuthStore()
-const { notification, showSuccess, showError, closeNotification } = useNotifications()
+const { notification, showSuccess, showInfo, showError, closeNotification } = useNotifications()
 const { primaryDisease, hasDisease, setPrimaryDisease, clearDiagnosis, validateDiagnosis } = useDiseaseDiagnosis()
 
 const handleClearSearch = () => clearSearch()
@@ -909,7 +910,7 @@ const handleSaveProgress = async () => {
     setSavedFromSections()
     savedCaseCode.value = casoCode
     
-    showSuccess('Progreso guardado', `Los cambios del caso ${casoCode} han sido guardados. Completa todos los campos para poder firmar.`, 5000)
+    showInfo('¡Progreso guardado!', `Los cambios del caso ${casoCode} han sido guardados exitosamente.`, 0)
     validationMessage.value = ''
     
   } catch (error: any) {

@@ -12,12 +12,14 @@ export function useNotifications() {
 
   const showSuccess = (title: string, message: string, duration = 0): void => { showNotification('success', title, message, duration) }
 
+  const showInfo = (title: string, message: string, duration = 0): void => { showNotification('info', title, message, duration) }
+
   const showError = (title: string, message: string, duration = 0): void => { showNotification('error', title, message, duration) }
 
 
   const closeNotification = (): void => { notification.visible = false }
 
   return {
-    notification, showNotification, showSuccess, showError, closeNotification
+    notification, showNotification, showSuccess, showInfo, showError, closeNotification
   }
 }

@@ -9,7 +9,7 @@
     :auto-close="props.autoClose"
     @close="$emit('close')"
   >
-    <template v-if="props.type === 'success'" #content>
+    <template v-if="props.type === 'success' || props.type === 'info'" #content>
       <div class="relative p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-sm">
         <div class="space-y-4">
           <div class="text-center pb-3 border-b border-gray-200">

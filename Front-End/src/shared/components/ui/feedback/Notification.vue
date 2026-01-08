@@ -157,7 +157,7 @@ const notificationClasses = computed(() => {
     success: 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-500',
     error: 'bg-gradient-to-r from-red-50 to-red-100 border-red-500',
     warning: 'bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-500',
-    info: 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-500'
+    info: 'bg-gradient-to-r from-blue-50 to-blue-100 border-blue-400'
   }
   return classes[props.type]
 })
