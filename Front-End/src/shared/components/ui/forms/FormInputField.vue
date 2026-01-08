@@ -21,6 +21,8 @@
         :ref="inputRef"
         :autocomplete="autocomplete"
         :inputmode="inputmode"
+        lang="es"
+        :spellcheck="type === 'text' || type === 'search' ? 'true' : 'false'"
       />
 
       <!-- Icono de error como tooltip (no desposiciona el layout) -->

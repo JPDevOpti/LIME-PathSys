@@ -150,6 +150,11 @@
       class="editor-content p-4 overflow-y-auto focus:outline-none"
       :style="{ minHeight: computedMinHeight, maxHeight: computedMaxHeight }"
       contenteditable="true"
+      :lang="props.language"
+      :spellcheck="props.spellcheck"
+      :autocorrect="props.spellcheck ? 'on' : 'off'"
+      :autocapitalize="props.spellcheck ? 'sentences' : 'off'"
+      :inputmode="props.spellcheck ? 'text' : 'none'"
       @input="handleInput"
       @blur="handleBlur"
       :placeholder="placeholder"
@@ -158,24 +163,68 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted, computed, withDefaults } from 'vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   modelValue: string
   placeholder?: string
   minHeight?: number
   maxHeight?: number
-}>()
+  language?: string
+  spellcheck?: boolean
+}>(), {
+  language: 'es',
+  spellcheck: true
+})
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
 }>()
 
-const editorRef = ref<HTMLDivElement>()
-
+// Referencia al div editable para manipular contenido y foco
+const editorRef = ref<HTMLDivElement | null>(null)
 // Alturas por defecto ligeramente más bajas que antes (era 400/600)
 const defaultMin = 360
 const defaultMax = 560
+
+// Fuerza el idioma y spellcheck en el nodo editable
+// IMPORTANTE: Firefox requiere tener instalado el diccionario español en about:addons
+// Chrome/Chromium detectan automáticamente el idioma del sistema
+const applyLanguageSettings = () => {
+  const lang = props.language || 'es'
+  if (editorRef.value) {
+    // Configurar propiedades DOM directamente
+    editorRef.value.lang = lang
+    editorRef.value.spellcheck = props.spellcheck
+    
+    // Configurar atributos HTML
+    editorRef.value.setAttribute('lang', lang)
+    editorRef.value.setAttribute('xml:lang', lang)
+    editorRef.value.setAttribute('spellcheck', props.spellcheck ? 'true' : 'false')
+    
+    // Atributos para Safari/iOS (no afectan Firefox)
+    editorRef.value.setAttribute('autocorrect', props.spellcheck ? 'on' : 'off')
+    editorRef.value.setAttribute('autocapitalize', props.spellcheck ? 'sentences' : 'off')
+    editorRef.value.setAttribute('inputmode', props.spellcheck ? 'text' : 'none')
+    
+    // Firefox: forzar re-evaluación del spellcheck
+    if (props.spellcheck) {
+      editorRef.value.blur()
+      setTimeout(() => editorRef.value?.focus(), 0)
+    }
+  }
+  
+  // Ajustar el documento principal
+  if (typeof document !== 'undefined') {
+    document.documentElement.lang = lang
+    document.documentElement.setAttribute('lang', lang)
+    document.documentElement.setAttribute('xml:lang', lang)
+    if (document.body) {
+      document.body.setAttribute('lang', lang)
+      document.body.setAttribute('xml:lang', lang)
+    }
+  }
+}
 
 const computedMinHeight = computed(() => `${props.minHeight ?? defaultMin}px`)
 const computedMaxHeight = computed(() => `${props.maxHeight ?? defaultMax}px`)
@@ -230,10 +279,14 @@ watch(() => props.modelValue, (newValue) => {
 
 // Inicializar contenido al montar
 onMounted(() => {
+  applyLanguageSettings()
   if (editorRef.value && props.modelValue) {
     editorRef.value.innerHTML = props.modelValue
   }
 })
+
+// Reaplicar idioma o spellcheck si cambian desde fuera
+watch(() => [props.language, props.spellcheck], () => applyLanguageSettings())
 </script>
 
 <style scoped>

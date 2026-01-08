@@ -13,6 +13,8 @@
       :rows="rows"
       :disabled="disabled"
       :class="computedTextareaClasses"
+      lang="es"
+      spellcheck="true"
     ></textarea>
     
     <!-- Solo texto de ayuda -->

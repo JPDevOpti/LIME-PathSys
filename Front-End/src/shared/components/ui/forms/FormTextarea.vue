@@ -14,6 +14,8 @@
       :maxlength="maxLength"
       :disabled="disabled"
       :class="computedTextareaClasses"
+      lang="es"
+      spellcheck="true"
     ></textarea>
     
     <!-- Contador de caracteres -->
