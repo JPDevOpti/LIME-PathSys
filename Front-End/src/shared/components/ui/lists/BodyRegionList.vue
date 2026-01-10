@@ -561,6 +561,13 @@ const bodyRegions: BodyRegion[] = [
   { value: 'ganglio_yugulodigastrico', label: 'Ganglio Yugulodigástrico', category: 'Sistema Hematolinfático' },
   { value: 'ganglio_hiliar', label: 'Ganglio Hiliar', category: 'Sistema Hematolinfático' },
 
+  // Órganos Trasplantados
+  { value: 'rinon_trasplantado', label: 'Riñón Trasplantado', category: 'Órganos Trasplantados' },
+  { value: 'corazon_trasplantado', label: 'Corazón Trasplantado', category: 'Órganos Trasplantados' },
+  { value: 'higado_trasplantado', label: 'Hígado Trasplantado', category: 'Órganos Trasplantados' },
+  { value: 'pancreas_trasplantado', label: 'Páncreas Trasplantado', category: 'Órganos Trasplantados' },
+  { value: 'pulmon_trasplantado', label: 'Pulmón Trasplantado', category: 'Órganos Trasplantados' },
+
   // Misceláneos
   { value: 'multiple', label: 'Múltiples Regiones', category: 'Misceláneos' },
   { value: 'sistémico', label: 'Sistémico', category: 'Misceláneos' },

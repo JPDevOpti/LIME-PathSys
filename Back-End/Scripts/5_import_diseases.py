@@ -82,7 +82,29 @@ def process_excel_data(file_path: str) -> List[Dict[str, str]]:
             }
             diseases.append(disease)
         
-        print(f"Procesadas {len(diseases)} enfermedades válidas de {len(df)} filas totales")
+        # Agregar manualmente los códigos faltantes
+        extra_diseases = [
+            {
+                'table': 'CIE10',
+                'code': 'M3214',
+                'name': 'Lupus eritematoso sistémico con compromiso de órganos o sistemas.',
+                'description': 'Lupus eritematoso sistémico con compromiso de órganos o sistemas.'
+            },
+            {
+                'table': 'CIE10',
+                'code': 'Z941',
+                'name': 'Estado de trasplante de corazón.',
+                'description': 'Estado de trasplante de corazón.'
+            },
+            {
+                'table': 'CIE10',
+                'code': 'A000',
+                'name': 'ver en ghibs',
+                'description': 'ver en ghibs'
+            }
+        ]
+        diseases.extend(extra_diseases)
+        print(f"Procesadas {len(diseases)} enfermedades válidas de {len(df)} filas totales (incluyendo agregadas manualmente)")
         return diseases
         
     except Exception as e:
@@ -142,8 +164,57 @@ def main():
     parser = argparse.ArgumentParser(description="Importar enfermedades desde archivo Excel")
     parser.add_argument("--file", help="Ruta al archivo Excel (opcional, si no se proporciona se abrirá un diálogo)")
     parser.add_argument("--dry-run", action="store_true", help="No escribir a la BD, solo previsualizar")
+    parser.add_argument("--insert-extra-only", action="store_true", help="Solo insertar los tres códigos especiales (sin procesar Excel)")
     args = parser.parse_args()
-    
+
+    if args.insert_extra_only:
+        # Solo insertar los tres códigos especiales, saltando si ya existen
+        async def insert_extras():
+            db = await connect_to_mongo()
+            repo = DiseaseRepository(db)
+            extra_diseases = [
+                {
+                    'table': 'CIE10',
+                    'code': 'M3214',
+                    'name': 'Lupus eritematoso sistémico con compromiso de órganos o sistemas.',
+                    'description': 'Lupus eritematoso sistémico con compromiso de órganos o sistemas.'
+                },
+                {
+                    'table': 'CIE10',
+                    'code': 'Z941',
+                    'name': 'Estado de trasplante de corazón.',
+                    'description': 'Estado de trasplante de corazón.'
+                },
+                {
+                    'table': 'CIE10',
+                    'code': 'A000',
+                    'name': 'ver en ghibs',
+                    'description': 'ver en ghibs'
+                }
+            ]
+            created = 0
+            skipped = 0
+            for disease in extra_diseases:
+                exists = await repo.get_by_code(disease['code'])
+                if exists:
+                    print(f"[SKIP] {disease['code']} ya existe: {disease['name']}")
+                    skipped += 1
+                    continue
+                payload = DiseaseCreate(
+                    table=disease['table'],
+                    code=disease['code'],
+                    name=disease['name'],
+                    description=disease['description'],
+                    is_active=True
+                )
+                await repo.create(payload)
+                print(f"[OK] Enfermedad creada: {disease['code']} - {disease['name']}")
+                created += 1
+            await close_mongo_connection()
+            print(f"Completado solo extra. Creadas: {created}, Saltadas: {skipped}")
+        asyncio.run(insert_extras())
+        return
+
     # Obtener ruta del archivo
     file_path = args.file
     if not file_path:
@@ -151,20 +222,20 @@ def main():
         if not file_path:
             print("No se seleccionó ningún archivo. Saliendo...")
             return
-    
+
     # Verificar que el archivo existe
     if not os.path.exists(file_path):
         print(f"Error: El archivo {file_path} no existe.")
         return
-    
+
     print(f"Procesando archivo: {file_path}")
-    
+
     # Procesar datos del Excel
     diseases = process_excel_data(file_path)
     if not diseases:
         print("No se pudieron procesar datos del archivo Excel.")
         return
-    
+
     # Importar enfermedades
     created, skipped = asyncio.run(import_diseases(diseases, dry_run=args.dry_run))
     print(f"Completado. Creadas: {created}, Saltadas: {skipped}")
