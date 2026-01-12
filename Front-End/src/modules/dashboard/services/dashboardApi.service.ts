@@ -93,9 +93,9 @@ class DashboardApiService {
 
       if (!code) return this.getCasosPorMes(año)
 
-      return this._getCasosPorMes(`${this.baseUrl.CASES}/statistics/dashboard/cases-by-month/pathologist/${año || new Date().getFullYear()}`, { 
-        pathologist_code: code, 
-        no_cache: true 
+      return this._getCasosPorMes(`${this.baseUrl.CASES}/statistics/dashboard/cases-by-month/pathologist/${año || new Date().getFullYear()}`, {
+        pathologist_code: code,
+        no_cache: true
       })
     } catch (error) {
       return this.getCasosPorMes(año)
@@ -114,9 +114,9 @@ class DashboardApiService {
         return defaultResponse
       }
 
-      return { 
-        datos: data.datos, 
-        total: typeof data.total === 'number' ? data.total : 0, 
+      return {
+        datos: data.datos,
+        total: typeof data.total === 'number' ? data.total : 0,
         año: typeof data.año === 'number' ? data.año : añoActual
       }
     } catch (error) {
@@ -200,7 +200,8 @@ class DashboardApiService {
       paciente: {
         nombre: caso.paciente_nombre || 'N/A',
         cedula: caso.paciente_documento || 'N/A',
-        entidad: caso.entidad_nombre || 'Sin entidad'
+        entidad: caso.entidad_nombre || 'Sin entidad',
+        entidad_codigo: caso.entidad_codigo || undefined
       },
       pruebas: caso.pruebas || [],
       patologo: caso.patologo_nombre || 'Sin asignar',

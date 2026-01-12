@@ -54,7 +54,7 @@ class DiseaseService {
           skip: 0
         }
       })
-      
+
       const backendData = response.data || response
       return {
         diseases: backendData.diseases || [],
@@ -70,44 +70,20 @@ class DiseaseService {
   /**
    * Buscar enfermedades por nombre o código
    */
-  async searchDiseases(query: string, limit: number = 15000): Promise<DiseaseSearchResponse> {
+  async searchDiseases(query: string, limit: number = 15000, table?: string): Promise<DiseaseSearchResponse> {
     try {
-      // Intentar buscar por código primero (si parece un código)
-      if (/^[A-Z]\d{2,3}$/.test(query.toUpperCase())) {
-        
-        const response = await apiClient.get(`${this.endpoint}/search/code`, {
-          params: {
-            q: query,
-            limit,
-            skip: 0
-          }
-        })
-        
-        // El nuevo backend devuelve { diseases: [...], search_term: ..., skip: ..., limit: ... }
-        const backendData = response.data || response
-        
-        return {
-          diseases: backendData.diseases || [],
-          search_term: backendData.search_term || query,
-          total: backendData.diseases?.length || 0,
-          skip: backendData.skip || 0,
-          limit: backendData.limit || limit
-        }
-      }
-      
-      // Si no es un código, buscar por nombre
-      
-      const response = await apiClient.get(`${this.endpoint}/search/name`, {
+      // Usar endpoint unificado de búsqueda (nombre o código)
+      const response = await apiClient.get(`${this.endpoint}/search`, {
         params: {
           q: query,
           limit,
-          skip: 0
+          skip: 0,
+          table: table || undefined
         }
       })
-      
-      // El nuevo backend devuelve { diseases: [...], search_term: ..., skip: ..., limit: ... }
+
       const backendData = response.data || response
-      
+
       return {
         diseases: backendData.diseases || [],
         search_term: backendData.search_term || query,
@@ -125,7 +101,7 @@ class DiseaseService {
    */
   async getAllDiseases(): Promise<DiseaseListResponse> {
     try {
-      
+
       // Usar el endpoint general para enfermedades (no necesita filtro activo/inactivo)
       const response = await apiClient.get(`${this.endpoint}`, {
         params: {
@@ -133,18 +109,18 @@ class DiseaseService {
           limit: 15000 // Límite alto para obtener todas las enfermedades
         }
       })
-      
-      
+
+
       // El nuevo backend devuelve { diseases: [...], total: ..., skip: ..., limit: ... }
       const backendData = response.data || response
-      
-      
+
+
       const result = {
         diseases: backendData.diseases || [],
         total: backendData.total || 0,
         skip: backendData.skip || 0,
         limit: backendData.limit || 15000
-      }      
+      }
       return result
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Error al obtener enfermedades')
@@ -186,10 +162,10 @@ class DiseaseService {
           limit
         }
       })
-      
+
       // El nuevo backend devuelve { diseases: [...], table: ..., skip: ..., limit: ... }
       const backendData = response.data
-      
+
       return {
         diseases: backendData.diseases || [],
         table: backendData.table || tabla,

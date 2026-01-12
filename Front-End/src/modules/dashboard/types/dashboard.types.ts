@@ -18,6 +18,7 @@ export interface CasoUrgente {
     nombre: string
     cedula: string
     entidad?: string
+    entidad_codigo?: string
   }
   pruebas: string[]
   patologo: string

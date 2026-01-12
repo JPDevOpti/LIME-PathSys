@@ -263,13 +263,14 @@ const handleSearch = async () => {
   showResultsTable.value = true // Mostrar tabla solo cuando se hace clic en "Buscar"
   
   try {
-    // Hacer búsqueda amplia en el servidor para obtener más resultados
-    const result = await searchDiseases('', 'CIE10', 10000) // Obtener todas las enfermedades
+    // Hacer búsqueda en el backend usando el término ingresado
+    const result = await searchDiseases(searchQuery.value, 'CIE10', 100) 
     
     if (result.success && result.diseases) {
-      // Filtrar localmente con búsqueda flexible
-      const filteredResults = filterDiseasesFlexibly(result.diseases, searchQuery.value)
-      searchResults.value = filteredResults
+      // Ordenar resultados para mejor experiencia (exact match primero, etc)
+      // Usamos filterDiseasesFlexibly solo para reordenar, ya que el backend hizo el filtrado
+      const sortedResults = filterDiseasesFlexibly(result.diseases, searchQuery.value)
+      searchResults.value = sortedResults
     } else {
       searchResults.value = []
       loadError.value = result.error || 'Error al buscar enfermedades'
@@ -304,13 +305,13 @@ const handleSearchCIEO = async () => {
   showResultsTable.value = true // Mostrar tabla solo cuando se hace clic en "Buscar"
   
   try {
-    // Hacer búsqueda amplia en el servidor para obtener más resultados
-    const result = await searchDiseases('', 'CIEO', 10000) // Obtener todas las enfermedades
+    // Hacer búsqueda en el backend usando el término ingresado
+    const result = await searchDiseases(searchQueryCIEO.value, 'CIEO', 100) 
     
     if (result.success && result.diseases) {
-      // Filtrar localmente con búsqueda flexible
-      const filteredResults = filterDiseasesFlexibly(result.diseases, searchQueryCIEO.value)
-      searchResults.value = filteredResults
+      // Ordenar resultados
+      const sortedResults = filterDiseasesFlexibly(result.diseases, searchQueryCIEO.value)
+      searchResults.value = sortedResults
     } else {
       searchResults.value = []
       loadError.value = result.error || 'Error al buscar enfermedades'

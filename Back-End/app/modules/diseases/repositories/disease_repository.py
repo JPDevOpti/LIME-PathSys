@@ -67,13 +67,17 @@ class DiseaseRepository:
         self, 
         name: str, 
         skip: int = 0, 
-        limit: int = 100
+        limit: int = 100,
+        table: Optional[str] = None
     ) -> List[DiseaseResponse]:
         """Search diseases by name"""
         filter_query = {
             "name": {"$regex": name, "$options": "i"},
             "is_active": True
         }
+        
+        if table:
+            filter_query["table"] = table
         
         cursor = self.collection.find(filter_query).skip(skip).limit(limit)
         documents = await cursor.to_list(length=limit)
@@ -94,13 +98,51 @@ class DiseaseRepository:
         self, 
         code: str, 
         skip: int = 0, 
-        limit: int = 100
+        limit: int = 100,
+        table: Optional[str] = None
     ) -> List[DiseaseResponse]:
         """Search diseases by code"""
         filter_query = {
             "code": {"$regex": code, "$options": "i"},
             "is_active": True
         }
+        
+        if table:
+            filter_query["table"] = table
+        
+        cursor = self.collection.find(filter_query).skip(skip).limit(limit)
+        documents = await cursor.to_list(length=limit)
+        
+        diseases = []
+        for doc in documents:
+            doc = self._convert_objectid_to_string(doc)
+            try:
+                disease = DiseaseResponse(**doc)
+                diseases.append(disease)
+            except Exception as e:
+                print(f"Error converting document: {e}")
+                continue
+        
+        return diseases
+
+    async def search_general(
+        self, 
+        query: str, 
+        skip: int = 0, 
+        limit: int = 100,
+        table: Optional[str] = None
+    ) -> List[DiseaseResponse]:
+        """Search diseases by name OR code"""
+        filter_query = {
+            "$or": [
+                {"name": {"$regex": query, "$options": "i"}},
+                {"code": {"$regex": query, "$options": "i"}}
+            ],
+            "is_active": True
+        }
+        
+        if table:
+            filter_query["table"] = table
         
         cursor = self.collection.find(filter_query).skip(skip).limit(limit)
         documents = await cursor.to_list(length=limit)

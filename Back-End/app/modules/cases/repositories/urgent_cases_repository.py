@@ -100,7 +100,8 @@ class UrgentCasesRepository:
                     "created_at": "$doc.created_at",
                     "state": "$doc.state",
                     "priority": "$doc.priority",
-                    "days_in_system": "$doc.days_in_system"
+                    "days_in_system": "$doc.days_in_system",
+                    "entity_code": "$doc.patient_info.entity_info.id"
                 }
             }
         ]

@@ -68,6 +68,7 @@ async def get_all_diseases(
 @router.get("/search/name", response_model=DiseaseSearchResponseSchema)
 async def search_diseases_by_name(
     q: str = Query(..., min_length=1, description="Search term by name"),
+    table: Optional[str] = Query(None, description="Filter by table (e.g. CIE10, CIEO)"),
     skip: int = Query(0, ge=0, description="Number of elements to skip"),
     limit: int = Query(100, ge=1, le=15000, description="Maximum number of elements to return"),
     service: DiseaseService = Depends(get_disease_service)
@@ -80,13 +81,14 @@ async def search_diseases_by_name(
     GET /diseases/search/name?q=COLERA&skip=0&limit=20
     ```
     """
-    result = await service.search_diseases_by_name(q, skip, limit)
+    result = await service.search_diseases_by_name(q, skip, limit, table)
     return result
 
 
 @router.get("/search/code", response_model=DiseaseSearchResponseSchema)
 async def search_diseases_by_code(
     q: str = Query(..., min_length=1, description="Search term by code"),
+    table: Optional[str] = Query(None, description="Filter by table (e.g. CIE10, CIEO)"),
     skip: int = Query(0, ge=0, description="Number of elements to skip"),
     limit: int = Query(100, ge=1, le=15000, description="Maximum number of elements to return"),
     service: DiseaseService = Depends(get_disease_service)
@@ -99,7 +101,27 @@ async def search_diseases_by_code(
     GET /diseases/search/code?q=A00&skip=0&limit=20
     ```
     """
-    result = await service.search_diseases_by_code(q, skip, limit)
+    result = await service.search_diseases_by_code(q, skip, limit, table)
+    return result
+
+
+@router.get("/search", response_model=DiseaseSearchResponseSchema)
+async def search_diseases(
+    q: str = Query(..., min_length=1, description="Search term (name or code)"),
+    table: Optional[str] = Query(None, description="Filter by table (e.g. CIE10, CIEO)"),
+    skip: int = Query(0, ge=0, description="Number of elements to skip"),
+    limit: int = Query(100, ge=1, le=15000, description="Maximum number of elements to return"),
+    service: DiseaseService = Depends(get_disease_service)
+):
+    """
+    Search diseases by name OR code
+    
+    **Example usage:**
+    ```
+    GET /diseases/search?q=XXX&skip=0&limit=20
+    ```
+    """
+    result = await service.search_diseases_general(q, skip, limit, table)
     return result
 
 

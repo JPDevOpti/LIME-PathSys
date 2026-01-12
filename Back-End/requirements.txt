@@ -1,51 +1,51 @@
-# FastAPI y dependencias principales
-fastapi==0.117.1
-uvicorn[standard]==0.32.1
-pydantic==2.10.0
-pydantic-settings==2.1.0
-pydantic-core==2.27.0
+# --- Core Framework ---
+# FastAPI estándar incluye uvicorn, email-validator, httpx, etc.
+fastapi[standard]>=0.115.0
+uvicorn[standard]>=0.32.0
 
-# Base de datos MongoDB
-motor==3.7.1
-pymongo==4.15.1
-dnspython==2.7.0
+# --- Pydantic & Validación ---
+pydantic>=2.10.0
+pydantic-settings>=2.6.0
+pydantic-core>=2.27.0
+# Nota: email-validator ya viene en fastapi[standard], pero se puede dejar explícito
+email-validator>=2.2.0
 
-# Autenticación y seguridad
-python-jose[cryptography]==3.3.0
-cryptography==46.0.1
-passlib[bcrypt]==1.7.4
-bcrypt==5.0.0
-argon2-cffi==25.1.0
-argon2-cffi-bindings==25.1.0
-python-multipart==0.0.6
+# --- Base de datos (MongoDB) ---
+# Motor se encarga de instalar pymongo compatible
+motor>=3.6.0
+dnspython>=2.7.0
 
-# CORS y middleware
-starlette==0.40.0
+# --- Seguridad y Autenticación (CRÍTICO) ---
+# IMPORTANTE: python-jose está abandonada/deprecada. Se reemplaza por PyJWT.
+PyJWT>=2.9.0
+# passlib está en modo mantenimiento, pero sigue siendo el estándar con bcrypt
+passlib[bcrypt]>=1.7.4
+bcrypt>=4.2.0
+# python-multipart 0.0.6 tiene vulnerabilidad DoS. Actualizar a >=0.0.18 es obligatorio.
+python-multipart>=0.0.18
+# Argon2 para hashing moderno
+argon2-cffi>=23.1.0
 
-# Validación de email
-email-validator==2.1.0
+# --- Utilidades ---
+python-dotenv>=1.0.1
+typing-extensions>=4.12.0
 
-# Utilidades
-python-dotenv==1.0.0
-typing-extensions==4.15.0
+# --- Logging ---
+loguru>=0.7.2
+python-json-logger>=2.0.7
 
-# Logging y monitoreo
-loguru==0.7.2
-python-json-logger==2.0.7
+# --- Procesamiento de Datos ---
+openpyxl>=3.1.5
+pandas>=2.2.3
 
-# Cliente HTTP para testing
-httpx==0.25.2
- 
-# Procesamiento de datos para scripts de importación
-openpyxl==3.1.5
-pandas==2.2.3
+# --- Generación de PDFs ---
+playwright>=1.48.0
+jinja2>=3.1.4  # Versiones anteriores tienen fallos de seguridad
+markupsafe>=3.0.2
+pypdf>=5.1.0
 
-# Generación de PDFs
-playwright==1.48.0
-jinja2==3.1.2
-markupsafe==3.0.2
-pypdf==5.1.0
-# Testing dependencies
-pytest>=7.0.0
-pytest-asyncio>=0.23.0
-# httpx is already pinned above for TestClient usage
+# --- Testing ---
+pytest>=8.3.0
+pytest-asyncio>=0.24.0
+# httpx se actualiza para compatibilidad con versiones nuevas de FastAPI
+httpx>=0.27.2

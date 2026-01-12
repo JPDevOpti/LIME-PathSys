@@ -350,7 +350,10 @@ const sortOrder = ref('desc')
 
 // Sorted urgent cases according to the selected column and order
 const casosUrgentes = computed(() => {
-  return casos.value.slice().sort((a, b) => {
+  return casos.value
+    .filter(c => c.paciente.entidad_codigo !== 'HAMA')
+    .slice()
+    .sort((a, b) => {
     const getVal = (caso: CasoUrgente) => {
       switch (sortKey.value) {
         case 'codigo': {

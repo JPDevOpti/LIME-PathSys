@@ -75,11 +75,12 @@ class DiseaseService:
         self, 
         name: str, 
         skip: int = 0, 
-        limit: int = 100
+        limit: int = 100,
+        table: Optional[str] = None
     ) -> Dict[str, Any]:
         """Search diseases by name"""
         try:
-            diseases = await self.repository.search_by_name(name, skip, limit)
+            diseases = await self.repository.search_by_name(name, skip, limit, table)
             
             return {
                 "diseases": diseases,
@@ -95,11 +96,12 @@ class DiseaseService:
         self, 
         code: str, 
         skip: int = 0, 
-        limit: int = 100
+        limit: int = 100,
+        table: Optional[str] = None
     ) -> Dict[str, Any]:
         """Search diseases by code"""
         try:
-            diseases = await self.repository.search_by_code(code, skip, limit)
+            diseases = await self.repository.search_by_code(code, skip, limit, table)
             
             return {
                 "diseases": diseases,
@@ -109,6 +111,27 @@ class DiseaseService:
             }
         except Exception as e:
             logger.error(f"Error searching diseases by code: {str(e)}")
+            raise HTTPException(status_code=500, detail="Internal server error")
+
+    async def search_diseases_general(
+        self, 
+        query: str, 
+        skip: int = 0, 
+        limit: int = 100,
+        table: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Search diseases by name OR code"""
+        try:
+            diseases = await self.repository.search_general(query, skip, limit, table)
+            
+            return {
+                "diseases": diseases,
+                "search_term": query,
+                "skip": skip,
+                "limit": limit
+            }
+        except Exception as e:
+            logger.error(f"Error searching diseases generally: {str(e)}")
             raise HTTPException(status_code=500, detail="Internal server error")
     
     async def get_diseases_by_table(

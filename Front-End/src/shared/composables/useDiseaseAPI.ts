@@ -27,9 +27,9 @@ export function useDiseaseAPI() {
 
     try {
       const result = await diseaseService.getAllDiseases()
-      
+
       diseases.value = result.diseases
-      
+
       return {
         success: true,
         diseases: result.diseases,
@@ -37,7 +37,7 @@ export function useDiseaseAPI() {
       }
     } catch (err: any) {
       let errorMessage = 'Error al cargar enfermedades'
-      
+
       if (err.response?.status === 307) {
         errorMessage = 'Error de redirección en el servidor. Verificar configuración de endpoints.'
       } else if (err.response?.data?.detail) {
@@ -47,9 +47,9 @@ export function useDiseaseAPI() {
       } else if (err.message) {
         errorMessage = err.message
       }
-      
+
       error.value = errorMessage
-      
+
       return {
         success: false,
         error: errorMessage
@@ -70,28 +70,17 @@ export function useDiseaseAPI() {
       let diseasesList: Disease[] = []
       const searchTerm = query.trim().toLowerCase()
 
-      if (tabla && tabla.trim()) {
-        if (tabla === 'CIEO') {
-          const response = await diseaseService.searchDiseasesByTabla('CIEO', limit)
-          diseasesList = searchTerm
-            ? response.diseases.filter(disease =>
-                disease.name.toLowerCase().includes(searchTerm) ||
-                disease.code.toLowerCase().includes(searchTerm)
-              )
-            : response.diseases
-        } else if (tabla === 'CIE10') {
-          const response = await diseaseService.searchDiseasesByTabla('CIE10', limit)
-          diseasesList = searchTerm
-            ? response.diseases.filter(disease =>
-                disease.name.toLowerCase().includes(searchTerm) ||
-                disease.code.toLowerCase().includes(searchTerm)
-              )
-            : response.diseases
-        } else {
-          const response = await diseaseService.searchDiseases(query, limit)
-          diseasesList = response.diseases
-        }
+      if (searchTerm) {
+        // Si hay término de búsqueda, usamos la búsqueda del backend que soporta filtro por tabla
+        // Esto evita tener que descargar toda la lista y filtrarla localmente
+        const response = await diseaseService.searchDiseases(searchTerm, limit, tabla && tabla.trim() ? tabla : undefined)
+        diseasesList = response.diseases
+      } else if (tabla && tabla.trim()) {
+        // Si no hay término pero hay tabla, traemos los de la tabla (hasta el límite)
+        const response = await diseaseService.searchDiseasesByTabla(tabla, limit)
+        diseasesList = response.diseases
       } else {
+        // Fallback: búsqueda general (aquí query está vacío)
         const response = await diseaseService.searchDiseases(query, limit)
         diseasesList = response.diseases
       }
@@ -104,7 +93,7 @@ export function useDiseaseAPI() {
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || err.message || 'Error en la búsqueda'
       error.value = errorMessage
-      
+
       return {
         success: false,
         error: errorMessage
@@ -123,7 +112,7 @@ export function useDiseaseAPI() {
 
     try {
       const disease = await diseaseService.getDiseaseById(id)
-      
+
       return {
         success: true,
         diseases: [disease],
@@ -151,7 +140,7 @@ export function useDiseaseAPI() {
 
     try {
       const disease = await diseaseService.getDiseaseByCode(codigo)
-      
+
       return {
         success: true,
         diseases: [disease],
@@ -175,7 +164,7 @@ export function useDiseaseAPI() {
     diseases,
     isLoading,
     error,
-    
+
     // Métodos
     loadDiseases,
     searchDiseases,
