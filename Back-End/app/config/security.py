@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Any, Union, Optional, Dict
-from jose import jwt, JWTError
+import jwt
+from jwt.exceptions import PyJWTError
 from passlib.context import CryptContext
 from app.config.settings import settings
 
@@ -50,7 +51,7 @@ def decode_token(token: str) -> Optional[dict]:
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
         return payload
-    except JWTError:
+    except PyJWTError:
         return None
 
 def verify_token_payload(token: str) -> Optional[dict]:
