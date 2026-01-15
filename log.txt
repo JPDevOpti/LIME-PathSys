@@ -1,0 +1,5 @@
+commit c7e1fa68748cf2faa387f736c4b02081a8815b5f
+Author: Juan Pablo Restrepo <juan.restrepo183@udea.edu.co>
+Date:   Fri Jan 9 21:41:27 2026 -0500
+
+    feat(BodyRegionList): add transplanted organs and lymph nodes

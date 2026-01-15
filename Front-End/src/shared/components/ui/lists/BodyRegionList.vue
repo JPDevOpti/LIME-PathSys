@@ -538,6 +538,7 @@ const bodyRegions: BodyRegion[] = [
   { value: 'cavidad_peritoneal', label: 'Cavidad Peritoneal', category: 'Cavidades Corporales' },
   { value: 'cavidad_pericardica', label: 'Cavidad Pericárdica', category: 'Cavidades Corporales' },
   { value: 'retroperitoneo', label: 'Retroperitoneo', category: 'Cavidades Corporales' },
+  { value: 'peritoneo', label: 'Peritoneo', category: 'Cavidades Corporales' },
 
   // Dientes y Estructuras Odontogénicas
   { value: 'diente', label: 'Diente', category: 'Dientes y Estructuras Odontogénicas' },
