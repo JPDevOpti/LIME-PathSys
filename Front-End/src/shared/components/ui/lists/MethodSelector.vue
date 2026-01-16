@@ -84,7 +84,7 @@ const selectedMethod = ref(props.modelValue)
 // Métodos predefinidos (lista actualizada)
 const defaultMethods = [
   { value: 'hematoxilina-eosina', label: 'Hematoxilina-Eosina' },
-  { value: 'inmunohistoquimica-polimero-peroxidasa', label: 'Inmunohistoquimica: Polímero-Peroxidasa' },
+  { value: 'inmunohistoquimica-polimero-peroxidasa', label: 'Inmunohistoquímica: Polímero-Peroxidasa' },
   { value: 'coloraciones-especiales', label: 'Coloraciones especiales' },
   { value: 'inmunofluorescencia-metodo-directo', label: 'Inmunoflurescencia: método directo' }
 ]

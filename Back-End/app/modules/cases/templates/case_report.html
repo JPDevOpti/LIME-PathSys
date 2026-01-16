@@ -421,7 +421,7 @@
         <td class="patient-value" style="width: 30%; word-break: break-word;">{{ case.paciente.sexo if case.paciente else 'Elija un elemento.' }}</td>
       </tr>
       <tr>
-        <td class="patient-label" style="width: 20%;">Patólogo Asignado:</td>
+        <td class="patient-label" style="width: 20%;">Médico(a) Patólogo(a):</td>
         <td class="patient-value" style="width: 30%; word-break: break-word;">{{ case.patologo_asignado.nombre if case.patologo_asignado else '' }}</td>
         <td class="patient-label" style="width: 20%;">Médico Remitente:</td>
         <td class="patient-value" style="width: 30%; word-break: break-word;">{{ case.medico_solicitante or '' }}</td>
@@ -497,7 +497,7 @@
       <img src="{{ pathologist_signature }}" alt="Firma del patólogo" style="height: 15mm; width: auto; object-fit: contain; display: block;"/>
       {% endif %}
       <div class="signature-line"></div>
-      <div><span class="signature-label">Médico Patólogo:</span> {% if case.patologo_asignado %}{{ case.patologo_asignado.nombre }}{% if case.patologo_asignado.registro_medico %} - {{ case.patologo_asignado.registro_medico }}{% endif %}{% endif %}</div>
+      <div><span class="signature-label">Médico(a) Patólogo(a):</span> {% if case.patologo_asignado %}{{ case.patologo_asignado.nombre }}{% if case.patologo_asignado.registro_medico %} - {{ case.patologo_asignado.registro_medico }}{% endif %}{% endif %}</div>
       {% if case.residente_asignado %}
       <div><span class="signature-label">Residente:</span> {{ case.residente_asignado.nombre }}{% if case.residente_asignado.registro_medico %} - {{ case.residente_asignado.registro_medico }}{% endif %}</div>
       {% endif %}
