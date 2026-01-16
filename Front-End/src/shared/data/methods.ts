@@ -2,7 +2,8 @@ export const AVAILABLE_METHODS = [
   { value: 'hematoxilina-eosina', label: 'Hematoxilina-Eosina' },
   { value: 'inmunohistoquimica-polimero-peroxidasa', label: 'Inmunohistoquimica: Polímero-Peroxidasa' },
   { value: 'coloraciones-especiales', label: 'Coloraciones especiales' },
-  { value: 'inmunofluorescencia-metodo-directo', label: 'Inmunoflurescencia: método directo' }
+  { value: 'inmunofluorescencia-metodo-directo', label: 'Inmunoflurescencia: método directo' },
+  { value: 'microscopia-electronica-transmision', label: 'Microscopía electrónica de transmisión' }
 ]
 
 export function normalizeMethod(input: string | undefined | null): string {

@@ -16,25 +16,6 @@ from app.modules.diseases.models.disease import DiseaseCreate
 async def insert_extras():
     db = await connect_to_mongo()
     repo = DiseaseRepository(db)
-    extra_diseases = [
-        {
-            'table': 'CIE10',
-            'code': 'M321',
-            'name': 'Lupus eritematoso sistémico con compromiso de órganos o sistemas.',
-            'description': 'Lupus eritematoso sistémico con compromiso de órganos o sistemas.'
-        },
-        {
-            'table': 'CIE10',
-            'code': 'Z941',
-            'name': 'Estado de trasplante de corazón.',
-            'description': 'Estado de trasplante de corazón.'
-        },
-        {
-            'table': 'CIE10',
-            'code': 'XXX',
-            'name': 'ver en ghibs',
-            'description': 'ver en ghibs'
-        }
     ]
     created = 0
     skipped = 0
