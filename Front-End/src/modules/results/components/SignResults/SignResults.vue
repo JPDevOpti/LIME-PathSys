@@ -237,20 +237,27 @@
               text="Imprimir PDF"
             />
             <!-- Botón de previsualización temporalmente deshabilitado -->
+            <!-- Botón Guardar Progreso (Siempre visible) -->
             <button
-              :disabled="loading || needsAssignedPathologist || !canUserSign || (!canSignByStatus && !hasBeenSigned) || isPathologistWithoutSignature"
-              :class="[
-                'px-4 py-2 text-sm font-medium rounded-md flex items-center gap-2 border-2 transition-colors duration-150 bg-white',
-                (loading || needsAssignedPathologist || !canUserSign || (!canSignByStatus && !hasBeenSigned) || isPathologistWithoutSignature) 
-                  ? 'bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed' 
-                  : allFieldsComplete 
-                    ? 'text-blue-600 border-blue-600 hover:bg-blue-50 hover:text-blue-700' 
-                    : 'text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700'
-              ]"
-              @click="handleButtonClick"
+              :disabled="loading || needsAssignedPathologist || !canUserSign || isPathologistWithoutSignature"
+              class="px-4 py-2 text-sm font-medium rounded-md flex items-center gap-2 border-2 transition-colors duration-150 bg-white text-blue-600 border-blue-600 hover:bg-blue-50 hover:text-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:border-gray-300 disabled:cursor-not-allowed"
+              @click="handleSaveProgress"
             >
               <EditCaseIcon class="w-4 h-4" />
-              {{ loading ? 'Procesando...' : (allFieldsComplete ? (signing ? 'Firmando...' : 'Firmar resultado') : 'Guardar progreso') }}
+              {{ loading ? 'Procesando...' : 'Guardar progreso' }}
+            </button>
+
+            <!-- Botón Firmar Resultado (Solo si está completo) -->
+            <button
+              v-if="allFieldsComplete"
+              :disabled="loading || needsAssignedPathologist || !canUserSign || (!canSignByStatus && !hasBeenSigned) || isPathologistWithoutSignature"
+              class="px-4 py-2 text-sm font-medium rounded-md flex items-center gap-2 border-2 transition-colors duration-150 bg-white text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:border-gray-300 disabled:cursor-not-allowed"
+              @click="handleSign"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {{ loading ? 'Procesando...' : (signing ? 'Firmando...' : 'Firmar resultado') }}
             </button>
           </div>
         </div>
@@ -302,7 +309,7 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, computed } from 'vue'
-import { ComponentCard, BaseButton } from '@/shared/components'
+import { ComponentCard } from '@/shared/components'
 import { ErrorMessage, ValidationAlert } from '@/shared/components/ui/feedback'
 import { FormInputField } from '@/shared/components/ui/forms'
 import { SearchButton, ClearButton, PrintPdfButton } from '@/shared/components/ui/buttons'
@@ -807,14 +814,7 @@ const validateAllFieldsComplete = (): { isValid: boolean; errors: string[] } => 
   }
 }
 
-// Función que maneja el click del botón según el estado de completitud
-const handleButtonClick = () => {
-  if (allFieldsComplete.value) {
-    handleSign()
-  } else {
-    handleSaveProgress()
-  }
-}
+
 
 // Función para guardar progreso sin firmar
 const handleSaveProgress = async () => {
