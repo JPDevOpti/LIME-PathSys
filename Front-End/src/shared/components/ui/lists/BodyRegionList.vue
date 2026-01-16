@@ -216,6 +216,7 @@ const bodyRegions: BodyRegion[] = [
   { value: 'adenoides', label: 'Adenoides', category: 'Cabeza y Cuello' },
   { value: 'tiroides', label: 'Tiroides', category: 'Cabeza y Cuello' },
   { value: 'paratiroides', label: 'Paratiroides', category: 'Cabeza y Cuello' },
+  { value: 'cuello', label: 'Cuello', category: 'Cabeza y Cuello' },
   { value: 'cuello_anterior', label: 'Cuello Anterior', category: 'Cabeza y Cuello' },
   { value: 'cuello_posterior', label: 'Cuello Posterior', category: 'Cabeza y Cuello' },
   { value: 'cuello_lateral', label: 'Cuello Lateral', category: 'Cabeza y Cuello' },
