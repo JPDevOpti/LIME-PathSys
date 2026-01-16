@@ -1,0 +1,12 @@
+En la rama main
+Tu rama y 'origin/main' han divergido,
+y tienen 1 y 2 commits diferentes cada una respectivamente.
+  (use "git pull" if you want to integrate the remote branch with yours)
+
+Archivos sin seguimiento:
+  (usa "git add <archivo>..." para incluirlo a lo que será confirmado)
+	git_status.txt
+
+no hay nada agregado al commit pero hay archivos sin seguimiento presentes (usa "git add" para hacerles seguimiento)
+* main
+  production
