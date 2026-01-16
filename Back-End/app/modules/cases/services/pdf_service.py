@@ -111,7 +111,8 @@ class CasePdfService:
             case=case_data, 
             pathologist_signature=pathologist_signature,
             pruebas_complementarias=complementary_tests,
-            logos=self.logos
+            logos=self.logos,
+            is_pdf=True
         )
 
         # Generar PDF usando el pool de navegadores (mucho más eficiente)
