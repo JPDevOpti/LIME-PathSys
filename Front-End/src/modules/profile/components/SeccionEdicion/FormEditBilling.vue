@@ -23,6 +23,14 @@
       autocomplete="off"
     />
 
+    <div class="col-span-full">
+      <EntityMultiSelect
+        label="Entidades Asociadas"
+        placeholder="Buscar y seleccionar entidades..."
+        v-model="localModel.associatedEntities"
+      />
+    </div>
+
     <FormInputField 
       class="col-span-full md:col-span-6" 
       label="Email" 
@@ -140,6 +148,7 @@ import { reactive, computed, watch, nextTick, ref } from 'vue'
 import { FormInputField, FormCheckbox, FormTextarea } from '@/shared/components/ui/forms'
 import { SaveButton, ClearButton } from '@/shared/components/ui/buttons'
 import { Notification, ValidationAlert } from '@/shared/components/ui/feedback'
+import EntityMultiSelect from '@/shared/components/ui/lists/EntityMultiSelect.vue'
 import { useBillingEdition } from '../../composables/useBillingEdition'
 import type { BillingEditFormModel } from '../../types/billing.types'
 
@@ -180,6 +189,7 @@ const normalizeIncoming = (mv: Partial<BillingEditFormModel> | any): BillingEdit
   billingEmail: (mv.billingEmail ?? mv.billing_email ?? mv.FacturacionEmail ?? mv.email ?? '').toString(),
   observations: (mv.observations ?? mv.observaciones ?? '').toString(),
   isActive: mv.isActive !== undefined ? !!mv.isActive : (mv.is_active !== undefined ? !!mv.is_active : true),
+  associatedEntities: mv.associatedEntities ?? mv.associated_entities ?? [],
   password: '',
   passwordConfirm: ''
 })
@@ -211,14 +221,6 @@ const passwordValue = computed({
   }
 })
 
-watch(() => modelValue?.value, (newValue) => {
-  if (!newValue) { console.debug('[FormEditBilling] modelValue empty'); return }
-  console.debug('[FormEditBilling] modelValue received:', newValue)
-  const normalized = normalizeIncoming(newValue)
-  Object.assign(localModel, normalized)
-  setInitialData(normalized)
-}, { deep: true })
-
 // Allow loading from prop `usuario` (like auxiliary edit)
 const normalizeFromUsuario = (u: any): BillingEditFormModel => ({
   id: (u?.id ?? '').toString(),
@@ -227,15 +229,34 @@ const normalizeFromUsuario = (u: any): BillingEditFormModel => ({
   billingEmail: (u?.billingEmail ?? u?.billing_email ?? u?.email ?? '').toString(),
   observations: (u?.observations ?? u?.observaciones ?? '').toString(),
   isActive: u?.isActive !== undefined ? !!u.isActive : (u?.is_active !== undefined ? !!u.is_active : true),
+  associatedEntities: u?.associatedEntities ?? u?.associated_entities ?? [],
   password: '',
   passwordConfirm: ''
 })
 
-const pickIncoming = (p: any) => p?.usuario ?? p?.facturacion ?? p?.selectedUser ?? null
+watch(() => modelValue.value, (newValue) => {
+  if (!newValue) { 
+    console.debug('[FormEditBilling] modelValue empty')
+    return 
+  }
+  console.log('[FormEditBilling] modelValue received:', newValue)
+  console.log('[FormEditBilling] entities in modelValue:', newValue.associatedEntities)
+  
+  const normalized = normalizeIncoming(newValue)
+  console.log('[FormEditBilling] normalized model:', normalized)
+  
+  Object.assign(localModel, normalized)
+  setInitialData(normalized)
+}, { deep: true, immediate: true })
 
-watch(() => pickIncoming(props), (u) => {
-  if (!u) { console.debug('[FormEditBilling] incoming user empty'); return }
-  console.debug('[FormEditBilling] incoming user received:', u)
+// If using props.usuario / props.selectedUser as fallback (though v-model is preferred)
+watch(() => props.selectedUser || props.usuario, (u) => {
+  if (modelValue.value) return // Prioritize modelValue
+  if (!u) {
+     console.debug('[FormEditBilling] prop user empty')
+     return 
+  }
+  console.log('[FormEditBilling] prop user received:', u)
   const normalized = normalizeFromUsuario(u)
   Object.assign(localModel, normalized)
   setInitialData(normalized)

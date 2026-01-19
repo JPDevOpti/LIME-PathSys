@@ -1,5 +1,7 @@
 // Types for the billing module
 
+import type { EntityInfo } from "@/modules/cases/types"
+
 // Creation form
 export interface BillingFormModel {
   billingName: string
@@ -8,6 +10,7 @@ export interface BillingFormModel {
   password: string
   observations: string
   isActive: boolean
+  associatedEntities: EntityInfo[]
 }
 
 // Request to create billing
@@ -18,6 +21,7 @@ export interface BillingCreateRequest {
   password: string // Contraseña para crear el usuario asociado
   observations: string
   is_active: boolean
+  associated_entities: EntityInfo[]
 }
 
 // Creation response
@@ -28,6 +32,7 @@ export interface BillingCreateResponse {
   billing_email: string
   observations: string
   is_active: boolean
+  associated_entities: EntityInfo[]
   created_at: string
   updated_at?: string
 }
@@ -60,6 +65,7 @@ export interface BillingEditFormModel {
   billingEmail: string
   observations: string
   isActive: boolean
+  associatedEntities: EntityInfo[]
   password?: string
   passwordConfirm?: string
 }
@@ -69,6 +75,7 @@ export interface BillingUpdateRequest {
   billing_email: string
   observations: string
   is_active: boolean
+  associated_entities: EntityInfo[]
   password?: string
 }
 
@@ -79,6 +86,7 @@ export interface BillingUpdateResponse {
   billing_email: string
   observations: string
   is_active: boolean
+  associated_entities: EntityInfo[]
   created_at: string
   updated_at: string
 }

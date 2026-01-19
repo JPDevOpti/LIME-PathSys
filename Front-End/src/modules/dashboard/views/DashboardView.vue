@@ -36,14 +36,13 @@ import type { CasoUrgente } from '../types/dashboard.types'
 import { useAuthStore } from '@/stores/auth.store'
 import { profileApiService } from '@/modules/profile/services/profileApiService'
 import { API_CONFIG } from '@/core/config/api.config'
-import { useToasts } from '@/shared/composables/useToasts'
 import { useSignatureNotifier } from '@/shared/composables/useSignatureNotifier'
 
 // Currently selected urgent case for the details modal
 const selectedUrgentCase = ref<CasoUrgente | null>(null)
 
 const authStore = useAuthStore()
-const { warning } = useToasts()
+// const { warning } = useToasts()
 const { checkAndShowOncePerSession, close: closeSignatureNotice } = useSignatureNotifier()
 
 // Open modal with selected urgent case
@@ -115,7 +114,6 @@ async function ensureSignatureStatus() {
 }
 
 onMounted(() => {
-  console.log('[Dashboard] Mounted, iniciando verificación de firma')
   ensureSignatureStatus()
 })
 
@@ -126,7 +124,6 @@ watch(
     authStore.user?.role
   ],
   ([ready, code, role]) => {
-    console.log('[Dashboard] Watch auth changes', { ready, code, role })
     if (ready && code && role) ensureSignatureStatus()
   },
   { immediate: true }

@@ -47,7 +47,8 @@ export class AuthApiService {
         pathologist_code: backendUser.pathologist_code,
         resident_code: backendUser.resident_code,
         auxiliary_code: backendUser.auxiliary_code,
-        billing_code: backendUser.billing_code
+        billing_code: backendUser.billing_code,
+        associated_entities: backendUser.associated_entities
       }
       return {
         access_token: backendToken.access_token,
@@ -89,7 +90,8 @@ export class AuthApiService {
         pathologist_code: data.pathologist_code,
         resident_code: data.resident_code,
         auxiliary_code: data.auxiliary_code,
-        billing_code: data.billing_code
+        billing_code: data.billing_code,
+        associated_entities: data.associated_entities
       }
       return mapped
     } catch (error) {

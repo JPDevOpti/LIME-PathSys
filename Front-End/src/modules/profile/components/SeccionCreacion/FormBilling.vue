@@ -23,6 +23,14 @@
       maxlength="20"
     />
 
+    <div class="col-span-full">
+      <EntityMultiSelect
+        label="Entidades Asociadas"
+        placeholder="Buscar y seleccionar entidades..."
+        v-model="localModel.associatedEntities"
+      />
+    </div>
+
     <FormInputField 
       class="col-span-full md:col-span-6" 
       label="Email" 
@@ -137,6 +145,7 @@ import { reactive, computed, watch, nextTick, ref } from 'vue'
 import { FormInputField, FormCheckbox, FormTextarea } from '@/shared/components/ui/forms'
 import { SaveButton, ClearButton } from '@/shared/components/ui/buttons'
 import { Notification, ValidationAlert } from '@/shared/components/ui/feedback'
+import EntityMultiSelect from '@/shared/components/ui/lists/EntityMultiSelect.vue'
 import { useBillingCreation } from '../../composables/useBillingCreation'
 import type { BillingFormModel, BillingCreateResponse } from '../../types/billing.types'
 
@@ -177,7 +186,8 @@ const normalizeIncoming = (mv: Partial<BillingFormModel> | any): BillingFormMode
   billingEmail: (mv.billingEmail ?? mv.FacturacionEmail ?? '').toString(),
   password: (mv.password ?? '').toString(),
   observations: (mv.observations ?? mv.observaciones ?? '').toString(),
-  isActive: mv.isActive !== undefined ? !!mv.isActive : true
+  isActive: mv.isActive !== undefined ? !!mv.isActive : true,
+  associatedEntities: mv.associatedEntities || []
 })
 
 const localModel = reactive<BillingFormModel>(normalizeIncoming(modelValue.value))
@@ -386,7 +396,7 @@ const clearForm = () => {
   clearFormErrors()
   clearState()
   Object.assign(localModel, { 
-    billingName: '', billingCode: '', billingEmail: '', password: '', observations: '', isActive: true
+    billingName: '', billingCode: '', billingEmail: '', password: '', observations: '', isActive: true, associatedEntities: []
   })
   ;(localModel as any).passwordConfirm = ''
 }

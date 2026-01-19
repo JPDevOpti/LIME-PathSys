@@ -10,6 +10,7 @@ export interface BillingResponse {
   observations?: string
   created_at: string
   updated_at: string
+  associated_entities?: Array<{ id: string; name: string; codigo?: string; nombre?: string }>
 }
 
 export interface BillingUpdate {

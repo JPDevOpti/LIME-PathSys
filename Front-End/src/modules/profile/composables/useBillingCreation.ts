@@ -1,7 +1,7 @@
 import { ref, reactive } from 'vue'
 import { billingCreateService } from '../services/billingCreateService'
-import type { 
-  BillingFormModel, 
+import type {
+  BillingFormModel,
   BillingFormValidation,
   BillingCreateRequest,
   BillingCreationState
@@ -78,7 +78,8 @@ export function useBillingCreation() {
     billing_email: trimOrEmpty(formData.billingEmail),
     password: formData.password,
     observations: trimOrEmpty(formData.observations),
-    is_active: formData.isActive
+    is_active: formData.isActive,
+    associated_entities: formData.associatedEntities || []
   })
 
   const createFacturacion = async (formData: BillingFormModel): Promise<{ success: boolean; data?: any }> => {

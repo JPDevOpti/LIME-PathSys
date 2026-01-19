@@ -49,6 +49,7 @@ export interface BackendFacturacion {
   isActive: boolean
   fecha_creacion?: string
   fecha_actualizacion?: string
+  associated_entities?: Array<{ id: string; name: string; codigo?: string; nombre?: string }>
 }
 
 export const profileApiService = {
@@ -58,7 +59,7 @@ export const profileApiService = {
         // Usar el nuevo servicio de patólogos
         const pathologist = await PathologistApiService.getByEmail(email)
         if (!pathologist) return undefined
-        
+
         // Mapear a la estructura esperada por el frontend
         const mapped = {
           patologoName: pathologist.pathologist_name,
@@ -78,7 +79,7 @@ export const profileApiService = {
         // Usar el nuevo servicio de residentes
         const resident = await ResidentApiService.getByEmail(email)
         if (!resident) return undefined
-        
+
         // Mapear a la estructura esperada por el frontend
         const mapped = {
           residenteName: resident.resident_name,
@@ -97,7 +98,7 @@ export const profileApiService = {
         // Usar el nuevo servicio de auxiliares
         const auxiliar = await AuxiliarApiService.getByEmail(email)
         if (!auxiliar) return undefined
-        
+
         // Mapear a la estructura esperada por el frontend
         const mapped = {
           auxiliarName: auxiliar.auxiliar_name,
@@ -114,7 +115,7 @@ export const profileApiService = {
         // Usar el nuevo servicio de facturación
         const billing = await BillingApiService.getByEmail(email)
         if (!billing) return undefined
-        
+
         // Mapear a la estructura esperada por el frontend
         const mapped = {
           facturacionName: billing.billing_name,
@@ -123,7 +124,8 @@ export const profileApiService = {
           observaciones: billing.observations,
           isActive: billing.is_active,
           fecha_creacion: billing.created_at,
-          fecha_actualizacion: billing.updated_at
+          fecha_actualizacion: billing.updated_at,
+          associated_entities: billing.associated_entities
         } as BackendFacturacion
         return mapped
       }
@@ -137,7 +139,7 @@ export const profileApiService = {
     try {
       const pathologist = await PathologistApiService.getByCode(code)
       if (!pathologist) return undefined
-      
+
       // Mapear a la estructura esperada por el frontend
       return {
         patologoName: pathologist.pathologist_name,
@@ -160,7 +162,7 @@ export const profileApiService = {
     try {
       const resident = await ResidentApiService.getByCode(code)
       if (!resident) return undefined
-      
+
       // Mapear a la estructura esperada por el frontend
       return {
         residenteName: resident.resident_name,
@@ -182,7 +184,7 @@ export const profileApiService = {
     try {
       const auxiliar = await AuxiliarApiService.getByCode(code)
       if (!auxiliar) return undefined
-      
+
       // Mapear a la estructura esperada por el frontend
       return {
         auxiliarName: auxiliar.auxiliar_name,
@@ -202,7 +204,7 @@ export const profileApiService = {
     try {
       const billing = await BillingApiService.getByCode(code)
       if (!billing) return undefined
-      
+
       // Mapear a la estructura esperada por el frontend
       return {
         facturacionName: billing.billing_name,
@@ -211,7 +213,8 @@ export const profileApiService = {
         observaciones: billing.observations,
         isActive: billing.is_active,
         fecha_creacion: billing.created_at,
-        fecha_actualizacion: billing.updated_at
+        fecha_actualizacion: billing.updated_at,
+        associated_entities: billing.associated_entities
       } as BackendFacturacion
     } catch {
       return undefined

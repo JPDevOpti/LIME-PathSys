@@ -76,6 +76,7 @@ async def list_cases(
     test: Optional[str] = Query(None, description="Filtrar por prueba específica"),
     date_from: Optional[str] = Query(None, description="Fecha de inicio (YYYY-MM-DD)"),
     date_to: Optional[str] = Query(None, description="Fecha de fin (YYYY-MM-DD)"),
+    entity_codes: Optional[List[str]] = Query(None, description="Lista de códigos de entidad para filtrar"),
     service: CaseService = Depends(get_service),
     current_user_id: Optional[str] = Depends(get_current_user_id)
 ):
@@ -90,6 +91,7 @@ async def list_cases(
             test=test,
             date_from=date_from,
             date_to=date_to,
+            entity_codes=entity_codes,
             current_user_id=current_user_id
         )
     except BadRequestError as e:

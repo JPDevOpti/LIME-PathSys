@@ -159,6 +159,7 @@ class UserManagementService:
         email: EmailStr,
         password: str,
         billing_code: str,
+        associated_entities: Optional[list] = None,
         is_active: bool = True
     ) -> Optional[Dict[str, Any]]:
         """Create a new billing user"""
@@ -177,7 +178,8 @@ class UserManagementService:
                 "role": "billing",
                 "password_hash": password_hash,
                 "is_active": is_active,
-                "billing_code": billing_code
+                "billing_code": billing_code,
+                "associated_entities": associated_entities or []
             }
 
             # Insert user into database
@@ -301,6 +303,7 @@ class UserManagementService:
         name: Optional[str] = None,
         email: Optional[EmailStr] = None,
         password: Optional[str] = None,
+        associated_entities: Optional[list] = None,
         is_active: Optional[bool] = None
     ) -> Optional[Dict[str, Any]]:
         """Update a billing user"""
@@ -319,6 +322,8 @@ class UserManagementService:
                 update_data["email"] = email
             if password is not None:
                 update_data["password_hash"] = get_password_hash(password)
+            if associated_entities is not None:
+                update_data["associated_entities"] = associated_entities
             if is_active is not None:
                 update_data["is_active"] = is_active
 

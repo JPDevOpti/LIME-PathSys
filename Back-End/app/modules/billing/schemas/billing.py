@@ -11,6 +11,7 @@ class BillingBase(BaseModel):
     billing_email: EmailStr = Field(..., description="Email único del usuario de facturación")
     is_active: bool = Field(default=True, description="Estado activo/inactivo del usuario de facturación")
     observations: Optional[str] = Field(None, max_length=500, description="Notas adicionales")
+    associated_entities: Optional[list[dict]] = Field(default=[], description="Entidades asociadas al usuario de facturación")
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -25,6 +26,7 @@ class BillingUpdate(BaseModel):
     is_active: Optional[bool] = Field(None, description="Estado activo/inactivo del usuario de facturación")
     observations: Optional[str] = Field(None, max_length=500, description="Notas adicionales")
     password: Optional[str] = Field(None, min_length=6, max_length=128, description="Nueva contraseña del usuario de facturación")
+    associated_entities: Optional[list[dict]] = Field(None, description="Entidades asociadas al usuario de facturación")
 
     model_config = ConfigDict(populate_by_name=True)
 

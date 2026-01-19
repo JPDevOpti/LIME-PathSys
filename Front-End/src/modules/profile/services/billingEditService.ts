@@ -26,9 +26,9 @@ class BillingEditService {
       const data = (response as any).data ?? (response as any)
       return { success: true, data }
     } catch (error: any) {
-      return { 
-        success: false, 
-        error: error.response?.data?.detail || 'Error al obtener el usuario de facturación' 
+      return {
+        success: false,
+        error: error.response?.data?.detail || 'Error al obtener el usuario de facturación'
       }
     }
   }
@@ -42,9 +42,9 @@ class BillingEditService {
       const payload = (response as any).data ?? (response as any)
       return { success: true, data: payload }
     } catch (error: any) {
-      return { 
-        success: false, 
-        error: error.response?.data?.detail || 'Error al actualizar el usuario de facturación' 
+      return {
+        success: false,
+        error: error.response?.data?.detail || 'Error al actualizar el usuario de facturación'
       }
     }
   }
@@ -56,12 +56,14 @@ class BillingEditService {
     const observations = this.trimOrEmpty((formModel as any).observations ?? (formModel as any).observaciones)
     const is_active = !!formModel.isActive
     const password = this.trimOrEmpty(formModel.password)
+    const associated_entities = formModel.associatedEntities || []
 
     const payload: BillingUpdateRequest = {
       billing_name,
       billing_email,
       observations,
       is_active,
+      associated_entities,
       ...(password ? { password } : {})
     }
     return payload

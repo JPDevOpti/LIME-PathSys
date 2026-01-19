@@ -201,7 +201,8 @@ const onSelectUserToEdit = (item: any) => {
       facturacionName: item.billing_name ?? item.facturacionName ?? item.nombre,
       facturacionCode: item.billing_code ?? item.facturacionCode ?? item.codigo,
       FacturacionEmail: item.billing_email ?? item.FacturacionEmail ?? item.email,
-      observaciones: item.observations ?? item.observaciones ?? ''
+      observaciones: item.observations ?? item.observaciones ?? '',
+      associated_entities: item.associated_entities ?? item.associatedEntities ?? []
     },
     residente: {
       residenteName: item.resident_name ?? item.residenteName ?? item.nombre,
@@ -231,6 +232,7 @@ const onSelectUserToEdit = (item: any) => {
     ...baseFields,
     ...(typeMappings[item.tipo as keyof typeof typeMappings] || {})
   }
+  console.log('Selected User for Edit (mapped):', selectedUser.value)
 }
 
 

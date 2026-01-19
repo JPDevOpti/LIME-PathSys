@@ -3,6 +3,7 @@ import type { Case, Filters, SortKey, SortOrder } from '../types/case.types'
 import { listCases, searchCases, listTests, type BackendCase, type BackendTest } from '../services/caseListApi'
 import { getDefaultDateRange } from '../utils/dateUtils'
 import { useCasesStore } from '@/stores/cases.store'
+import { useAuthStore } from '@/stores/auth.store'
 
 const normalize = (text: string): string => (text || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim()
 
@@ -30,7 +31,7 @@ export function useCaseList() {
 
   const defaultDates = getDefaultDateRange()
   const casesStore = useCasesStore()
-  
+
   const filters = ref<Filters>({
     searchQuery: '',
     searchPathologist: '',
@@ -63,7 +64,7 @@ export function useCaseList() {
 
       const serverParams: Record<string, any> = { skip: 0 }
       serverParams.limit = fullSearch ? 100000 : 100
-      
+
       if (filters.value.searchQuery) serverParams.search = filters.value.searchQuery
       if (filters.value.searchPathologist) serverParams.pathologist = filters.value.searchPathologist
       if (filters.value.selectedEntity) serverParams.entity = filters.value.selectedEntity
@@ -71,6 +72,18 @@ export function useCaseList() {
       if (filters.value.selectedTest) serverParams.test = filters.value.selectedTest
       if (filters.value.dateFrom) serverParams.date_from = ddmmyyyyToISO(filters.value.dateFrom)
       if (filters.value.dateTo) serverParams.date_to = ddmmyyyyToISO(filters.value.dateTo)
+
+      // Filter by associated entities if user is billing
+      const authStore = useAuthStore()
+
+      if (authStore.isBilling && authStore.user?.associated_entities?.length) {
+        // Extract IDs using the same logic as frontend mapping (id or codigo)
+        const codes = authStore.user.associated_entities.map((e: any) => e.id || e.codigo).filter(Boolean)
+
+        if (codes.length > 0) {
+          serverParams.entity_codes = codes
+        }
+      }
 
       const data: BackendCase[] = fullSearch ? await searchCases(serverParams) : await listCases(serverParams)
       cases.value = data.map((bk) => transformBackendCase(bk, testsCatalog))
@@ -89,26 +102,19 @@ export function useCaseList() {
       if (v?.$date) return v.$date
       return ''
     }
-    
+
     const id = (typeof bk._id === 'string' ? bk._id : (bk._id as any)?.$oid) || bk.case_code || bk.caso_code || `case-${Math.random().toString(36).substr(2, 9)}`
     const receivedAt = getDate(bk.created_at || bk.fecha_creacion)
     const deliveredAt = getDate(bk.updated_at || bk.fecha_entrega)
     const signedAt = getDate(bk.signed_at || bk.fecha_firma)
-    
+
     if (bk.case_code === 'T-2025-001' || (bk.state === 'Por entregar' && signedAt)) {
-      console.log('🔍 DEBUG Case Transform:', {
-        case_code: bk.case_code,
-        state: bk.state,
-        signed_at_raw: bk.signed_at,
-        fecha_firma_raw: bk.fecha_firma,
-        signedAt_transformed: signedAt,
-        receivedAt_transformed: receivedAt
-      })
+      // Logic without log
     }
 
     const flatTests: string[] = []
     const subsamples: Case['subsamples'] = []
-    
+
     const samples: any[] = (bk.samples as any) || (bk.muestras as any) || []
     if (Array.isArray(samples)) {
       samples.forEach((m: any) => {
@@ -118,19 +124,19 @@ export function useCaseList() {
           const code = p.id || ''
           const name = p.name || p.nombre || testsCatalog.get(code) || ''
           const cantidad = p.quantity || p.cantidad || 1
-          
+
           if (code) {
             const testString = name ? `${code} - ${name}` : code
             for (let i = 0; i < cantidad; i++) {
               flatTests.push(testString)
             }
           }
-          
+
           items.push({ id: code, name: name || code, quantity: cantidad })
         })
-        subsamples.push({ 
-          bodyRegion: m.body_region || m.region_cuerpo || '', 
-          tests: items 
+        subsamples.push({
+          bodyRegion: m.body_region || m.region_cuerpo || '',
+          tests: items
         })
       })
     }
@@ -151,7 +157,7 @@ export function useCaseList() {
     const patientInfo: any = (bk.patient_info as any) || (bk.paciente as any) || {}
     const caseCode = bk.case_code || bk.caso_code || id
     const sampleType = (samples[0]?.body_region || samples[0]?.region_cuerpo || (patientInfo?.care_type || patientInfo?.tipo_atencion || ''))
-    
+
     return {
       id,
       caseCode,
@@ -268,16 +274,6 @@ export function useCaseList() {
     const start = (currentPage.value - 1) * itemsPerPage.value
     const end = start + itemsPerPage.value
     const paginated = filteredCases.value.slice(start, end)
-    
-    const porEntregar = paginated.filter(c => c.status === 'Por entregar')
-    if (porEntregar.length > 0) {
-      console.log('🔍 Paginated Cases (Por entregar):', porEntregar.map(c => ({
-        caseCode: c.caseCode,
-        signedAt: c.signedAt,
-        length: c.signedAt?.length
-      })))
-    }
-    
     return paginated
   })
 
@@ -365,11 +361,11 @@ export function useCaseList() {
 
   watch(filters, () => { currentPage.value = 1 }, { deep: true })
   watch(itemsPerPage, () => { currentPage.value = 1 })
-  
+
   const handleCaseCreated = (_event: CustomEvent) => {
     loadCases()
   }
-  
+
   watch(() => casesStore.needsRefresh, (needsRefresh) => {
     if (needsRefresh) {
       loadCases().then(() => {
@@ -377,16 +373,16 @@ export function useCaseList() {
       })
     }
   })
-  
+
   watch(() => casesStore.lastUpdate, () => {
     loadCases()
   })
-  
+
   onMounted(() => {
     loadCases()
     window.addEventListener('case-created', handleCaseCreated as EventListener)
   })
-  
+
   onUnmounted(() => {
     window.removeEventListener('case-created', handleCaseCreated as EventListener)
   })

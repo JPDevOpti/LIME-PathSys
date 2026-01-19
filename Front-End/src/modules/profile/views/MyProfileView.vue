@@ -199,7 +199,8 @@ const loadUserProfile = async () => {
           ...(roleData?.registro_medico && { registroMedico: roleData.registro_medico }),
           ...(roleData?.firma && { firmaUrl: roleData.firma }),
           ...(roleData?.observaciones && { observaciones: roleData.observaciones }),
-          ...(roleData?.patologoCode && { patologoCode: roleData.patologoCode, pathologistCode: roleData.patologoCode })
+          ...(roleData?.patologoCode && { patologoCode: roleData.patologoCode, pathologistCode: roleData.patologoCode }),
+          ...(roleData?.associated_entities && { associatedEntities: roleData.associated_entities })
         }
       }
     }

@@ -18,6 +18,18 @@ class AuthRepository:
         if not doc:
             return None
         doc["_id"] = str(doc.get("_id", ""))
+
+        # SI ES BILLING Y NO TIENE ENTIDADES EN USERS, BUSCAR EN COLECCION BILLING
+        if doc.get("role") == "billing" and not doc.get("associated_entities"):
+            try:
+                billing_code = doc.get("billing_code")
+                if billing_code:
+                    billing_doc = await self.db.get_collection("billing").find_one({"billing_code": billing_code})
+                    if billing_doc and billing_doc.get("associated_entities"):
+                         doc["associated_entities"] = billing_doc["associated_entities"]
+            except Exception:
+                pass
+                
         return doc
 
     async def get_user_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
@@ -29,6 +41,18 @@ class AuthRepository:
         if not doc:
             return None
         doc["_id"] = str(doc.get("_id", ""))
+        
+        # SI ES BILLING Y NO TIENE ENTIDADES EN USERS, BUSCAR EN COLECCION BILLING
+        if doc.get("role") == "billing" and not doc.get("associated_entities"):
+            try:
+                billing_code = doc.get("billing_code")
+                if billing_code:
+                    billing_doc = await self.db.get_collection("billing").find_one({"billing_code": billing_code})
+                    if billing_doc and billing_doc.get("associated_entities"):
+                         doc["associated_entities"] = billing_doc["associated_entities"]
+            except Exception:
+                pass
+
         return doc
 
 

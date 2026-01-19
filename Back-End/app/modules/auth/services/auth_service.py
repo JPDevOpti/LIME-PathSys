@@ -42,6 +42,7 @@ class AuthService:
             "resident_code": user.get("resident_code"),
             "auxiliary_code": user.get("auxiliary_code"),
             "billing_code": user.get("billing_code"),
+            "associated_entities": user.get("associated_entities", []),
         }
 
         return {
@@ -86,6 +87,7 @@ class AuthService:
             "resident_code": user.get("resident_code"),
             "auxiliary_code": user.get("auxiliary_code"),
             "billing_code": user.get("billing_code"),
+            "associated_entities": user.get("associated_entities", []),
         }
 
 

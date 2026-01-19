@@ -3,7 +3,7 @@
 // with BillingEditFormModel (billingName, billingEmail, observations, billingCode).
 import { ref, reactive } from 'vue'
 import { billingEditService } from '../services/billingEditService'
-import type { 
+import type {
   BillingEditFormModel,
   BillingEditFormValidation,
   BillingEditionState
@@ -91,16 +91,16 @@ export const useBillingEdition = () => {
   }
 
   // Store original data to compare changes or reset
-  const setInitialData = (data: BillingEditFormModel) => { 
-    originalData.value = { ...data } 
+  const setInitialData = (data: BillingEditFormModel) => {
+    originalData.value = { ...data }
   }
-  
+
   // Return a copy of original data if present
   const resetToOriginal = () => (originalData.value ? { ...originalData.value } : null)
-  
+
   // Clear transient UI messages
-  const clearMessages = () => { 
-    emailValidationError.value = '' 
+  const clearMessages = () => {
+    emailValidationError.value = ''
     state.error = ''
     state.successMessage = ''
   }
@@ -108,12 +108,13 @@ export const useBillingEdition = () => {
   // Compare current values against the captured originals to know if there are changes
   const createHasChanges = (current: BillingEditFormModel) => {
     if (!originalData.value) return false
-    
+
     return (
       current.billingName !== originalData.value.billingName ||
       current.billingEmail !== originalData.value.billingEmail ||
       current.observations !== originalData.value.observations ||
       current.isActive !== originalData.value.isActive ||
+      JSON.stringify(current.associatedEntities) !== JSON.stringify(originalData.value.associatedEntities) ||
       (current.password && current.password.trim() !== '')
     )
   }

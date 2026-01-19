@@ -101,6 +101,21 @@
             label="Observaciones"
             :value="user.roleSpecificData.observaciones!"
           />
+          <div 
+            v-if="user.roleSpecificData?.associatedEntities && user.roleSpecificData.associatedEntities.length > 0"
+            class="col-span-full"
+          >
+            <label class="block text-sm font-medium text-gray-700 mb-2">Entidades Asociadas</label>
+            <div class="flex flex-wrap gap-2">
+              <span 
+                v-for="entity in user.roleSpecificData.associatedEntities" 
+                :key="entity.id || entity.codigo"
+                class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200"
+              >
+                {{ entity.name || entity.nombre }} ({{ entity.id || entity.codigo }})
+              </span>
+            </div>
+          </div>
         </template>
       </div>
     </div>
@@ -138,7 +153,8 @@ const hasRoleSpecificData = computed(() => {
   return !!(
     data.iniciales ||
     data.registroMedico ||
-    data.observaciones
+    data.observaciones ||
+    (data.associatedEntities && data.associatedEntities.length > 0)
   )
 })
 </script>

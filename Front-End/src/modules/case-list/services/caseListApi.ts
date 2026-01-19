@@ -104,9 +104,25 @@ export interface BackendTest {
 
 const CASES_BASE = '/cases'
 
+const serializeParams = (params: Record<string, any>) => {
+  const searchParams = new URLSearchParams()
+  Object.keys(params).forEach(key => {
+    const value = params[key]
+    if (Array.isArray(value)) {
+      value.forEach(v => searchParams.append(key, v))
+    } else if (value !== undefined && value !== null) {
+      searchParams.append(key, value)
+    }
+  })
+  return searchParams.toString()
+}
+
 export async function listCases(params: Record<string, any> = {}) {
   // Usar los parámetros directamente ya que vienen con los nombres correctos del backend
-  const data = await apiClient.get<BackendCase[]>(`${CASES_BASE}/`, { params })
+  const data = await apiClient.get<BackendCase[]>(`${CASES_BASE}/`, {
+    params,
+    paramsSerializer: serializeParams
+  })
   const arr = (data as BackendCase[]) || []
   return arr.sort((a, b) => String(b.caso_code || b.case_code || '').localeCompare(String(a.caso_code || a.case_code || '')))
 }
@@ -117,18 +133,21 @@ export async function listAllCases(params: Record<string, any> = {}) {
   let skip = 0
   const limit = 1000
   while (true) {
-    const batchParams = { 
-      skip, 
-      limit, 
+    const batchParams = {
+      skip,
+      limit,
       search: params.query,
       pathologist: params.patologo_nombre,
       entity: params.entidad_nombre,
-      state: params.estado,
       test: params.prueba,
       date_from: params.fecha_ingreso_desde,
-      date_to: params.fecha_ingreso_hasta
+      date_to: params.fecha_ingreso_hasta,
+      entity_codes: params.entity_codes
     }
-    const data = await apiClient.get<BackendCase[]>(`${CASES_BASE}/`, { params: batchParams })
+    const data = await apiClient.get<BackendCase[]>(`${CASES_BASE}/`, {
+      params: batchParams,
+      paramsSerializer: serializeParams
+    })
     const arr = (data as BackendCase[]) || []
     if (arr.length === 0) break
     all.push(...arr)

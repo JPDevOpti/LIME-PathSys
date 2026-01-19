@@ -7,6 +7,7 @@ export interface RoleSpecificData {
   registroMedico?: string
   firmaUrl?: string
   observaciones?: string
+  associatedEntities?: Array<{ id: string; name: string; codigo?: string; nombre?: string }>
 }
 
 export interface UserProfile {
@@ -59,46 +60,46 @@ export interface ProfileEditState {
 
 export type ProfileEditPayload =
   | {
-      role: 'patologo'
-      patologoName: string
-      InicialesPatologo?: string
-      PatologoEmail: string
-      registro_medico: string
-      password?: string
-      passwordConfirm?: string
-      observaciones?: string
-    }
+    role: 'patologo'
+    patologoName: string
+    InicialesPatologo?: string
+    PatologoEmail: string
+    registro_medico: string
+    password?: string
+    passwordConfirm?: string
+    observaciones?: string
+  }
   | {
-      role: 'residente'
-      residenteName: string
-      InicialesResidente?: string
-      ResidenteEmail: string
-      registro_medico: string
-      password?: string
-      passwordConfirm?: string
-      observaciones?: string
-    }
+    role: 'residente'
+    residenteName: string
+    InicialesResidente?: string
+    ResidenteEmail: string
+    registro_medico: string
+    password?: string
+    passwordConfirm?: string
+    observaciones?: string
+  }
   | {
-      role: 'auxiliar'
-      auxiliarName: string
-      auxiliarCode: string
-      AuxiliarEmail: string
-      password?: string
-      passwordConfirm?: string
-      observaciones?: string
-    }
+    role: 'auxiliar'
+    auxiliarName: string
+    auxiliarCode: string
+    AuxiliarEmail: string
+    password?: string
+    passwordConfirm?: string
+    observaciones?: string
+  }
   | {
-      role: 'facturacion'
-      facturacionName: string
-      facturacionCode: string
-      FacturacionEmail: string
-      password?: string
-      passwordConfirm?: string
-      observaciones?: string
-    }
+    role: 'facturacion'
+    facturacionName: string
+    facturacionCode: string
+    FacturacionEmail: string
+    password?: string
+    passwordConfirm?: string
+    observaciones?: string
+  }
   | {
-      role: 'admin'
-      firstName: string
-      lastName: string
-      email: string
-    }
+    role: 'admin'
+    firstName: string
+    lastName: string
+    email: string
+  }

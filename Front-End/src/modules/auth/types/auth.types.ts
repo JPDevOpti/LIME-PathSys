@@ -27,6 +27,7 @@ export interface User {
   auxiliary_code?: string
   billing_code?: string
   last_access?: string
+  associated_entities?: Array<{ id: string; name: string }>
 }
 
 export interface TokenPayload {

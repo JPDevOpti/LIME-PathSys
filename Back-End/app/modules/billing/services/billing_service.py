@@ -37,6 +37,7 @@ class BillingService:
             email=payload.billing_email,
             password=payload.password,
             billing_code=payload.billing_code,
+            associated_entities=payload.associated_entities,
             is_active=payload.is_active
         )
         
@@ -84,12 +85,13 @@ class BillingService:
             raise BadRequestError("Failed to update billing user")
         
         # Actualizar el usuario correspondiente en la colección users
-        if payload.billing_name or payload.billing_email or payload.is_active is not None or payload.password:
+        if payload.billing_name or payload.billing_email or payload.is_active is not None or payload.password or payload.associated_entities is not None:
             user_data = await self.user_service.update_user_for_billing(
                 billing_code=billing_code,
                 name=payload.billing_name,
                 email=payload.billing_email,
                 password=payload.password,
+                associated_entities=payload.associated_entities,
                 is_active=payload.is_active
             )
             if not user_data:
@@ -117,6 +119,7 @@ class BillingService:
             billing_email=doc["billing_email"],
             is_active=doc["is_active"],
             observations=doc.get("observations"),
+            associated_entities=doc.get("associated_entities", []),
             created_at=doc["created_at"],
             updated_at=doc["updated_at"]
         )

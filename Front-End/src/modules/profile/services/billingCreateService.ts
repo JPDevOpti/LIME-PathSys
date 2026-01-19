@@ -1,9 +1,9 @@
 import { apiClient } from '@/core/config/axios.config'
 import type { AxiosResponse } from 'axios'
 import { API_CONFIG } from '@/core/config/api.config'
-import type { 
-  BillingCreateRequest, 
-  BillingCreateResponse 
+import type {
+  BillingCreateRequest,
+  BillingCreateResponse
 } from '../types/billing.types'
 
 class BillingCreateService {
@@ -20,7 +20,8 @@ class BillingCreateService {
         billing_email: this.trimOrEmpty(facturacionData.billing_email),
         password: this.trimOrEmpty(facturacionData.password),
         observations: this.trimOrEmpty(facturacionData.observations),
-        is_active: !!facturacionData.is_active
+        is_active: !!facturacionData.is_active,
+        associated_entities: facturacionData.associated_entities || []
       }
 
       const response: AxiosResponse<BillingCreateResponse> = await apiClient.post<BillingCreateResponse>(
@@ -31,7 +32,7 @@ class BillingCreateService {
       return (response as any).data ?? (response as any)
     } catch (error: any) {
       console.error('Error creating facturacion:', error)
-      
+
       if (error.response?.status === 409) {
         const detail = error.response.data?.detail || 'Ya existe un usuario de facturación con estos datos'
         throw new Error(detail)

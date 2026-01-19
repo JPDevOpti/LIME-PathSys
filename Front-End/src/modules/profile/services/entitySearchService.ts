@@ -132,6 +132,7 @@ class EntitySearchService {
       facturacionCode,
       FacturacionEmail: email,
       observaciones: fact.observations || fact.observaciones || '',
+      associated_entities: fact.associated_entities || [],
       isActive: activo
     }
   }

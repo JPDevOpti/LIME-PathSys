@@ -25,7 +25,7 @@
         <PathologistList v-model="pathologistCode" label="Patólogo" :placeholder="isPatologo ? 'Patólogo fijo (usted)' : 'Buscar y seleccionar patólogo...'" :disabled="isPatologo" @pathologist-selected="onPathologistSelected" />
       </div>
       <div class="flex-1">
-        <EntityList v-model="entityCode" label="Entidad" placeholder="Buscar y seleccionar entidad..." @entity-selected="onEntitySelected" />
+        <EntityList v-model="entityCode" label="Entidad" placeholder="Buscar y seleccionar entidad..." @entity-selected="onEntitySelected" :disabled="authStore.isBilling" />
       </div>
       <div class="flex-1">
         <TestList v-model="local.selectedTest" label="Pruebas" placeholder="Buscar y seleccionar prueba..." />

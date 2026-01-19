@@ -80,6 +80,7 @@ class CaseService:
         test: Optional[str] = None,
         date_from: Optional[str] = None,
         date_to: Optional[str] = None,
+        entity_codes: Optional[List[str]] = None,
         current_user_id: Optional[str] = None
     ) -> List[CaseResponse]:
         """Listar casos con filtros opcionales"""
@@ -155,6 +156,11 @@ class CaseService:
                 except ValueError:
                     raise BadRequestError("Formato de fecha inválido para date_to. Use YYYY-MM-DD")
             filters["created_at"] = date_filter
+
+        # Filtro por lista de códigos de entidad (para usuarios de facturación)
+        if entity_codes:
+            # Filtrar por lista de códigos de entidad (HAMA, etc.)
+            filters["patient_info.entity_info.id"] = {"$in": entity_codes}
         
         # Ejecutar consulta con paginación
         cursor = self.repo.collection.find(filters).sort("created_at", -1).skip(skip).limit(limit)
