@@ -24,7 +24,7 @@ async def create_test(test: TestCreate, service: TestService = Depends(get_servi
 async def list_active_tests(
     query: str = Query(None),
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(10, ge=1, le=20000),
     service: TestService = Depends(get_service)
 ):
     try:
@@ -36,7 +36,7 @@ async def list_active_tests(
 async def list_all_tests(
     query: str = Query(None),
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(10, ge=1, le=20000),
     service: TestService = Depends(get_service)
 ):
     try:

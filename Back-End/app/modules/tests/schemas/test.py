@@ -57,4 +57,4 @@ class TestResponse(TestBase):
 class TestSearch(BaseModel):
     query: Optional[str] = None
     skip: int = Field(0, ge=0)
-    limit: int = Field(10, ge=1, le=100)
+    limit: int = Field(10, ge=1, le=20000)

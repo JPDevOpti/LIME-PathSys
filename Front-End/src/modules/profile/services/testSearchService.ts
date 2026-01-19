@@ -20,11 +20,11 @@ class TestSearchService {
         try {
           const byIdResp = await apiClient.get(`${this.endpoint}/${q}`)
           if (byIdResp) results.push(this.normalizeTest(byIdResp))
-        } catch {}
+        } catch { }
       }
 
       // 3) Name/code contains search (active or including inactive)
-      const endpoint = includeInactive 
+      const endpoint = includeInactive
         ? `${this.endpoint}/inactive`
         : `${this.endpoint}/`
       const params = { query: q, limit: 50 }
@@ -68,7 +68,7 @@ class TestSearchService {
   async getTestByCode(code: string): Promise<any | null> {
     try {
       const response = await apiClient.get(`${this.endpoint}/${code}`)
-      
+
       if (response) {
         return this.normalizeTest(response)
       }
@@ -96,7 +96,7 @@ class TestSearchService {
     const time = test.time || test.tiempo || 1
     const price = test.price || test.precio || 0
     const isActive = test.is_active !== undefined ? test.is_active : (test.isActive !== undefined ? test.isActive : test.activo)
-    
+
     return {
       id: test._id || test.id,
       nombre: name,
@@ -114,7 +114,8 @@ class TestSearchService {
   async getAllTests(includeInactive: boolean = false): Promise<any[]> {
     try {
       const endpoint = includeInactive ? `${this.endpoint}/inactive` : `${this.endpoint}/`
-      const response = await apiClient.get(endpoint)
+      const params = { skip: 0, limit: 20000 }
+      const response = await apiClient.get(endpoint, { params })
       const list = Array.isArray(response) ? response : []
       return list.map((t: any) => this.normalizeTest(t))
     } catch (error: any) {
