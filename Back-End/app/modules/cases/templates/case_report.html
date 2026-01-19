@@ -506,6 +506,7 @@
         <div class="info-row">
           <span class="info-label">Fecha de Informe:</span>
           <div class="info-value">
+            {% if case.estado == 'Por entregar' or case.estado == 'Completado' %}
             {% if case.fecha_firma %}
             {% set fecha = case.fecha_firma %}
             {% if fecha.strftime %}
@@ -534,6 +535,7 @@
             {% endif %}
             {% else %}
             Haga clic aquí para escribir una fecha.
+            {% endif %}
             {% endif %}
           </div>
         </div>
@@ -669,7 +671,7 @@
 
     <!-- Signature -->
     <div class="signature-section">
-      {% if pathologist_signature %}
+      {% if pathologist_signature and (case.estado == 'Por entregar' or case.estado == 'Completado') %}
       <img src="{{ pathologist_signature }}" alt="Firma del patólogo"
         style="height: 15mm; width: auto; object-fit: contain; display: block;" />
       {% endif %}

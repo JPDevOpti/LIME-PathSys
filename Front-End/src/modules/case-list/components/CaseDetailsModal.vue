@@ -209,7 +209,7 @@
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">Fecha de firma</p>
-                <p class="text-sm font-bold text-gray-900">{{ (caseItem?.signedAt || caseItem?.deliveredAt) ? formatDate((caseItem?.signedAt || caseItem?.deliveredAt) as string) : 'Pendiente' }}</p>
+                <p class="text-sm font-bold text-gray-900">{{ signatureDateDisplay }}</p>
               </div>
             </div>
           </div>
@@ -444,6 +444,7 @@
         <div class="flex-shrink-0 flex items-center justify-between pt-3 border-t border-gray-200 px-4 pb-4 bg-white rounded-b-2xl">
           <div class="flex items-center space-x-4">
             <PrintPdfButton
+              v-if="caseState === 'Por entregar' || caseState === 'Completado'"
               text="Imprimir PDF"
               :caseCode="props.caseItem?.caseCode || props.caseItem?.id"
               :caseData="props.caseItem"
@@ -563,6 +564,15 @@ const formatDate = (dateString: string, includeTime: boolean = false) => {
   
   return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
+
+const signatureDateDisplay = computed(() => {
+  const status = caseState.value
+  if (status === 'En proceso' || status === 'Por firmar') {
+    return ''
+  }
+  const date = props.caseItem?.signedAt || props.caseItem?.deliveredAt
+  return date ? formatDate(date as string) : 'Pendiente'
+})
 
 function normalizeGender(value?: string | null) {
   if (!value) return ''

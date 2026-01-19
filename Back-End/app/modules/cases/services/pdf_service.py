@@ -318,6 +318,7 @@ class CasePdfService:
             'fecha_firma': case_dict.get('signed_at'),
             'fecha_entrega': case_dict.get('delivered_at'),
             'updated_at': case_dict.get('updated_at'),
+            'estado': case_dict.get('state'),
             
             # Información del paciente (mapear de patient_info)
             'paciente': {
