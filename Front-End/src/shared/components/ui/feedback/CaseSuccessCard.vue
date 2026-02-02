@@ -99,7 +99,7 @@
                       </div>
                       <div class="flex-1 min-w-0">
                         <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">Edad</p>
-                        <p class="text-lg font-bold text-gray-900">{{ patientAge ? `${patientAge} años` : '—' }}</p>
+                        <p class="text-lg font-bold text-gray-900">{{ patientAge || '—' }}</p>
                       </div>
                     </div>
                   </div>
@@ -248,6 +248,7 @@ import { useSidebar } from '@/shared/composables/SidebarControl'
 import CaseIcon from '@/assets/icons/CaseIcon.vue'
 import EntityIcon from '@/assets/icons/EntityIcon.vue'
 import SampleIcon from '@/assets/icons/SampleIcon.vue'
+import { formatPatientAge } from '@/shared/utils/formatting'
 
 interface CasePatientData {
   name?: string
@@ -441,7 +442,6 @@ function computeAgeFrom(dateInput?: string | Date | null): number | '' {
 
 const patientAge = computed(() => {
   const direct = activePatient.value.age || activePatient.value.edad
-  if (direct !== undefined && direct !== null && direct !== '') return direct
   const dob =
     (activePatient.value as any).birthDate ||
     (activePatient.value as any).birth_date ||
@@ -451,7 +451,8 @@ const patientAge = computed(() => {
     (props.caseData as any).birth_date ||
     (props.caseData as any).fecha_nacimiento ||
     (props.caseData as any).fechaNacimiento
-  return computeAgeFrom(dob)
+  
+  return formatPatientAge(direct, dob)
 })
 const patientGender = computed(() => normalizeGender(activePatient.value.gender || activePatient.value.genero || activePatient.value.sexo))
 const patientCareType = computed(() => normalizeCareType(activePatient.value.care_type || activePatient.value.careType || activePatient.value.tipoAtencion))

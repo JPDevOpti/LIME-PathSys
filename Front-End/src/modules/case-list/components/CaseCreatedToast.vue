@@ -42,7 +42,7 @@
               <div class="space-y-2 text-sm">
                 <div><span class="text-gray-500 font-medium">Nombre:</span><p class="text-gray-900 font-semibold">{{ caseData?.paciente?.nombre }}</p></div>
                 <div><span class="text-gray-500 font-medium">Código:</span><p class="text-gray-900 font-mono font-semibold">{{ caseData?.paciente?.paciente_code || caseData?.paciente?.cedula }}</p></div>
-                <div><span class="text-gray-500 font-medium">Edad:</span><p class="text-gray-900 font-semibold">{{ caseData?.paciente?.edad }} años</p></div>
+                <div><span class="text-gray-500 font-medium">Edad:</span><p class="text-gray-900 font-semibold">{{ patientAge }}</p></div>
                 <div><span class="text-gray-500 font-medium">Sexo:</span><p class="text-gray-900 font-semibold capitalize">{{ caseData?.paciente?.sexo }}</p></div>
                 <div><span class="text-gray-500 font-medium">Entidad:</span><p class="text-gray-900 font-semibold">{{ caseData?.paciente?.entidad_info?.nombre }}</p></div>
                 <div><span class="text-gray-500 font-medium">Tipo de Atención:</span><p class="text-gray-900 font-semibold">{{ caseData?.paciente?.tipo_atencion }}</p></div>
@@ -97,6 +97,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { formatPatientAge } from '@/shared/utils/formatting'
 import { useSidebar } from '@/shared/composables/SidebarControl'
 
 interface Props {
@@ -121,6 +122,12 @@ const formatDateDisplay = (value: string | undefined | null): string => {
 const createdCaseFecha = computed(() => {
   const raw = (props.caseData?.fecha_creacion || props.caseData?.fechaIngreso) as string | undefined
   return formatDateDisplay(raw)
+})
+
+const patientAge = computed(() => {
+  const p = props.caseData?.paciente
+  if (!p) return ''
+  return formatPatientAge(p.edad || p.age, p.birth_date || p.fecha_nacimiento || p.birthDate)
 })
 
 // Alineación consistente con CaseDetailsModal: respetar header y sidebar

@@ -44,7 +44,7 @@
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">Edad</p>
-              <p class="text-sm font-bold text-gray-900">{{ (patient.age === 0 || patient.age === '0') ? 'N/A' : patient.age + ' años' }}</p>
+              <p class="text-sm font-bold text-gray-900">{{ formattedAge }}</p>
               <p v-if="formattedBirthDate" class="text-xs text-gray-600 mt-0.5">Nac: {{ formattedBirthDate }}</p>
             </div>
           </div>
@@ -175,6 +175,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { formatPatientAge } from '@/shared/utils/formatting'
 import type { PatientData } from '@/modules/cases/types'
 import EntityIcon from '@/assets/icons/EntityIcon.vue'
 import GenderIcon from '@/assets/icons/GerdenIcon.vue'
@@ -183,7 +184,8 @@ import AttentionTypeIcon from '@/assets/icons/AtentionTypeIcon.vue'
 interface PatientInfo {
   name: string
   patientCode: string
-  age: string
+  age: string | number
+  birth_date?: string | Date
   gender?: string
   careType?: string
   entity: string
@@ -254,5 +256,12 @@ const formattedBirthDate = computed(() => {
   } catch {
     return ''
   }
+})
+
+const formattedAge = computed(() => {
+  if (!props.patient) return '—'
+  const p: any = props.patient
+  const age = p.age
+  return formatPatientAge(age, p.birth_date || p.birthDate)
 })
 </script>

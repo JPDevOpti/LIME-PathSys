@@ -185,7 +185,7 @@
             <td class="px-2 py-3 text-center">
               <div class="flex gap-1 justify-center min-w-[120px]">
                 <button class="p-1.5 rounded-md hover:bg-gray-100 text-gray-600" @click.stop="$emit('show-details', c)" title="Ver detalles"><InfoListIcon class="w-4 h-4" /></button>
-                <button v-if="!isPatologo && !isResidente && !isFacturacion && c.status !== 'Completado'" class="p-1.5 rounded-md hover:bg-gray-100 text-gray-600" @click.stop="handleEdit(c)" title="Editar caso"><SettingsIcon class="w-4 h-4" /></button>
+                <button v-if="isAdmin || (!isPatologo && !isResidente && !isFacturacion && c.status !== 'Completado')" class="p-1.5 rounded-md hover:bg-gray-100 text-gray-600" @click.stop="handleEdit(c)" title="Editar caso"><SettingsIcon class="w-4 h-4" /></button>
                 <button v-if="c.status === 'En proceso' && !isFacturacion" class="p-1.5 rounded-md hover:bg-gray-100 text-gray-600" @click.stop="handlePerform(c)" title="Realizar resultados">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
                 </button>
@@ -316,7 +316,7 @@
 
           <div class="flex gap-1 pt-2 border-t border-gray-100">
             <button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-xs font-medium" @click.stop="$emit('show-details', c)"><InfoListIcon class="w-3 h-3" />Ver detalles</button>
-            <button v-if="!isPatologo && !isResidente && !isFacturacion && c.status !== 'Completado'" class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-xs font-medium" @click.stop="handleEdit(c)"><SettingsIcon class="w-3 h-3" />Editar</button>
+            <button v-if="isAdmin || (!isPatologo && !isResidente && !isFacturacion && c.status !== 'Completado')" class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-xs font-medium" @click.stop="handleEdit(c)"><SettingsIcon class="w-3 h-3" />Editar</button>
             <button v-if="c.status === 'En proceso' && !isFacturacion" class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-xs font-medium" @click.stop="handlePerform(c)">
               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>Realizar
             </button>
@@ -363,6 +363,7 @@
 
 <script setup lang="ts">
 import type { Case } from '../types/case.types'
+import { apiClient } from '@/core/config/axios.config'
 import { SettingsIcon, DocsIcon, PrintIcon } from '@/assets/icons'
 import InfoListIcon from '@/assets/icons/InfoListIcon.vue'
 import { useRouter } from 'vue-router'
@@ -410,7 +411,7 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
-const { isPatologo, isResidente, isFacturacion } = usePermissions()
+const { isPatologo, isResidente, isFacturacion, isAdmin } = usePermissions()
 const { warning, success, error: showError } = useToasts()
 
 const isDownloadingExcel = ref(false)

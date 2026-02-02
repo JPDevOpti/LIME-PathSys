@@ -8,6 +8,8 @@ import re
 from pathlib import Path
 
 
+from datetime import datetime, date
+
 class CasePdfService:
     def __init__(self, database: Any):
         from app.modules.cases.services.case_service import CaseService
@@ -326,7 +328,10 @@ class CasePdfService:
                 'paciente_code': case_dict.get('patient_info', {}).get('patient_code', ''),
                 'identification_type': case_dict.get('patient_info', {}).get('identification_type', None),
                 'identification_number': case_dict.get('patient_info', {}).get('identification_number', ''),
-                'edad': case_dict.get('patient_info', {}).get('age', ''),
+                'edad': self._format_patient_age(
+                    case_dict.get('patient_info', {}).get('age'),
+                    case_dict.get('patient_info', {}).get('birth_date')
+                ),
                 'sexo': case_dict.get('patient_info', {}).get('gender', ''),
                 'telefono': case_dict.get('patient_info', {}).get('phone', ''),
                 'entidad_info': {
@@ -589,3 +594,59 @@ class CasePdfService:
             if 'pathologist_id' in locals() and pathologist_id:
                 self._signature_cache[pathologist_id] = None
             return None
+
+    def _format_patient_age(self, age: Any, birth_date: Any) -> str:
+        """Formatea la edad del paciente similar al frontend (meses, año y meses, años)"""
+        try:
+            # Si hay fecha de nacimiento, calcular edad precisa
+            if birth_date:
+                birth = None
+                if isinstance(birth_date, (datetime, date)):
+                    birth = birth_date
+                elif isinstance(birth_date, str):
+                    # Intentar parsear ISO
+                    try:
+                        if 'T' in birth_date:
+                            birth = datetime.fromisoformat(birth_date.replace('Z', '+00:00'))
+                        else:
+                            birth = datetime.strptime(birth_date, '%Y-%m-%d')
+                    except ValueError:
+                        pass
+                
+                if birth:
+                    now = datetime.now()
+                    if isinstance(birth, datetime):
+                        birth_dt = birth
+                    else:
+                        birth_dt = datetime.combine(birth, datetime.min.time()) # Convertir date a datetime
+
+                    years = now.year - birth_dt.year
+                    months = now.month - birth_dt.month
+                    
+                    if now.day < birth_dt.day:
+                        months -= 1
+                    
+                    if months < 0:
+                        years -= 1
+                        months += 12
+                        
+                    # Safety check for future dates
+                    if years < 0:
+                        return 'Recién nacido'
+
+                    if years < 1:
+                        return f"{months} meses"
+                    elif years < 2:
+                        return f"{years} año y {months} meses"
+                    
+                    # Si coincide con la edad proporcionada (si existe), usar cálculo
+                    return f"{years} años"
+
+            # Fallback a la edad directa si es válida
+            if age is not None and age != "":
+                return f"{age} años"
+            
+            return ""
+        except Exception as e:
+            print(f"Error formateando edad: {e}")
+            return f"{age} años" if age else ""

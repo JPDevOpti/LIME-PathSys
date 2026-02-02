@@ -26,7 +26,7 @@
         </div>
       </div>
       <div class="bg-gray-50 p-4 rounded-md border border-gray-200">
-        <h4 class="text-sm font-semibold text-gray-700 mb-1">Total Pacientes</h4>
+        <h4 class="text-sm font-semibold text-gray-700 mb-1">Total Casos</h4>
         <div class="flex items-end justify-between">
           <span class="text-2xl font-bold text-gray-700">{{ totalPacientes }}</span>
           <span class="text-sm text-gray-500">100%</span>

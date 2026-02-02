@@ -60,6 +60,22 @@
           </div>
         </div>
 
+        <!-- Admin Override Warning -->
+        <div 
+          v-if="caseFound && foundCaseInfo && isRealCaseCompleted && isAdmin" 
+          class="mt-4 p-3 sm:p-4 bg-orange-50 border border-orange-200 rounded-lg"
+        >
+          <div class="flex items-start">
+            <svg class="w-5 h-5 text-orange-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <div>
+              <h4 class="text-sm font-semibold text-orange-800">Modo Administrador</h4>
+              <p class="text-xs text-orange-600 mt-0.5">Este caso está completado. Como administrador, tiene permisos para modificarlo. Proceda con precaución.</p>
+            </div>
+          </div>
+        </div>
+
         <div>
           <Notification 
             :visible="notification.visible" 
@@ -263,6 +279,7 @@ import type { PatientData } from '@/modules/patients/types'
 import { ConfirmDialog } from '@/shared/components/ui/feedback'
 import CaseDeleteSuccessCard from '@/shared/components/ui/feedback/CaseDeleteSuccessCard.vue'
 import { TrashIcon } from '@/assets/icons'
+import { usePermissions } from '@/shared/composables/usePermissions'
 
 interface Props {
   caseCodeProp?: string
@@ -277,6 +294,7 @@ const emit = defineEmits<Emits>()
 
 const { notification, showError, closeNotification } = useNotifications()
 const { formData, errors, clearForm: clearCaseForm, addTestToSample, removeTestFromSample, createEmptySubSample, handleNumberOfSamplesChange } = useCaseForm()
+const { isAdmin } = usePermissions()
 
 // UI and data state
 const isLoading = ref(false)
@@ -340,11 +358,16 @@ const isFormValid = computed(() => {
   return baseOk && samplesOk
 })
 
-const isCaseCompleted = computed(() => {
+const isRealCaseCompleted = computed(() => {
   const fc: any = foundCaseInfo.value || {}
   const estado = fc.estado || fc.state || ''
   const v = String(estado).toLowerCase()
   return v === 'completado' || v === 'completed'
+})
+
+const isCaseCompleted = computed(() => {
+  if (isAdmin.value) return false
+  return isRealCaseCompleted.value
 })
 
 const patientDisplayInfo = computed(() => {
@@ -880,7 +903,8 @@ const onSubmit = async () => {
         entity: entityName,
         tipo_atencion: uc.patient_info.care_type,
         care_type: uc.patient_info.care_type,
-        careType: uc.patient_info.care_type
+        careType: uc.patient_info.care_type,
+        birth_date: uc.patient_info.birth_date || patientInfo.value.birth_date
       } : (updatedCase.value?.paciente || {}),
       prioridad: uc.priority || formData.casePriority,
       observaciones_generales: uc.observations || formData.observations,

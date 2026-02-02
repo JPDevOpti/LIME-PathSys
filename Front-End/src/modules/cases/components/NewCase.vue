@@ -537,6 +537,12 @@ const handleSaveClick = async () => {
     
     if (result.success && result.case) {
       createdCase.value = result.case as any
+      // Asegurar que birth_date esté presente para el cálculo de edad en el modal de éxito
+      if (verifiedPatient.value && verifiedPatient.value.birth_date && createdCase.value && createdCase.value.patient_info) {
+        if (!createdCase.value.patient_info.birth_date) {
+            createdCase.value.patient_info.birth_date = verifiedPatient.value.birth_date
+        }
+      }
       closeNotification()
       showCaseSuccessCard.value = true
       emit('case-saved', result.case)

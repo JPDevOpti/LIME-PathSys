@@ -9,6 +9,7 @@ export interface Patient {
   notes?: string
   createdAt?: string
   updatedAt?: string
+  birthDate?: string
 }
 
 export interface Case {

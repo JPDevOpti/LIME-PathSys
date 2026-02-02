@@ -1,14 +1,20 @@
-from __future__ import annotations
-
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional, Union
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from bson import ObjectId
 
 
 class OpportunityStatisticsRepository:
     # Repositorio para métricas de oportunidad (cumplimiento en días hábiles)
     def __init__(self, db: AsyncIOMotorDatabase):
         self.collection = db.cases
+
+        self.excluded_entity_id = "695fabcc483c3b4cc99ee1ac"
+        # Tratar de crear ObjectId si es válido, para filtrar ambos tipos
+        try:
+            self.excluded_entity_oid = ObjectId(self.excluded_entity_id)
+        except:
+            self.excluded_entity_oid = self.excluded_entity_id
 
     def _month_range(self, ref: Optional[datetime] = None) -> Dict[str, datetime]:
         # Calcula inicios de mes: actual, anterior y pre-anterior
@@ -40,13 +46,17 @@ class OpportunityStatisticsRepository:
     ) -> Dict[str, Any]:
         # Calcula porcentaje y tiempos dentro/fuera de oportunidad en un rango
         match_stage: Dict[str, Any] = {
-            "signed_at": {"$gte": start_date, "$lt": end_date},
+            "created_at": {"$gte": start_date, "$lt": end_date},
+            # Excluir Hospital Alma Máter (IDs string y ObjectId por si acaso)
+            "patient_info.entity_info.id": {
+                "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
+            }
         }
         if pathologist_code:
             match_stage["assigned_pathologist.id"] = pathologist_code
 
         projection = {
-            "signed_at": 1,
+            "created_at": 1,
             "state": 1,
             "assigned_pathologist.id": 1,
             "business_days": 1,
@@ -56,7 +66,7 @@ class OpportunityStatisticsRepository:
         cursor = self.collection.find(match_stage, projection=projection)
         docs = await cursor.to_list(length=None)
 
-        filtered = [d for d in docs if str(d.get("state")) == "Completado" and d.get("signed_at") and d.get("business_days") is not None]
+        filtered = [d for d in docs if str(d.get("state")) in ["Completado", "Por entregar"] and d.get("created_at") and d.get("business_days") is not None]
 
         total_considerados = len(filtered)
         if total_considerados == 0:
@@ -208,8 +218,12 @@ class OpportunityStatisticsRepository:
         start, end = self._month_bounds(year, month)
 
         match_stage: Dict[str, Any] = {
-            "state": "Completado",
-            "signed_at": {"$gte": start, "$lt": end},
+            "state": {"$in": ["Completado", "Por entregar"]},
+            "created_at": {"$gte": start, "$lt": end},
+            # Apply exclusion here too
+            "patient_info.entity_info.id": {
+                "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
+            }
         }
 
         if entity:
@@ -222,11 +236,13 @@ class OpportunityStatisticsRepository:
             ]
 
         projection = {
-            "signed_at": 1,
+            "created_at": 1,
             "state": 1,
             "assigned_pathologist.id": 1,
             "assigned_pathologist.name": 1,
             "patient_info.entity_info.name": 1,
+            "patient_info.patient_code": 1,
+            "patient_info.created_at": 1,
             "samples.tests.id": 1,
             "samples.tests.name": 1,
             "business_days": 1,
@@ -243,9 +259,9 @@ class OpportunityStatisticsRepository:
         sum_days_all = 0.0
 
         for d in docs:
-            signed_at: Optional[datetime] = d.get("signed_at")
+            created_at: Optional[datetime] = d.get("created_at")
             business_days: Optional[int] = d.get("business_days")
-            if not signed_at or business_days is None:
+            if not created_at or business_days is None:
                 continue
             days = business_days
             within = days <= threshold_days

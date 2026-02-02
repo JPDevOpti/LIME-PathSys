@@ -126,7 +126,7 @@
                     {{ statusLabel(caso) }}
                   </span>
                   <p class="text-xs font-medium px-1.5 sm:px-2 py-0.5 rounded-full inline-block mt-1" :class="daysClass(caso)">
-                    {{ caso.dias_en_sistema }} días
+                    {{ getDaysInSystem(caso) }} días
                   </p>
                 </td>
                 
@@ -201,7 +201,7 @@
                 <div>
                   <p class="text-gray-500">Días en sistema</p>
                   <p class="text-gray-800 font-medium" :class="daysClass(caso)">
-                    {{ caso.dias_en_sistema }} días
+                    {{ getDaysInSystem(caso) }} días
                   </p>
                 </div>
               </div>
@@ -332,6 +332,7 @@ import { useDashboard } from '../composables/useDashboard'
 import { usePermissions } from '@/shared/composables/usePermissions'
 import type { CasoUrgente } from '../types/dashboard.types'
 import type { FormPathologistInfo } from '@/modules/cases/types'
+import { getHolidaysForRange, formatISODate } from '@/modules/case-list/utils/holidayUtils'
 
 // Events emitted to parent
 const emit = defineEmits<{
@@ -347,6 +348,62 @@ const errorCarga = error
 const patologoSeleccionado = ref('')
 const sortKey = ref('codigo')
 const sortOrder = ref('desc')
+
+// Helper function to calculate business days (same as CasesTable)
+const calculateBusinessDays = (startDate: string): number => {
+  const parseDate = (s?: string): Date | null => {
+    if (!s) return null
+    const v = String(s).trim()
+    if (/^\d{2}[\/-]\d{2}[\/-]\d{4}$/.test(v)) {
+      const sep = v.includes('/') ? '/' : '-'
+      const [dd, mm, yyyy] = v.split(sep)
+      return new Date(Number(yyyy), Number(mm) - 1, Number(dd))
+    }
+    const digits = v.replace(/\D/g, '')
+    if (digits.length === 8) {
+      const dd = digits.slice(0, 2), mm = digits.slice(2, 4), yyyy = digits.slice(4)
+      return new Date(Number(yyyy), Number(mm) - 1, Number(dd))
+    }
+    if (/^\d{4}-\d{2}-\d{2}/.test(v)) return new Date(v)
+    const d = new Date(v)
+    return isNaN(d.getTime()) ? null : d
+  }
+  
+  const start = parseDate(startDate)
+  const end = new Date() 
+  
+  if (!start || isNaN(start.getTime())) return 0
+  
+  const fromDate = start <= end ? start : end
+  const toDate = start <= end ? end : start
+
+  const normalize = (d: Date) => { const x = new Date(d); x.setHours(0,0,0,0); return x }
+  let cur = normalize(fromDate)
+  const endDay = normalize(toDate)
+
+  // Festivos de Colombia en el rango
+  const holidays = getHolidaysForRange(cur, endDay)
+
+  let days = 0
+  while (cur <= endDay) {
+    const dow = cur.getDay() // 0=Sun, 1=Mon, ...
+    const iso = formatISODate(cur)
+    if (dow >= 1 && dow <= 5 && !holidays.has(iso)) days++
+    cur.setDate(cur.getDate() + 1)
+  }
+  // No contar el día inicial si es hábil y no festivo
+  const startNorm = normalize(fromDate)
+  const startDow = startNorm.getDay()
+  const startIso = formatISODate(startNorm)
+  const startIsBusiness = (startDow >= 1 && startDow <= 5) && !holidays.has(startIso)
+  if (startIsBusiness) days = Math.max(0, days - 1)
+  
+  return days
+}
+
+const getDaysInSystem = (caso: CasoUrgente): number => {
+  return calculateBusinessDays(caso.fecha_creacion)
+}
 
 // Sorted urgent cases according to the selected column and order
 const casosUrgentes = computed(() => {
@@ -364,7 +421,7 @@ const casosUrgentes = computed(() => {
         case 'pruebas': return caso.pruebas.join(', ').toLowerCase()
         case 'patologo': return (caso.patologo || '').toLowerCase()
         case 'fechaCreacion': return new Date(caso.fecha_creacion).getTime()
-        case 'diasSistema': return caso.dias_en_sistema
+        case 'diasSistema': return getDaysInSystem(caso)
         default: return caso.estado.toLowerCase()
       }
     }
@@ -470,7 +527,7 @@ const getTestTooltip = (tests: string[], code: string, count: number): string =>
 const statusLabel = (caso: CasoUrgente) => caso.estado
 
 const statusClass = (caso: CasoUrgente) => {
-  const days = caso.dias_en_sistema
+  const days = getDaysInSystem(caso)
   if (caso.estado === 'Por entregar') return 'bg-red-50 text-red-700 font-semibold'
   if (days >= 5 && caso.estado !== 'Completado') return 'bg-red-50 text-red-700 font-semibold'
   if (caso.estado === 'Por firmar') return 'bg-yellow-50 text-yellow-700'
@@ -480,7 +537,7 @@ const statusClass = (caso: CasoUrgente) => {
 }
 
 const daysClass = (caso: CasoUrgente) => {
-  const days = caso.dias_en_sistema
+  const days = getDaysInSystem(caso)
   return days >= 5 && caso.estado !== 'Completado' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'
 }
 
