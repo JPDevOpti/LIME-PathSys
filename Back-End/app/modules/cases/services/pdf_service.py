@@ -31,6 +31,8 @@ def _method_values_to_labels(values: list) -> list:
         else:
             out.append(str(v))
     return out
+
+
 class CasePdfService:
     def __init__(self, database: Any):
         from app.modules.cases.services.case_service import CaseService
