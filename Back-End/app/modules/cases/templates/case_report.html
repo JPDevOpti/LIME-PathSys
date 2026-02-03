@@ -586,9 +586,7 @@
     <!-- Method -->
     <div class="content-section">
       <div class="section-title">MÉTODO UTILIZADO:</div>
-      <div class="content-box">{% if case.resultado and case.resultado.metodo %}{% if case.resultado.metodo is iterable
-        and case.resultado.metodo is not string %}{{ case.resultado.metodo|join(', ') }}{% else %}{{
-        case.resultado.metodo }}{% endif %}{% else %}Elija un elemento.{% endif %}</div>
+      <div class="content-box">{% if case.resultado and (case.resultado.metodo_display or case.resultado.metodo) %}{% if case.resultado.metodo_display %}{{ case.resultado.metodo_display|join(', ') }}{% elif case.resultado.metodo is iterable and case.resultado.metodo is not string %}{{ case.resultado.metodo|join(', ') }}{% else %}{{ case.resultado.metodo }}{% endif %}{% else %}Elija un elemento.{% endif %}</div>
     </div>
 
     <!-- Macroscopic Description -->

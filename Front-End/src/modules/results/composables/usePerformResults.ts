@@ -60,7 +60,7 @@ export function usePerformResults(sampleId: string) {
   const missingFields = computed<string[]>(() => {
     const faltantes: string[] = []
     const methods = sections.value.method || []
-    
+
     // Validar que haya al menos un método
     if (!methods.length || methods.every(m => !m || !m.trim())) {
       faltantes.push('Método')
@@ -69,13 +69,13 @@ export function usePerformResults(sampleId: string) {
     else if (methods.some(m => !m || !m.trim())) {
       faltantes.push('Métodos vacíos (elimina o completa)')
     }
-    
-    if (!sections.value.macro.trim()) faltantes.push('Corte Macro')
-    if (!sections.value.micro.trim()) faltantes.push('Corte Micro')
+
+    if (!sections.value.macro.trim()) faltantes.push('Corte Macroscópico')
+    if (!sections.value.micro.trim()) faltantes.push('Descripción Microscópica')
     if (!sections.value.diagnosis.trim()) faltantes.push('Diagnóstico')
     return faltantes
   })
-  
+
   // Para guardar progreso - siempre se puede guardar si hay algún contenido
   const canSaveProgress = computed<boolean>(() => {
     // Se puede guardar si hay cualquier contenido, aunque haya métodos vacíos.
@@ -86,10 +86,10 @@ export function usePerformResults(sampleId: string) {
       sections.value.diagnosis.trim()
     )
   })
-  
+
   // Para marcar como completo - requiere todos los campos
   const canComplete = computed<boolean>(() => missingFields.value.length === 0)
-  
+
   // Mantener canSave para compatibilidad, pero ahora permite guardar progreso
   const canSave = computed<boolean>(() => canSaveProgress.value)
 
@@ -158,8 +158,8 @@ export function usePerformResults(sampleId: string) {
         try {
           const list = await casesApiService.getCasesByPatient(beCase.patient_info.patient_code)
           previousCases.value = list
-            .filter(c => 
-              c.case_code !== beCase.case_code && 
+            .filter(c =>
+              c.case_code !== beCase.case_code &&
               c.patient_info?.patient_code === beCase.patient_info?.patient_code
             )
             .map(c => ({
@@ -181,7 +181,7 @@ export function usePerformResults(sampleId: string) {
       if (beCase.result) {
         const resultData = beCase.result
         let methodArray: string[] = []
-        
+
         // Mapear métodos (nuevo formato: method)
         if (resultData.method && Array.isArray(resultData.method)) {
           methodArray = resultData.method
@@ -195,7 +195,7 @@ export function usePerformResults(sampleId: string) {
           const { normalizeMethod } = await import('@/shared/data/methods')
           methodArray = methodArray.map(m => normalizeMethod(m))
         } catch (e) { /* ignore */ }
-        
+
         sections.value = {
           method: methodArray,
           macro: resultData.macro_result || '',
@@ -203,7 +203,7 @@ export function usePerformResults(sampleId: string) {
           diagnosis: resultData.diagnosis || ''
         }
         savedSectionsSnapshot.value = JSON.stringify(sections.value)
-        
+
         // NOTA: Los diagnósticos CIE-10 y CIE-O NO se cargan automáticamente en Transcribir Resultados
         // Solo se cargan en Firmar Resultados
         /*
@@ -247,7 +247,7 @@ export function usePerformResults(sampleId: string) {
     attachments.value = attachments.value.filter(a => a.id !== attachmentId)
   }
 
-    // Función helper para convertir array de métodos a string
+  // Función helper para convertir array de métodos a string
   function formatMethodsForBackend(methods: string[] | null | undefined): string {
     if (!methods || !Array.isArray(methods)) return ''
     const validMethods = methods.filter(m => m && typeof m === 'string' && m.trim())
@@ -268,7 +268,7 @@ export function usePerformResults(sampleId: string) {
         return false
       }
       if (!sample.value?.id) throw new Error('No hay caso cargado')
-      
+
       // Preparar datos del diagnóstico CIE-10
       const cie10Diagnosis = hasDisease.value && primaryDisease.value ? {
         id: primaryDisease.value.id,
@@ -302,20 +302,20 @@ export function usePerformResults(sampleId: string) {
         micro_result: sections.value?.micro || '',
         diagnosis: sections.value?.diagnosis || '',
         observations: undefined,
-  cie10_diagnosis: cie10Diagnosis,
-  cieo_diagnosis: cieoDiagnosis,
-  diagnostico_cie10: cie10DiagnosisLegacy,
-  diagnostico_cieo: cieoDiagnosisLegacy
+        cie10_diagnosis: cie10Diagnosis,
+        cieo_diagnosis: cieoDiagnosis,
+        diagnostico_cie10: cie10DiagnosisLegacy,
+        diagnostico_cieo: cieoDiagnosisLegacy
       }
-      
+
       console.log('Enviando datos al nuevo backend:', requestData)
-      
+
       await resultsApiService.updateCaseResult(sample.value.id, requestData)
       lastSavedAt.value = new Date().toISOString()
-      
+
       // NO limpiar automáticamente aquí - dejar que el componente maneje cuándo limpiar
       // clearAfterSuccess()
-      
+
       return true
     } catch (err) {
       errorMessage.value = 'No se pudo guardar el borrador.'
@@ -334,7 +334,7 @@ export function usePerformResults(sampleId: string) {
         return false
       }
       if (!sample.value?.id) throw new Error('No hay caso cargado')
-      
+
       // Preparar datos del diagnóstico CIE-10
       const cie10Diagnosis = hasDisease.value && primaryDisease.value ? {
         id: primaryDisease.value.id,
@@ -368,21 +368,21 @@ export function usePerformResults(sampleId: string) {
         micro_result: sections.value?.micro || '',
         diagnosis: sections.value?.diagnosis || '',
         observations: undefined,
-  cie10_diagnosis: cie10Diagnosis,
-  cieo_diagnosis: cieoDiagnosis,
-  diagnostico_cie10: cie10DiagnosisLegacy,
-  diagnostico_cieo: cieoDiagnosisLegacy
+        cie10_diagnosis: cie10Diagnosis,
+        cieo_diagnosis: cieoDiagnosis,
+        diagnostico_cie10: cie10DiagnosisLegacy,
+        diagnostico_cieo: cieoDiagnosisLegacy
       }
-      
-      
+
+
       // Guardar resultado en el nuevo backend
       await resultsApiService.updateCaseResult(sample.value.id, requestData)
-      
+
       // Cambiar estado del caso a "Por firmar"
       await casesApiService.updateCaseState(sample.value.id, 'Por firmar')
-      
+
       lastSavedAt.value = new Date().toISOString()
-      
+
       return true
     } catch (err) {
       errorMessage.value = 'No se pudo completar el caso para firma.'
@@ -434,7 +434,7 @@ export function usePerformResults(sampleId: string) {
       }
       return value as string
     },
-    set: (val: string | string[]) => { 
+    set: (val: string | string[]) => {
       if (activeSection.value === 'method') {
         sections.value.method = Array.isArray(val) ? val : []
       } else {
@@ -456,8 +456,8 @@ export function usePerformResults(sampleId: string) {
     if (sections.value.method.length && sections.value.method.some(m => m.trim())) {
       parts.push(sectionHtml('Método', formatMethodsForBackend(sections.value.method)))
     }
-    if (sections.value.macro.trim()) parts.push(sectionHtml('Corte Macro', sections.value.macro))
-    if (sections.value.micro.trim()) parts.push(sectionHtml('Corte Micro', sections.value.micro))
+    if (sections.value.macro.trim()) parts.push(sectionHtml('Corte Macroscópico', sections.value.macro))
+    if (sections.value.micro.trim()) parts.push(sectionHtml('Descripción Microscópica', sections.value.micro))
     if (sections.value.diagnosis.trim()) parts.push(sectionHtml('Diagnóstico', sections.value.diagnosis))
     return parts.join('\n')
   }
@@ -482,28 +482,28 @@ export function usePerformResults(sampleId: string) {
     // Actualizar snapshots para que no aparezca como "dirty"
     savedSectionsSnapshot.value = JSON.stringify(sections.value)
     savedTemplateIdSnapshot.value = selectedTemplateId.value
-    
+
     // Limpiar el buscador (resetear estado del caso)
     sample.value = null
     patient.value = null
     caseDetails.value = null
     previousCases.value = []
-    
+
     // Emitir evento para limpiar el buscador en los componentes
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('clear-search'))
     }
-    
+
     // Scroll hacia la notificación después de un pequeño delay para que se renderice
     setTimeout(() => {
       // Buscar la notificación por diferentes selectores
       const notificationElement = document.querySelector('[data-notification="success"], .notification-container, .notification') ||
-                                 document.querySelector('.mt-3[data-notification]') ||
-                                 document.querySelector('.bg-green-50, .bg-blue-50, .bg-yellow-50, .bg-red-50')
-      
+        document.querySelector('.mt-3[data-notification]') ||
+        document.querySelector('.bg-green-50, .bg-blue-50, .bg-yellow-50, .bg-red-50')
+
       if (notificationElement) {
-        notificationElement.scrollIntoView({ 
-          behavior: 'smooth', 
+        notificationElement.scrollIntoView({
+          behavior: 'smooth',
           block: 'center',
           inline: 'nearest'
         })

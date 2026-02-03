@@ -64,8 +64,8 @@ defineEmits<{ (e: 'update:modelValue', value: string | string[]): void, (e: 'upd
 
 const tabs: Array<{ key: EditorSectionKey, label: string }> = [
   { key: 'method', label: 'Método' },
-  { key: 'macro', label: 'Corte Macro' },
-  { key: 'micro', label: 'Corte Micro' },
+  { key: 'macro', label: 'Corte Macroscópico' },
+  { key: 'micro', label: 'Descripción Microscópica' },
   { key: 'diagnosis', label: 'Diagnóstico' }
 ]
 

@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional, Union
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from bson import ObjectId
 
 
 class OpportunityStatisticsRepository:
@@ -9,12 +8,7 @@ class OpportunityStatisticsRepository:
     def __init__(self, db: AsyncIOMotorDatabase):
         self.collection = db.cases
 
-        self.excluded_entity_id = "695fabcc483c3b4cc99ee1ac"
-        # Tratar de crear ObjectId si es válido, para filtrar ambos tipos
-        try:
-            self.excluded_entity_oid = ObjectId(self.excluded_entity_id)
-        except:
-            self.excluded_entity_oid = self.excluded_entity_id
+        self.excluded_entity_code = "HAMA"
 
     def _month_range(self, ref: Optional[datetime] = None) -> Dict[str, datetime]:
         # Calcula inicios de mes: actual, anterior y pre-anterior
@@ -47,10 +41,10 @@ class OpportunityStatisticsRepository:
         # Calcula porcentaje y tiempos dentro/fuera de oportunidad en un rango
         match_stage: Dict[str, Any] = {
             "created_at": {"$gte": start_date, "$lt": end_date},
-            # Excluir Hospital Alma Máter (IDs string y ObjectId por si acaso)
-            "patient_info.entity_info.id": {
-                "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
-            }
+            # Excluir Hospital Alma Máter por código (el código se guarda en id/entity_code/code)
+            "patient_info.entity_info.id": {"$ne": self.excluded_entity_code},
+            "patient_info.entity_info.entity_code": {"$ne": self.excluded_entity_code},
+            "patient_info.entity_info.code": {"$ne": self.excluded_entity_code},
         }
         if pathologist_code:
             match_stage["assigned_pathologist.id"] = pathologist_code
@@ -220,10 +214,10 @@ class OpportunityStatisticsRepository:
         match_stage: Dict[str, Any] = {
             "state": {"$in": ["Completado", "Por entregar"]},
             "created_at": {"$gte": start, "$lt": end},
-            # Apply exclusion here too
-            "patient_info.entity_info.id": {
-                "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
-            }
+            # Excluir Hospital Alma Máter por código (el código se guarda en id/entity_code/code)
+            "patient_info.entity_info.id": {"$ne": self.excluded_entity_code},
+            "patient_info.entity_info.entity_code": {"$ne": self.excluded_entity_code},
+            "patient_info.entity_info.code": {"$ne": self.excluded_entity_code},
         }
 
         if entity:

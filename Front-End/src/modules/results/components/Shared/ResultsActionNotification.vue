@@ -25,11 +25,11 @@
               <div class="text-gray-900 whitespace-pre-wrap break-words overflow-hidden bg-gray-50 border border-gray-200 rounded p-3 min-h-[60px] max-w-full">{{ (props.savedContent?.method?.length || 0) > 0 ? props.savedContent.method.join(', ') : '—' }}</div>
             </div>
             <div>
-              <h5 class="font-medium text-gray-700 mb-1">Corte Macro</h5>
+              <h5 class="font-medium text-gray-700 mb-1">Corte Macroscópico</h5>
               <div class="text-gray-900 break-words overflow-hidden bg-gray-50 border border-gray-200 rounded p-3 min-h-[60px] max-w-full" v-html="safeMacro"></div>
             </div>
             <div>
-              <h5 class="font-medium text-gray-700 mb-1">Corte Micro</h5>
+              <h5 class="font-medium text-gray-700 mb-1">Descripción Microscópica</h5>
               <div class="text-gray-900 break-words overflow-hidden bg-gray-50 border border-gray-200 rounded p-3 min-h-[60px] max-w-full" v-html="safeMicro"></div>
             </div>
             <div>
