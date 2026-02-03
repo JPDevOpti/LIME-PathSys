@@ -99,7 +99,7 @@
                 </div>
                 <div class="flex-1 min-w-0">
                   <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">Edad</p>
-                  <p class="text-sm font-bold text-gray-900">{{ patientAge ? `${patientAge} años` : '—' }}</p>
+                  <p class="text-sm font-bold text-gray-900">{{ patientAge || '—' }}</p>
                 </div>
               </div>
             </div>
@@ -489,6 +489,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { sanitizeHtml } from '../../../utils/sanitizeHtml'
+import { formatPatientAge } from '@/shared/utils/formatting'
 import type { Case } from '../types/case.types'
 import { DocsIcon } from '@/assets/icons'
 import { NotesDialog } from '@/shared/components/ui/feedback'
@@ -527,7 +528,11 @@ const casePriority = computed(() => translateCasePriority((props.caseItem as any
 
 const patientName = computed(() => activePatient.value.fullName || activePatient.value.name || 'No registrado')
 const patientDocument = computed(() => activePatient.value.id || activePatient.value.patient_code || '')
-const patientAge = computed(() => activePatient.value.age || '')
+const patientAge = computed(() => {
+  const age = activePatient.value.age
+  const birthDate = activePatient.value.birthDate || activePatient.value.birth_date
+  return formatPatientAge(age, birthDate)
+})
 const patientGender = computed(() => normalizeGender(activePatient.value.sex || activePatient.value.gender))
 const patientCareType = computed(() => normalizeCareType(activePatient.value.attentionType || activePatient.value.care_type))
 

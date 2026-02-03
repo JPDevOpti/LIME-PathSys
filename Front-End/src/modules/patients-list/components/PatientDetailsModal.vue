@@ -298,6 +298,7 @@ import AtentionTypeIcon from '@/assets/icons/AtentionTypeIcon.vue'
 import { formatDate, formatDateTime } from '../utils/dateUtils'
 import { getPatientCases } from '../services/patientListApi'
 import { useSidebar } from '@/shared/composables/SidebarControl'
+import { formatPatientAge } from '@/shared/utils/formatting'
 
 interface Props {
   patient: Patient | null
@@ -350,12 +351,12 @@ const loadPatientCases = async () => {
 
 // Computed property para manejar la edad y detectar fechas futuras
 const displayAge = computed(() => {
-  if (!props.patient?.age) return '0 años'
+  if (!props.patient?.age && props.patient?.age !== 0) return '0 años'
   const age = props.patient.age
   if (age < 0) {
     return 'Error: Fecha futura'
   }
-  return `${age} años`
+  return formatPatientAge(age, props.patient.birth_date)
 })
 
 const getCaseStatusClass = (status: string) => {

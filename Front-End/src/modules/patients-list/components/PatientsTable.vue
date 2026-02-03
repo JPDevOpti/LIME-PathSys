@@ -75,7 +75,7 @@
             <td class="px-2 py-3 text-center">
               <div class="flex flex-col items-center gap-1">
                 <p class="text-gray-800 text-sm">{{ patient.gender }}</p>
-                <p class="text-gray-500 text-xs">{{ patient.age }} años</p>
+                <p class="text-gray-500 text-xs">{{ formatPatientAge(patient.age || 0, patient.birth_date) }}</p>
               </div>
             </td>
             <td class="px-2 py-3 text-center">
@@ -138,7 +138,7 @@
                 </div>
                 <div class="space-y-1 text-sm text-gray-600">
                   <p><span class="font-medium">Documento:</span> {{ getIdentificationTypeLabel(patient.identification_type) }}-{{ patient.identification_number }}</p>
-                  <p><span class="font-medium">Sexo/Edad:</span> {{ patient.gender }}, {{ patient.age }} años</p>
+                  <p><span class="font-medium">Sexo/Edad:</span> {{ patient.gender }}, {{ formatPatientAge(patient.age || 0, patient.birth_date) }}</p>
                   <p><span class="font-medium">Entidad:</span> {{ patient.entity_info?.name || 'N/A' }}</p>
                   <p><span class="font-medium">Tipo:</span> {{ patient.care_type }}</p>
                   <p v-if="patient.location?.municipality_name"><span class="font-medium">Municipio:</span> {{ patient.location.municipality_name }}</p>
@@ -228,6 +228,7 @@ import InfoCircleIcon from '@/assets/icons/InfoCircleIcon.vue'
 import EditPatientIcon from '@/assets/icons/EditPatientIcon.vue'
 import { usePatientExcelExport } from '../composables/usePatientExcelExport'
 import { formatDate } from '../utils/dateUtils'
+import { formatPatientAge } from '@/shared/utils/formatting'
 import { usePermissions } from '@/shared/composables/usePermissions'
 
 interface Column {

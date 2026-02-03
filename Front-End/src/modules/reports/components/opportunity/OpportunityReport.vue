@@ -61,7 +61,7 @@ import { RefreshIcon, TestIcon, StatisticsIcon } from '@/assets/icons'
 import OpportunitySummary from './OpportunitySummary.vue'
 import TestsOpportunityPanel from './TestsOpportunityPanel.vue'
 import PathologistsPerformancePanel from './PathologistsPerformancePanel.vue'
-import type { OpportunityTest, PathologistPerformance } from '../../types/opportunity.types'
+import type { OpportunityTest, PathologistPerformance, OpportunitySummaryStats } from '../../types/opportunity.types'
 import { opportunityApiService } from '../../services/opportunity.service'
 
 const monthsFull = [
@@ -157,7 +157,7 @@ const clearSelection = () => {
 
 const apiTests = ref<OpportunityTest[]>([])
 const apiPathologists = ref<PathologistPerformance[]>([])
-const summary = ref<{ total: number; within: number; out: number } | null>(null)
+const summary = ref<OpportunitySummaryStats | null>(null)
 
 const testsForSelection = computed<OpportunityTest[]>(() => apiTests.value)
 

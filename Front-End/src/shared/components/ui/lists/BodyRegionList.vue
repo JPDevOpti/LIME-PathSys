@@ -8,37 +8,55 @@
 
     <!-- Combobox Container -->
     <div class="relative">
-      <!-- Input field -->
-      <div class="relative">
-<input
-          ref="inputRef"
-          :value="displayText"
-          type="text"
-          :placeholder="placeholder"
-          :disabled="disabled"
-          :class="[
-            'w-full px-3 py-2 pr-10 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors',
-            errorString ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : (hasValue ? 'border-green-500' : 'border-gray-300'),
-            disabled ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'bg-white text-gray-900'
-          ]"
-          @focus="handleFocus"
-          @blur="handleBlur"
-          @keydown="handleKeyDown"
-          @input="(e:any) => { searchQuery = e?.target?.value || '' }"
-          autocomplete="off"
-        />
-        
-        <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
-          <svg 
-            class="h-4 w-4 text-gray-400 cursor-pointer transition-transform"
-            :class="{ 'transform rotate-180': isOpen }"
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-            @click="toggleDropdown"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-          </svg>
+      <div class="flex gap-2 w-full">
+        <div class="relative w-full">
+          <input
+            ref="inputRef"
+            :value="displayText"
+            type="text"
+            :placeholder="placeholder"
+            :disabled="disabled"
+            :class="[
+              'w-full px-3 py-2 pr-10 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors',
+              errorString ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : (hasValue ? 'border-green-500' : 'border-gray-300'),
+              disabled ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'bg-white text-gray-900'
+            ]"
+            @focus="handleFocus"
+            @blur="handleBlur"
+            @keydown="handleKeyDown"
+            @input="(e:any) => { searchQuery = e?.target?.value || '' }"
+            autocomplete="off"
+          />
+          
+          <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+            <svg 
+              class="h-4 w-4 text-gray-400 cursor-pointer transition-transform"
+              :class="{ 'transform rotate-180': isOpen }"
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+              @click="toggleDropdown"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+
+        <!-- Custom Input for 'Otro' -->
+        <div v-if="isOtherSelected" class="w-full">
+          <input
+            ref="customInputRef"
+            v-model="customInputValue"
+            type="text"
+            placeholder="Especifique región..."
+            :disabled="disabled"
+            :class="[
+              'w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors',
+              errorString ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300',
+              disabled ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'bg-white text-gray-900'
+            ]"
+            @input="handleCustomInput"
+          />
         </div>
       </div>
 
@@ -582,7 +600,9 @@ const bodyRegions: BodyRegion[] = [
 
 // Refs
 const inputRef = ref<HTMLInputElement>()
+const customInputRef = ref<HTMLInputElement>()
 const searchQuery = ref('')
+const customInputValue = ref('')
 const isOpen = ref(false)
 const highlightedIndex = ref(-1)
 const isFocused = ref(false)
@@ -606,6 +626,10 @@ const errorString = computed(() => {
 
 const hasValue = computed(() => {
   return !!(selectedRegion.value && String(selectedRegion.value).trim())
+})
+
+const isOtherSelected = computed(() => {
+  return selectedRegion.value === 'Otro (Especificar)'
 })
 
 // Filtrar opciones basado en la búsqueda
@@ -692,12 +716,29 @@ const selectOption = (option: BodyRegion) => {
   isOpen.value = false
   highlightedIndex.value = -1
   
-  // Emit events
-  emit('update:modelValue', option.label)
+  if (option.value === 'otro' || option.label === 'Otro (Especificar)') {
+    customInputValue.value = ''
+    // Emitimos el label 'Otro (Especificar)' temporalmente para mantener el estado
+    // El watcher lo reconocerá como una opción válida y mantendrá el input visible
+    emit('update:modelValue', 'Otro (Especificar)')
+    nextTick(() => {
+      customInputRef.value?.focus()
+    })
+  } else {
+    customInputValue.value = ''
+    emit('update:modelValue', option.label)
+  }
+
   emit('region-selected', option)
   
-  // Quitar focus del input
-  inputRef.value?.blur()
+  // Quitar focus del input solo si no es 'otro'
+  if (option.value !== 'otro' && option.label !== 'Otro (Especificar)') {
+    inputRef.value?.blur()
+  }
+}
+
+const handleCustomInput = () => {
+  emit('update:modelValue', customInputValue.value)
 }
 
 const handleKeyDown = (event: KeyboardEvent) => {
@@ -743,6 +784,7 @@ const handleKeyDown = (event: KeyboardEvent) => {
 watch(() => props.modelValue, (newValue) => {
   if (!newValue) {
     selectedRegion.value = ''
+    customInputValue.value = ''
     return
   }
   
@@ -750,19 +792,31 @@ watch(() => props.modelValue, (newValue) => {
   const optionByLabel = bodyRegions.find(opt => opt.label === newValue)
   if (optionByLabel) {
     selectedRegion.value = newValue
+    customInputValue.value = ''
     return
   }
   
   // Si no es un label, buscar por value (valor simplificado) y convertir a label
   const optionByValue = bodyRegions.find(opt => opt.value === newValue)
   if (optionByValue) {
-    selectedRegion.value = optionByValue.label
+    if (optionByValue.value === 'otro' || optionByValue.label === 'Otro (Especificar)') {
+      selectedRegion.value = 'Otro (Especificar)'
+      customInputValue.value = ''
+    } else {
+      selectedRegion.value = optionByValue.label
+      customInputValue.value = ''
+    }
   } else {
-    selectedRegion.value = newValue
+    // Es un valor personalizado (Otro)
+    selectedRegion.value = 'Otro (Especificar)'
+    customInputValue.value = newValue
   }
 }, { immediate: true })
 
 watch(selectedRegion, (newValue) => {
+  // Evitar sobreescribir el valor personalizado con el label 'Otro (Especificar)'
+  if (newValue === 'Otro (Especificar)') return
+
   if (newValue !== props.modelValue) {
     emit('update:modelValue', newValue)
   }

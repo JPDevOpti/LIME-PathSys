@@ -79,7 +79,7 @@
                     </div>
                     <div class="flex-1 min-w-0">
                       <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">Edad</p>
-                      <p class="text-sm font-bold text-gray-900">{{ computedAge }} años</p>
+                      <p class="text-sm font-bold text-gray-900">{{ computedAge }}</p>
                     </div>
                   </div>
                 </div>
@@ -233,6 +233,7 @@ import { IDENTIFICATION_TYPE_NAMES, IdentificationType } from '@/modules/patient
 import EntityIcon from '@/assets/icons/EntityIcon.vue'
 import GerdenIcon from '@/assets/icons/GerdenIcon.vue'
 import AtentionTypeIcon from '@/assets/icons/AtentionTypeIcon.vue'
+import { formatPatientAge } from '@/shared/utils/formatting'
 
 interface PatientData {
   name?: string
@@ -337,16 +338,9 @@ const documentDisplay = computed(() => {
 
 const computedAge = computed(() => {
   const p: any = props.patientData || {}
-  if (typeof p.age === 'number') return p.age
-  const birth: string | undefined = p.birth_date
-  if (!birth) return ''
-  const dob = new Date(birth)
-  if (isNaN(dob.getTime())) return ''
-  const today = new Date()
-  let age = today.getFullYear() - dob.getFullYear()
-  const m = today.getMonth() - dob.getMonth()
-  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--
-  return age
+  const age = p.age
+  const birthDate = p.birth_date
+  return formatPatientAge(age, birthDate)
 })
 
 const createdAtFormatted = computed(() => {

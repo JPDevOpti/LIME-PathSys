@@ -1,11 +1,18 @@
 from datetime import datetime, timezone
 from typing import Dict, Any, List
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from bson import ObjectId
 
 
 class DashboardStatisticsRepository:
     def __init__(self, db: AsyncIOMotorDatabase):
         self.collection = db.cases
+        self.excluded_entity_id = "695fabcc483c3b4cc99ee1ac"
+        # Tratar de crear ObjectId si es válido, para filtrar ambos tipos
+        try:
+            self.excluded_entity_oid = ObjectId(self.excluded_entity_id)
+        except:
+            self.excluded_entity_oid = self.excluded_entity_id
 
     # Cantidad de casos por mes del año indicado.
     async def get_cases_by_month(self, year: int) -> Dict[str, Any]:
@@ -18,6 +25,9 @@ class DashboardStatisticsRepository:
                     "created_at": {
                         "$gte": start_date,
                         "$lt": end_date
+                    },
+                    "patient_info.entity_info.id": {
+                        "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
                     }
                 }
             },
@@ -55,7 +65,10 @@ class DashboardStatisticsRepository:
                         "$gte": start_date,
                         "$lt": end_date
                     },
-                    "assigned_pathologist.id": pathologist_code
+                    "assigned_pathologist.id": pathologist_code,
+                    "patient_info.entity_info.id": {
+                        "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
+                    }
                 }
             },
             {
@@ -101,6 +114,9 @@ class DashboardStatisticsRepository:
                     "created_at": {
                         "$gte": current_month_start,
                         "$lt": next_month_start
+                    },
+                    "patient_info.entity_info.id": {
+                        "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
                     }
                 }
             },
@@ -114,6 +130,9 @@ class DashboardStatisticsRepository:
                     "created_at": {
                         "$gte": previous_month_start,
                         "$lt": current_month_start
+                    },
+                    "patient_info.entity_info.id": {
+                        "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
                     }
                 }
             },
@@ -123,10 +142,24 @@ class DashboardStatisticsRepository:
         ]
         total_pipeline = [
             {
+                "$match": {
+                    "patient_info.entity_info.id": {
+                        "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
+                    }
+                }
+            },
+            {
                 "$count": "total"
             }
         ]
         cases_by_state_pipeline = [
+            {
+                "$match": {
+                    "patient_info.entity_info.id": {
+                        "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
+                    }
+                }
+            },
             {
                 "$group": {
                     "_id": "$state",
@@ -272,6 +305,9 @@ class DashboardStatisticsRepository:
                     "created_at": {
                         "$gte": two_months_ago_start,
                         "$lt": previous_month_start
+                    },
+                    "patient_info.entity_info.id": {
+                        "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
                     }
                 }
             },
@@ -344,6 +380,9 @@ class DashboardStatisticsRepository:
                     "created_at": {
                         "$gte": two_months_ago_start,
                         "$lt": previous_month_start
+                    },
+                    "patient_info.entity_info.id": {
+                        "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
                     }
                 }
             },
@@ -378,7 +417,10 @@ class DashboardStatisticsRepository:
         last30_patients_pipeline = [
             {
                 "$match": {
-                    "created_at": {"$gte": last30_start, "$lt": now}
+                    "created_at": {"$gte": last30_start, "$lt": now},
+                    "patient_info.entity_info.id": {
+                        "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
+                    }
                 }
             },
             {"$addFields": {"patient_key": {"$ifNull": ["$patient_info.patient_code", {"$cond": [{"$and": [{"$gt": [{"$strLenCP": {"$ifNull": ["$patient_info.identification_type", ""]}}, 0]}, {"$gt": [{"$strLenCP": {"$ifNull": ["$patient_info.identification_number", ""]}}, 0]}]}, {"$concat": ["$patient_info.identification_type", "-", "$patient_info.identification_number"]}, "$patient_info.identification_number"]}]}}},
@@ -388,7 +430,10 @@ class DashboardStatisticsRepository:
         prev30_patients_pipeline = [
             {
                 "$match": {
-                    "created_at": {"$gte": prev30_start, "$lt": prev30_end}
+                    "created_at": {"$gte": prev30_start, "$lt": prev30_end},
+                    "patient_info.entity_info.id": {
+                        "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
+                    }
                 }
             },
             {"$addFields": {"patient_key": {"$ifNull": ["$patient_info.patient_code", {"$cond": [{"$and": [{"$gt": [{"$strLenCP": {"$ifNull": ["$patient_info.identification_type", ""]}}, 0]}, {"$gt": [{"$strLenCP": {"$ifNull": ["$patient_info.identification_number", ""]}}, 0]}]}, {"$concat": ["$patient_info.identification_type", "-", "$patient_info.identification_number"]}, "$patient_info.identification_number"]}]}}},
@@ -398,11 +443,25 @@ class DashboardStatisticsRepository:
 
         # Casos últimos 30 días (conteo total)
         last30_cases_pipeline = [
-            {"$match": {"created_at": {"$gte": last30_start, "$lt": now}}},
+            {
+                "$match": {
+                    "created_at": {"$gte": last30_start, "$lt": now},
+                    "patient_info.entity_info.id": {
+                        "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
+                    }
+                }
+            },
             {"$count": "total"}
         ]
         prev30_cases_pipeline = [
-            {"$match": {"created_at": {"$gte": prev30_start, "$lt": prev30_end}}},
+            {
+                "$match": {
+                    "created_at": {"$gte": prev30_start, "$lt": prev30_end},
+                    "patient_info.entity_info.id": {
+                        "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
+                    }
+                }
+            },
             {"$count": "total"}
         ]
 
@@ -474,7 +533,10 @@ class DashboardStatisticsRepository:
                         "$gte": current_month_start,
                         "$lt": next_month_start
                     },
-                    "assigned_pathologist.id": pathologist_code
+                    "assigned_pathologist.id": pathologist_code,
+                    "patient_info.entity_info.id": {
+                        "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
+                    }
                 }
             },
             {"$addFields": {"patient_key": {"$ifNull": ["$patient_info.patient_code", {"$cond": [{"$and": [{"$gt": [{"$strLenCP": {"$ifNull": ["$patient_info.identification_type", ""]}}, 0]}, {"$gt": [{"$strLenCP": {"$ifNull": ["$patient_info.identification_number", ""]}}, 0]}]}, {"$concat": ["$patient_info.identification_type", "-", "$patient_info.identification_number"]}, "$patient_info.identification_number"]}]}}},
@@ -497,7 +559,10 @@ class DashboardStatisticsRepository:
                         "$gte": previous_month_start,
                         "$lt": current_month_start
                     },
-                    "assigned_pathologist.id": pathologist_code
+                    "assigned_pathologist.id": pathologist_code,
+                    "patient_info.entity_info.id": {
+                        "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
+                    }
                 }
             },
             {"$addFields": {"patient_key": {"$ifNull": ["$patient_info.patient_code", {"$cond": [{"$and": [{"$gt": [{"$strLenCP": {"$ifNull": ["$patient_info.identification_type", ""]}}, 0]}, {"$gt": [{"$strLenCP": {"$ifNull": ["$patient_info.identification_number", ""]}}, 0]}]}, {"$concat": ["$patient_info.identification_type", "-", "$patient_info.identification_number"]}, "$patient_info.identification_number"]}]}}},
@@ -520,7 +585,10 @@ class DashboardStatisticsRepository:
                         "$gte": two_months_ago_start,
                         "$lt": previous_month_start
                     },
-                    "assigned_pathologist.id": pathologist_code
+                    "assigned_pathologist.id": pathologist_code,
+                    "patient_info.entity_info.id": {
+                        "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
+                    }
                 }
             },
             {"$addFields": {"patient_key": {"$ifNull": ["$patient_info.patient_code", {"$cond": [{"$and": [{"$gt": [{"$strLenCP": {"$ifNull": ["$patient_info.identification_type", ""]}}, 0]}, {"$gt": [{"$strLenCP": {"$ifNull": ["$patient_info.identification_number", ""]}}, 0]}]}, {"$concat": ["$patient_info.identification_type", "-", "$patient_info.identification_number"]}, "$patient_info.identification_number"]}]}}},
@@ -559,7 +627,10 @@ class DashboardStatisticsRepository:
                         "$gte": previous_month_start,
                         "$lt": current_month_start
                     },
-                    "assigned_pathologist.id": pathologist_code
+                    "assigned_pathologist.id": pathologist_code,
+                    "patient_info.entity_info.id": {
+                        "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
+                    }
                 }
             },
             {
@@ -575,7 +646,10 @@ class DashboardStatisticsRepository:
                         "$gte": two_months_ago_start,
                         "$lt": previous_month_start
                     },
-                    "assigned_pathologist.id": pathologist_code
+                    "assigned_pathologist.id": pathologist_code,
+                    "patient_info.entity_info.id": {
+                        "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
+                    }
                 }
             },
             {
@@ -609,7 +683,10 @@ class DashboardStatisticsRepository:
             {
                 "$match": {
                     "created_at": {"$gte": last30_start, "$lt": now},
-                    "assigned_pathologist.id": pathologist_code
+                    "assigned_pathologist.id": pathologist_code,
+                    "patient_info.entity_info.id": {
+                        "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
+                    }
                 }
             },
             {"$addFields": {"patient_key": {"$ifNull": ["$patient_info.patient_code", {"$cond": [{"$and": [{"$gt": [{"$strLenCP": {"$ifNull": ["$patient_info.identification_type", ""]}}, 0]}, {"$gt": [{"$strLenCP": {"$ifNull": ["$patient_info.identification_number", ""]}}, 0]}]}, {"$concat": ["$patient_info.identification_type", "-", "$patient_info.identification_number"]}, "$patient_info.identification_number"]}]}}},
@@ -620,7 +697,10 @@ class DashboardStatisticsRepository:
             {
                 "$match": {
                     "created_at": {"$gte": prev30_start, "$lt": prev30_end},
-                    "assigned_pathologist.id": pathologist_code
+                    "assigned_pathologist.id": pathologist_code,
+                    "patient_info.entity_info.id": {
+                        "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
+                    }
                 }
             },
             {"$addFields": {"patient_key": {"$ifNull": ["$patient_info.patient_code", {"$cond": [{"$and": [{"$gt": [{"$strLenCP": {"$ifNull": ["$patient_info.identification_type", ""]}}, 0]}, {"$gt": [{"$strLenCP": {"$ifNull": ["$patient_info.identification_number", ""]}}, 0]}]}, {"$concat": ["$patient_info.identification_type", "-", "$patient_info.identification_number"]}, "$patient_info.identification_number"]}]}}},
@@ -629,11 +709,27 @@ class DashboardStatisticsRepository:
         ]
 
         last30_cases_pipeline = [
-            {"$match": {"created_at": {"$gte": last30_start, "$lt": now}, "assigned_pathologist.id": pathologist_code}},
+            {
+                "$match": {
+                    "created_at": {"$gte": last30_start, "$lt": now},
+                    "assigned_pathologist.id": pathologist_code,
+                    "patient_info.entity_info.id": {
+                        "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
+                    }
+                }
+            },
             {"$count": "total"}
         ]
         prev30_cases_pipeline = [
-            {"$match": {"created_at": {"$gte": prev30_start, "$lt": prev30_end}, "assigned_pathologist.id": pathologist_code}},
+            {
+                "$match": {
+                    "created_at": {"$gte": prev30_start, "$lt": prev30_end},
+                    "assigned_pathologist.id": pathologist_code,
+                    "patient_info.entity_info.id": {
+                        "$nin": [self.excluded_entity_id, self.excluded_entity_oid]
+                    }
+                }
+            },
             {"$count": "total"}
         ]
 

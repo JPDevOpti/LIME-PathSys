@@ -29,3 +29,11 @@ export interface PeriodSelection {
 }
 
 
+
+export interface OpportunitySummaryStats {
+  total: number
+  within: number
+  out: number
+  averageDays: number
+  patients?: number
+}

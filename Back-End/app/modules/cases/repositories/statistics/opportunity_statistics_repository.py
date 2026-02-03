@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional, Union
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -236,11 +234,13 @@ class OpportunityStatisticsRepository:
             ]
 
         projection = {
-            "signed_at": 1,
+            "created_at": 1,
             "state": 1,
             "assigned_pathologist.id": 1,
             "assigned_pathologist.name": 1,
             "patient_info.entity_info.name": 1,
+            "patient_info.patient_code": 1,
+            "patient_info.created_at": 1,
             "samples.tests.id": 1,
             "samples.tests.name": 1,
             "business_days": 1,
@@ -257,9 +257,9 @@ class OpportunityStatisticsRepository:
         sum_days_all = 0.0
 
         for d in docs:
-            signed_at: Optional[datetime] = d.get("signed_at")
+            created_at: Optional[datetime] = d.get("created_at")
             business_days: Optional[int] = d.get("business_days")
-            if not signed_at or business_days is None:
+            if not created_at or business_days is None:
                 continue
             days = business_days
             within = days <= threshold_days

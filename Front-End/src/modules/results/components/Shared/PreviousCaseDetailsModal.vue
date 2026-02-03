@@ -198,6 +198,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { sanitizeHtml } from '@/utils/sanitizeHtml'
+import { formatPatientAge } from '@/shared/utils/formatting'
 import type { CaseModel } from '@/modules/cases/types/case'
 import { Modal } from '@/shared/components/layout'
 import { CloseButton, PrintPdfButton } from '@/shared/components/ui/buttons'
@@ -233,10 +234,11 @@ const patientId = computed(() => {
   return id
 })
 const patientAge = computed(() => {
-  const age = props.caseItem?.patient_info?.age
-  const result = age ? `${age} años` : 'No especificada'
+  const pi = props.caseItem?.patient_info as any
+  const age = pi?.age
+  const result = formatPatientAge(age || 0, pi?.birth_date || pi?.birthDate)
   console.log('PreviousCaseDetailsModal - patientAge:', result, 'age:', age)
-  return result
+  return result || 'No especificada'
 })
 const patientSex = computed(() => {
   const sex = props.caseItem?.patient_info?.gender || 'No especificado'

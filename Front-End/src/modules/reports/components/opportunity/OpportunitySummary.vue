@@ -18,8 +18,9 @@
           <span class="text-sm text-red-500">{{ pctOut }}%</span>
         </div>
       </div>
+
       <div class="bg-gray-50 p-4 rounded-md border border-gray-200">
-        <h4 class="text-sm font-semibold text-gray-700 mb-1">Total Procedimientos</h4>
+        <h4 class="text-sm font-semibold text-gray-700 mb-1">Casos Vistos</h4>
         <div class="flex items-end justify-between">
           <span class="text-2xl font-bold text-gray-700">{{ total }}</span>
           <span class="text-sm text-gray-500">100%</span>
@@ -46,11 +47,12 @@ import ComponentCard from '@/shared/components/layout/ComponentCard.vue'
 import type { OpportunityTest } from '../../types/opportunity.types'
 import { StatisticsIcon } from '@/assets/icons'
 
-const props = defineProps<{ datos: OpportunityTest[]; monthlyPct?: number[]; resumen?: { total: number; within: number; out: number } }>()
+const props = defineProps<{ datos: OpportunityTest[]; monthlyPct?: number[]; resumen?: { total: number; within: number; out: number; patients?: number } }>()
 
 const totalWithin = computed(() => (props.resumen ? props.resumen.within : props.datos.reduce((a, p) => a + p.withinOpportunity, 0)))
 const totalOut = computed(() => (props.resumen ? props.resumen.out : props.datos.reduce((a, p) => a + p.outOfOpportunity, 0)))
 const total = computed(() => (props.resumen ? props.resumen.total : totalWithin.value + totalOut.value))
+
 const pctWithin = computed(() => total.value ? ((totalWithin.value / total.value) * 100).toFixed(1) : '0.0')
 const pctOut = computed(() => total.value ? ((totalOut.value / total.value) * 100).toFixed(1) : '0.0')
 
