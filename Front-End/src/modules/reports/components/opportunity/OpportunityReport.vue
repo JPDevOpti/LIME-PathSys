@@ -171,7 +171,7 @@ async function loadFromApi() {
     const api = await opportunityApiService.getMonthlyOpportunity(Number(selectedMonth.value) + 1, Number(selectedYear.value))
     apiTests.value = api.tests
     apiPathologists.value = api.pathologists
-    summary.value = api.summary || null
+    summary.value = (api.summary as OpportunitySummaryStats) || null
     
     // Cargar serie anual para el gráfico de líneas (enero -> mes anterior)
     const year = Number(selectedYear.value)

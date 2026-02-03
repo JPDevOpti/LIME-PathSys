@@ -6,6 +6,15 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 class PathologistStatisticsRepository:
     def __init__(self, database: AsyncIOMotorDatabase):
         self.collection = database["cases"]
+        self.excluded_entity_code = "HAMA"
+
+    def _exclude_entity_match(self) -> Dict[str, Any]:
+        """Excluir entidad por código en entity_info."""
+        return {
+            "patient_info.entity_info.id": {"$ne": self.excluded_entity_code},
+            "patient_info.entity_info.entity_code": {"$ne": self.excluded_entity_code},
+            "patient_info.entity_info.code": {"$ne": self.excluded_entity_code},
+        }
 
     # Rendimiento mensual por patólogo (casos completados).
     async def get_pathologist_monthly_performance(
@@ -18,8 +27,9 @@ class PathologistStatisticsRepository:
         start_date = datetime(year, month, 1)
         end_date = datetime(year + 1, 1, 1) if month == 12 else datetime(year, month + 1, 1)
         match_conditions = {
-            "state": "Completado",
-            "signed_at": {"$gte": start_date, "$lt": end_date}
+            "state": {"$in": ["Completado", "Por entregar"]},
+            "created_at": {"$gte": start_date, "$lt": end_date},
+            **self._exclude_entity_match()
         }
         if pathologist_name:
             match_conditions["assigned_pathologist.name"] = {"$regex": pathologist_name.strip(), "$options": "i"}
@@ -85,8 +95,9 @@ class PathologistStatisticsRepository:
             {
                 "$match": {
                     "assigned_pathologist.name": {"$regex": pathologist_name.strip(), "$options": "i"},
-                    "state": "Completado",
-                    "signed_at": {"$gte": start_date, "$lt": end_date}
+                    "state": {"$in": ["Completado", "Por entregar"]},
+                    "created_at": {"$gte": start_date, "$lt": end_date},
+                    **self._exclude_entity_match()
                 }
             },
             {
@@ -127,8 +138,9 @@ class PathologistStatisticsRepository:
             {
                 "$match": {
                     "assigned_pathologist.name": {"$regex": pathologist_name.strip(), "$options": "i"},
-                    "state": "Completado",
-                    "signed_at": {"$gte": start_date, "$lt": end_date}
+                    "state": {"$in": ["Completado", "Por entregar"]},
+                    "created_at": {"$gte": start_date, "$lt": end_date},
+                    **self._exclude_entity_match()
                 }
             },
             {"$unwind": "$samples"},
@@ -167,9 +179,10 @@ class PathologistStatisticsRepository:
             {
                 "$match": {
                     "pathologist.name": pathologist_name.strip(),
-                    "state": "Completado",
-                    "signed_at": {"$exists": True},
-                    "business_days": {"$exists": True}
+                    "state": {"$in": ["Completado", "Por entregar"]},
+                    "created_at": {"$exists": True},
+                    "business_days": {"$exists": True},
+                    **self._exclude_entity_match()
                 }
             },
             {
@@ -225,8 +238,9 @@ class PathologistStatisticsRepository:
             {
                 "$match": {
                     "pathologist.name": pathologist_name.strip(),
-                    "state": "Completado",
-                    "signed_at": {"$gte": start_date, "$lt": end_date}
+                    "state": {"$in": ["Completado", "Por entregar"]},
+                    "created_at": {"$gte": start_date, "$lt": end_date},
+                    **self._exclude_entity_match()
                 }
             },
             {

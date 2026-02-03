@@ -1,359 +1,406 @@
 <template>
   <div class="rich-text-editor border border-gray-300 rounded-lg overflow-hidden">
-    <!-- Barra de herramientas compacta y responsive -->
-    <div class="toolbar bg-gray-50 border-b border-gray-300 px-2 py-1.5 flex flex-wrap gap-1 items-center">
+    <!-- Barra de herramientas minimalista -->
+    <div v-if="editor" class="toolbar bg-gray-50 border-b border-gray-300 px-2 py-1.5 flex flex-wrap gap-1 items-center">
       <!-- Deshacer/Rehacer -->
       <div class="toolbar-group">
-        <button @click="execCommand('undo')" type="button" class="toolbar-btn-compact" title="Deshacer">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button
+          @click="editor.chain().focus().undo().run()"
+          :disabled="!editor.can().undo()"
+          type="button"
+          class="toolbar-btn"
+          title="Deshacer"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
           </svg>
         </button>
-        <button @click="execCommand('redo')" type="button" class="toolbar-btn-compact" title="Rehacer">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button
+          @click="editor.chain().focus().redo().run()"
+          :disabled="!editor.can().redo()"
+          type="button"
+          class="toolbar-btn"
+          title="Rehacer"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10H11a8 8 0 00-8 8v2m18-10l-6 6m6-6l-6-6"/>
           </svg>
         </button>
       </div>
 
-      <div class="toolbar-separator-compact"></div>
-
-      <!-- Tipo de letra -->
-      <select @change="(e) => handleSelectChange(e, 'fontName')" class="toolbar-select-compact">
-        <option value="Arial">Sans Serif</option>
-        <option value="Arial">Arial</option>
-        <option value="Helvetica">Helvetica</option>
-        <option value="Times New Roman">Times</option>
-        <option value="Georgia">Georgia</option>
-        <option value="Courier New">Courier</option>
-        <option value="Verdana">Verdana</option>
-      </select>
-
-      <div class="toolbar-separator-compact"></div>
-
-      <!-- Tamaño de letra -->
-      <select @change="(e) => handleSelectChange(e, 'fontSize')" class="toolbar-select-compact">
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3" selected>3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
-        <option value="6">6</option>
-        <option value="7">7</option>
-      </select>
-
-      <div class="toolbar-separator-compact"></div>
+      <div class="toolbar-separator"></div>
 
       <!-- Formato de texto -->
       <div class="toolbar-group">
-        <button @click="execCommand('bold')" type="button" class="toolbar-btn-compact font-bold" :class="{ 'bg-blue-100': isActive('bold') }" title="Negrita">
-          <span class="text-xs">B</span>
+        <button
+          @click="editor.chain().focus().toggleBold().run()"
+          :class="{ 'bg-blue-100': editor.isActive('bold') }"
+          type="button"
+          class="toolbar-btn font-bold"
+          title="Negrita"
+        >
+          B
         </button>
-        <button @click="execCommand('italic')" type="button" class="toolbar-btn-compact italic" :class="{ 'bg-blue-100': isActive('italic') }" title="Cursiva">
-          <span class="text-xs">I</span>
+        <button
+          @click="editor.chain().focus().toggleItalic().run()"
+          :class="{ 'bg-blue-100': editor.isActive('italic') }"
+          type="button"
+          class="toolbar-btn italic"
+          title="Cursiva"
+        >
+          I
         </button>
-        <button @click="execCommand('underline')" type="button" class="toolbar-btn-compact underline" :class="{ 'bg-blue-100': isActive('underline') }" title="Subrayado">
-          <span class="text-xs">U</span>
-        </button>
-        <button @click="execCommand('strikeThrough')" type="button" class="toolbar-btn-compact line-through" :class="{ 'bg-blue-100': isActive('strikeThrough') }" title="Tachado">
-          <span class="text-xs">S</span>
+        <button
+          @click="editor.chain().focus().toggleUnderline().run()"
+          :class="{ 'bg-blue-100': editor.isActive('underline') }"
+          type="button"
+          class="toolbar-btn underline"
+          title="Subrayado"
+        >
+          U
         </button>
       </div>
 
-      <div class="toolbar-separator-compact"></div>
+      <div class="toolbar-separator"></div>
 
       <!-- Alineación -->
       <div class="toolbar-group">
-        <button @click="execCommand('justifyLeft')" type="button" class="toolbar-btn-compact" :class="{ 'bg-blue-100': isActive('justifyLeft') }" title="Alinear izquierda">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button
+          @click="editor.chain().focus().setTextAlign('left').run()"
+          :class="{ 'bg-blue-100': editor.isActive({ textAlign: 'left' }) }"
+          type="button"
+          class="toolbar-btn"
+          title="Alinear izquierda"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h10M4 18h16"/>
           </svg>
         </button>
-        <button @click="execCommand('justifyCenter')" type="button" class="toolbar-btn-compact" :class="{ 'bg-blue-100': isActive('justifyCenter') }" title="Centrar">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button
+          @click="editor.chain().focus().setTextAlign('center').run()"
+          :class="{ 'bg-blue-100': editor.isActive({ textAlign: 'center' }) }"
+          type="button"
+          class="toolbar-btn"
+          title="Centrar"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M7 12h10M4 18h16"/>
           </svg>
         </button>
-        <button @click="execCommand('justifyRight')" type="button" class="toolbar-btn-compact" :class="{ 'bg-blue-100': isActive('justifyRight') }" title="Alinear derecha">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button
+          @click="editor.chain().focus().setTextAlign('right').run()"
+          :class="{ 'bg-blue-100': editor.isActive({ textAlign: 'right' }) }"
+          type="button"
+          class="toolbar-btn"
+          title="Alinear derecha"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M10 12h10M4 18h16"/>
           </svg>
         </button>
-        <button @click="execCommand('justifyFull')" type="button" class="toolbar-btn-compact" :class="{ 'bg-blue-100': isActive('justifyFull') }" title="Justificar">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button
+          @click="editor.chain().focus().setTextAlign('justify').run()"
+          :class="{ 'bg-blue-100': editor.isActive({ textAlign: 'justify' }) }"
+          type="button"
+          class="toolbar-btn"
+          title="Justificar"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
           </svg>
         </button>
       </div>
 
-      <div class="toolbar-separator-compact"></div>
+      <div class="toolbar-separator"></div>
 
       <!-- Listas -->
       <div class="toolbar-group">
-        <button @click="execCommand('insertUnorderedList')" type="button" class="toolbar-btn-compact" :class="{ 'bg-blue-100': isActive('insertUnorderedList') }" title="Lista sin orden">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        <button
+          @click="editor.chain().focus().toggleBulletList().run()"
+          :class="{ 'bg-blue-100': editor.isActive('bulletList') }"
+          type="button"
+          class="toolbar-btn"
+          title="Lista con viñetas"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
           </svg>
         </button>
-        <button @click="execCommand('insertOrderedList')" type="button" class="toolbar-btn-compact" :class="{ 'bg-blue-100': isActive('insertOrderedList') }" title="Lista ordenada">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-          </svg>
-        </button>
-        <button @click="execCommand('indent')" type="button" class="toolbar-btn-compact" title="Aumentar sangría">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
-          </svg>
-        </button>
-        <button @click="execCommand('outdent')" type="button" class="toolbar-btn-compact" title="Disminuir sangría">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        <button
+          @click="editor.chain().focus().toggleOrderedList().run()"
+          :class="{ 'bg-blue-100': editor.isActive('orderedList') }"
+          type="button"
+          class="toolbar-btn"
+          title="Lista numerada"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h.01M3 8h.01M3 12h.01M8 4h13M8 8h13M8 12h13"/>
           </svg>
         </button>
       </div>
 
-      <div class="toolbar-separator-compact"></div>
-
-      <!-- Color de texto -->
-      <div class="toolbar-group">
-        <div class="relative">
-          <input 
-            type="color" 
-            @input="(e) => handleColorChange(e, 'foreColor')" 
-            class="toolbar-color-input-compact"
-            title="Color de texto"
-          />
-        </div>
-        <div class="relative">
-          <input 
-            type="color" 
-            @input="(e) => handleColorChange(e, 'hiliteColor')" 
-            class="toolbar-color-input-compact"
-            title="Color de fondo"
-          />
-        </div>
-      </div>
-
-      <div class="toolbar-separator-compact"></div>
+      <div class="toolbar-separator"></div>
 
       <!-- Limpiar formato -->
-      <button @click="execCommand('removeFormat')" type="button" class="toolbar-btn-compact" title="Limpiar formato">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <button
+        @click="editor.chain().focus().clearNodes().unsetAllMarks().run()"
+        type="button"
+        class="toolbar-btn"
+        title="Limpiar formato"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
         </svg>
       </button>
     </div>
 
-    <!-- Área de edición con altura configurable -->
-    <div 
-      ref="editorRef"
-      class="editor-content p-4 overflow-y-auto focus:outline-none"
+    <!-- Editor content -->
+    <EditorContent
+      :editor="editor"
+      class="editor-wrapper"
       :style="{ minHeight: computedMinHeight, maxHeight: computedMaxHeight }"
-      contenteditable="true"
-      :lang="props.language"
-      :spellcheck="props.spellcheck"
-      :autocorrect="props.spellcheck ? 'on' : 'off'"
-      :autocapitalize="props.spellcheck ? 'sentences' : 'off'"
-      :inputmode="props.spellcheck ? 'text' : 'none'"
-      @input="handleInput"
-      @blur="handleBlur"
-      :placeholder="placeholder"
-    ></div>
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, computed, withDefaults } from 'vue'
+import { watch, onBeforeUnmount, computed, onMounted } from 'vue'
+import { useEditor, EditorContent } from '@tiptap/vue-3'
+import StarterKit from '@tiptap/starter-kit'
+import Underline from '@tiptap/extension-underline'
+import TextAlign from '@tiptap/extension-text-align'
 
-const props = withDefaults(defineProps<{
+interface Props {
   modelValue: string
   placeholder?: string
   minHeight?: number
   maxHeight?: number
   language?: string
   spellcheck?: boolean
-}>(), {
+}
+
+const props = withDefaults(defineProps<Props>(), {
   language: 'es',
-  spellcheck: true
+  spellcheck: true,
+  minHeight: 360,
+  maxHeight: 560
 })
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
 }>()
 
-// Referencia al div editable para manipular contenido y foco
-const editorRef = ref<HTMLDivElement | null>(null)
-// Alturas por defecto ligeramente más bajas que antes (era 400/600)
-const defaultMin = 360
-const defaultMax = 560
+const computedMinHeight = computed(() => `${props.minHeight}px`)
+const computedMaxHeight = computed(() => `${props.maxHeight}px`)
 
-// Fuerza el idioma y spellcheck en el nodo editable
-// IMPORTANTE: Firefox requiere tener instalado el diccionario español en about:addons
-// Chrome/Chromium detectan automáticamente el idioma del sistema
-const applyLanguageSettings = () => {
-  const lang = props.language || 'es'
-  if (editorRef.value) {
-    // Configurar propiedades DOM directamente
-    editorRef.value.lang = lang
-    editorRef.value.spellcheck = props.spellcheck
-    
-    // Configurar atributos HTML
-    editorRef.value.setAttribute('lang', lang)
-    editorRef.value.setAttribute('xml:lang', lang)
-    editorRef.value.setAttribute('spellcheck', props.spellcheck ? 'true' : 'false')
-    
-    // Atributos para Safari/iOS (no afectan Firefox)
-    editorRef.value.setAttribute('autocorrect', props.spellcheck ? 'on' : 'off')
-    editorRef.value.setAttribute('autocapitalize', props.spellcheck ? 'sentences' : 'off')
-    editorRef.value.setAttribute('inputmode', props.spellcheck ? 'text' : 'none')
-    
-    // Firefox: forzar re-evaluación del spellcheck
-    if (props.spellcheck) {
-      editorRef.value.blur()
-      setTimeout(() => editorRef.value?.focus(), 0)
-    }
-  }
+// Función para limpiar HTML de Word
+const cleanWordHTML = (html: string): string => {
+  let cleaned = html
+
+  // Remover comentarios condicionales de Word
+  cleaned = cleaned.replace(/<!--\[if[\s\S]*?<!\[endif\]-->/gi, '')
   
-  // Ajustar el documento principal
-  if (typeof document !== 'undefined') {
-    document.documentElement.lang = lang
-    document.documentElement.setAttribute('lang', lang)
-    document.documentElement.setAttribute('xml:lang', lang)
-    if (document.body) {
-      document.body.setAttribute('lang', lang)
-      document.body.setAttribute('xml:lang', lang)
+  // Remover comentarios HTML
+  cleaned = cleaned.replace(/<!--[\s\S]*?-->/g, '')
+  
+  // Remover tags XML de Office
+  cleaned = cleaned.replace(/<(\/)?(xml|o:|w:|m:|v:)[^>]*>/gi, '')
+  
+  // Remover clases de Word/Office
+  cleaned = cleaned.replace(/class="?Mso[^"]*"?/gi, '')
+  
+  // Remover todos los atributos style
+  cleaned = cleaned.replace(/style="[^"]*"/gi, '')
+  
+  // Remover atributos lang
+  cleaned = cleaned.replace(/lang="[^"]*"/gi, '')
+  
+  // Remover spans vacíos o innecesarios
+  cleaned = cleaned.replace(/<span[^>]*>(.*?)<\/span>/gi, '$1')
+  
+  // Normalizar espacios múltiples
+  cleaned = cleaned.replace(/\s+/g, ' ')
+  
+  // Remover &nbsp; excesivos
+  cleaned = cleaned.replace(/(&nbsp;|\u00A0)+/g, ' ')
+  
+  // Limpiar tags vacíos
+  cleaned = cleaned.replace(/<(\w+)[^>]*>\s*<\/\1>/gi, '')
+  
+  return cleaned.trim()
+}
+
+// Configurar editor con TipTap
+const editor = useEditor({
+  content: props.modelValue,
+  editorProps: {
+    attributes: {
+      class: 'prose prose-sm max-w-none focus:outline-none p-4',
+      spellcheck: props.spellcheck ? 'true' : 'false',
+      lang: props.language,
+      'data-placeholder': props.placeholder || ''
+    },
+    handlePaste: (view, event) => {
+      const html = event.clipboardData?.getData('text/html')
+      
+      if (html) {
+        // Limpiar HTML de Word
+        const cleanedHTML = cleanWordHTML(html)
+        
+        // Si el HTML limpio es muy corto comparado con el original,
+        // probablemente era basura de Word, insertar como texto plano
+        if (cleanedHTML.length < html.length * 0.3) {
+          const text = event.clipboardData?.getData('text/plain') || ''
+          if (text) {
+            view.dispatch(view.state.tr.insertText(text))
+            return true
+          }
+        }
+        
+        // Dejar que TipTap maneje el HTML limpio
+        // preservando solo los formatos permitidos
+      }
+      
+      return false
     }
-  }
-}
-
-const computedMinHeight = computed(() => `${props.minHeight ?? defaultMin}px`)
-const computedMaxHeight = computed(() => `${props.maxHeight ?? defaultMax}px`)
-
-// Ejecutar comando de formato
-const execCommand = (command: string, value: string | undefined = undefined) => {
-  document.execCommand(command, false, value)
-  editorRef.value?.focus()
-}
-
-// Verificar si un comando está activo
-const isActive = (command: string): boolean => {
-  return document.queryCommandState(command)
-}
-
-// Manejar cambios en el select
-const handleSelectChange = (event: Event, command: string) => {
-  const target = event.target as HTMLSelectElement
-  if (target) {
-    execCommand(command, target.value)
-  }
-}
-
-// Manejar cambios en color
-const handleColorChange = (event: Event, command: string) => {
-  const target = event.target as HTMLInputElement
-  if (target) {
-    execCommand(command, target.value)
-  }
-}
-
-// Manejar cambios en el contenido
-const handleInput = () => {
-  if (editorRef.value) {
-    emit('update:modelValue', editorRef.value.innerHTML)
-  }
-}
-
-// Manejar pérdida de foco
-const handleBlur = () => {
-  if (editorRef.value) {
-    emit('update:modelValue', editorRef.value.innerHTML)
-  }
-}
-
-// Sincronizar contenido cuando cambia el modelValue desde fuera
-watch(() => props.modelValue, (newValue) => {
-  if (editorRef.value && editorRef.value.innerHTML !== newValue) {
-    editorRef.value.innerHTML = newValue || ''
-  }
-}, { immediate: true })
-
-// Inicializar contenido al montar
-onMounted(() => {
-  applyLanguageSettings()
-  if (editorRef.value && props.modelValue) {
-    editorRef.value.innerHTML = props.modelValue
+  },
+  extensions: [
+    StarterKit.configure({
+      heading: false,        // Sin encabezados
+      code: false,           // Sin código inline
+      codeBlock: false,      // Sin bloques de código
+      strike: false,         // Sin tachado
+      blockquote: false,     // Sin citas
+      horizontalRule: false, // Sin líneas horizontales
+      // Habilitar solo extensiones necesarias
+      // history se habilita por defecto, no necesita ser true
+    }),
+    Underline,               // Extensión de subrayado
+    TextAlign.configure({    // Alineación de texto
+      types: ['paragraph'],
+      alignments: ['left', 'center', 'right', 'justify']
+    })
+  ],
+  onUpdate: ({ editor }) => {
+    emit('update:modelValue', editor.getHTML())
   }
 })
 
-// Reaplicar idioma o spellcheck si cambian desde fuera
-watch(() => [props.language, props.spellcheck], () => applyLanguageSettings())
+// Sincronizar contenido cuando cambia desde fuera
+watch(() => props.modelValue, (newValue) => {
+  if (editor.value && editor.value.getHTML() !== newValue) {
+    editor.value.commands.setContent(newValue || '')
+  }
+})
+
+// Aplicar idioma al montar
+onMounted(() => {
+  if (editor.value) {
+    const editorElement = document.querySelector('.ProseMirror') as HTMLElement
+    if (editorElement) {
+      editorElement.setAttribute('lang', props.language)
+      editorElement.setAttribute('spellcheck', props.spellcheck ? 'true' : 'false')
+    }
+  }
+})
+
+// Limpiar al desmontar
+onBeforeUnmount(() => {
+  editor.value?.destroy()
+})
 </script>
 
 <style scoped>
-.toolbar-btn-compact {
-  @apply px-1.5 py-0.5 rounded hover:bg-gray-200 transition-colors flex items-center justify-center min-w-[24px] h-6 text-xs;
+.toolbar-btn {
+  @apply px-2 py-1 rounded hover:bg-gray-200 transition-colors flex items-center justify-center min-w-[28px] h-7 text-sm disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
-.toolbar-btn-compact:active {
+.toolbar-btn:active:not(:disabled) {
   @apply bg-gray-300;
 }
 
-.toolbar-select-compact {
-  @apply px-1 py-0.5 text-xs border border-gray-300 rounded bg-white hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 min-w-[60px];
-}
-
-.toolbar-separator-compact {
-  @apply w-px h-4 bg-gray-300 mx-0.5;
+.toolbar-separator {
+  @apply w-px h-5 bg-gray-300 mx-1;
 }
 
 .toolbar-group {
-  @apply flex gap-0.5 items-center;
+  @apply flex gap-1 items-center;
 }
 
-.toolbar-color-input-compact {
-  @apply w-6 h-6 cursor-pointer border border-gray-300 rounded;
+.editor-wrapper {
+  @apply overflow-y-auto bg-white;
 }
 
-.editor-content:empty:before {
-  content: attr(placeholder);
-  @apply text-gray-400 pointer-events-none;
+/* Estilos globales para el contenido del editor TipTap */
+:deep(.ProseMirror) {
+  /* Tipografía estándar fija */
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  color: #000000;
+  line-height: 1.6;
+  outline: none;
 }
 
-.editor-content:focus {
+:deep(.ProseMirror:focus) {
   @apply ring-2 ring-blue-500 ring-inset;
 }
 
-/* Estilos para el contenido del editor */
-.editor-content :deep(p) {
+/* Placeholder */
+:deep(.ProseMirror p.is-editor-empty:first-child::before) {
+  content: attr(data-placeholder);
+  @apply text-gray-400 pointer-events-none float-left h-0;
+}
+
+/* Párrafos */
+:deep(.ProseMirror p) {
   @apply mb-2;
 }
 
-.editor-content :deep(ul),
-.editor-content :deep(ol) {
+/* Listas */
+:deep(.ProseMirror ul),
+:deep(.ProseMirror ol) {
   @apply ml-6 mb-2;
 }
 
-.editor-content :deep(ul) {
+:deep(.ProseMirror ul) {
   @apply list-disc;
 }
 
-.editor-content :deep(ol) {
+:deep(.ProseMirror ol) {
   @apply list-decimal;
 }
 
-.editor-content :deep(li) {
+:deep(.ProseMirror li) {
   @apply mb-1;
 }
 
-.editor-content :deep(strong) {
+/* Formatos de texto */
+:deep(.ProseMirror strong) {
   @apply font-bold;
 }
 
-.editor-content :deep(em) {
+:deep(.ProseMirror em) {
   @apply italic;
 }
 
-.editor-content :deep(u) {
+:deep(.ProseMirror u) {
   @apply underline;
+}
+
+/* Alineación */
+:deep(.ProseMirror [style*="text-align: left"]) {
+  text-align: left !important;
+}
+
+:deep(.ProseMirror [style*="text-align: center"]) {
+  text-align: center !important;
+}
+
+:deep(.ProseMirror [style*="text-align: right"]) {
+  text-align: right !important;
+}
+
+:deep(.ProseMirror [style*="text-align: justify"]) {
+  text-align: justify !important;
 }
 </style>

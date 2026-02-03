@@ -6,8 +6,31 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup
 import re
 from pathlib import Path
+from datetime import datetime, date
+
+# Mapeo valor interno -> etiqueta para informe (tildes, espacios; igual que frontend)
+METHOD_VALUE_TO_LABEL = {
+    "hematoxilina-eosina": "Hematoxilina-Eosina",
+    "inmunohistoquimica-polimero-peroxidasa": "Inmunohistoquímica: Polímero-Peroxidasa",
+    "coloraciones-especiales": "Coloraciones histoquímicas",
+    "inmunofluorescencia-metodo-directo": "Inmunofluorescencia: método directo",
+    "microscopia-electronica-transmision": "Microscopía electrónica de transmisión",
+}
 
 
+def _method_values_to_labels(values: list) -> list:
+    """Convierte lista de valores (keys) a etiquetas para mostrar en el informe."""
+    if not values:
+        return []
+    out = []
+    for v in values:
+        if isinstance(v, str):
+            label = METHOD_VALUE_TO_LABEL.get(v.strip().lower(), v.strip())
+            if label:
+                out.append(label)
+        else:
+            out.append(str(v))
+    return out
 class CasePdfService:
     def __init__(self, database: Any):
         from app.modules.cases.services.case_service import CaseService
@@ -416,8 +439,13 @@ class CasePdfService:
         if not result:
             return None
 
+        metodo_raw = result.get('method', [])
+        if not isinstance(metodo_raw, list):
+            metodo_raw = [metodo_raw] if metodo_raw else []
+
         mapped_result = {
-            'metodo': result.get('method', []),
+            'metodo': metodo_raw,
+            'metodo_display': _method_values_to_labels(metodo_raw),
             # Sanitizar campos con posible HTML
             'resultado_macro': self._sanitize_html(result.get('macro_result', '')),
             'resultado_micro': self._sanitize_html(result.get('micro_result', '')),

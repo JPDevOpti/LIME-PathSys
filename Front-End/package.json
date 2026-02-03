@@ -11,6 +11,11 @@
   },
   "dependencies": {
     "@heroicons/vue": "^2.2.0",
+    "@tiptap/extension-text-align": "^3.18.0",
+    "@tiptap/extension-text-style": "^3.18.0",
+    "@tiptap/extension-underline": "^3.18.0",
+    "@tiptap/starter-kit": "^3.18.0",
+    "@tiptap/vue-3": "^3.18.0",
     "apexcharts": "^5.3.5",
     "axios": "^1.12.2",
     "date-holidays": "^3.0.0",

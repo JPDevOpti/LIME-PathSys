@@ -172,7 +172,7 @@
               </svg>
               <div>
                 <p class="text-sm font-medium text-blue-800">Completa todos los campos para firmar</p>
-                <p class="text-sm text-blue-700">Todos los campos (método, corte macro, corte micro, diagnóstico y CIE-10) deben estar completos para poder firmar el resultado. El CIE-O es opcional.</p>
+                <p class="text-sm text-blue-700">Todos los campos (método, corte macroscópico, descripción microscópica, diagnóstico y CIE-10) deben estar completos para poder firmar el resultado. El CIE-O es opcional.</p>
               </div>
             </div>
           </div>
@@ -791,9 +791,9 @@ const validateAllFieldsComplete = (): { isValid: boolean; errors: string[] } => 
     errors.push('El corte macroscópico es obligatorio')
   }
   
-  // Validar corte microscópico
+  // Validar descripción microscópica
   if (isRichTextEmpty(sections.value?.micro)) {
-    errors.push('El corte microscópico es obligatorio')
+    errors.push('La descripción microscópica es obligatoria')
   }
   
   // Validar diagnóstico
@@ -1082,7 +1082,7 @@ const handleCreateApprovalRequest = async (payload: { case_code: string; reason:
       throw new Error(`El caso debe tener un diagnóstico CIE-10 completo antes de solicitar pruebas complementarias. Errores: ${validation.errors.join(', ')}`)
     }
     
-    // Validar que el caso tenga método, corte macro, micro y diagnósticos completos
+    // Validar que el caso tenga método, corte macroscópico, descripción microscópica y diagnósticos completos
     // Verificar en el editor local (sections) en lugar del estado guardado
     if (!sections.value?.macro?.trim()) {
       throw new Error('El caso debe tener un resultado macroscópico antes de solicitar pruebas complementarias')

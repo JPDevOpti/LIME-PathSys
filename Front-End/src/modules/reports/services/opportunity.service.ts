@@ -2,6 +2,30 @@ import { apiClient } from '@/core/config/axios.config'
 import { API_CONFIG } from '@/core/config/api.config'
 import type { OpportunityTest, PathologistPerformance } from '../types/opportunity.types'
 
+const EXCLUDED_ENTITY_CODE = 'HAMA'
+
+const isExcludedEntity = (item: any): boolean => {
+  if (!item || typeof item !== 'object') return false
+  const entity = item.entity || item.entityInfo || item.entidad || {}
+
+  const idAsCode = String(
+    entity.id ||
+    entity.entity_id ||
+    item.entity_id ||
+    ''
+  ).trim().toUpperCase()
+
+  const code = String(
+    item.entity_code ||
+    item.entityCode ||
+    entity.code ||
+    entity.entity_code ||
+    entity.codigo ||
+    ''
+  ).trim().toUpperCase()
+  return code === EXCLUDED_ENTITY_CODE || idAsCode === EXCLUDED_ENTITY_CODE
+}
+
 export interface OpportunityReportData {
   tests: OpportunityTest[]
   pathologists: PathologistPerformance[]
@@ -37,6 +61,7 @@ export class OpportunityApiService {
     const testBlocks: any[] = raw?.tests || []
     if (Array.isArray(testBlocks)) {
       for (const t of testBlocks) {
+        if (isExcludedEntity(t)) continue
         tests.push({
           code: String(t.code || ''),
           name: String(t.name || ''),
@@ -50,6 +75,7 @@ export class OpportunityApiService {
     const patoBlocks: any[] = raw?.pathologists || []
     if (Array.isArray(patoBlocks)) {
       for (const p of patoBlocks) {
+        if (isExcludedEntity(p)) continue
         pathologists.push({
           code: String(p.code || ''),
           name: String(p.name || ''),

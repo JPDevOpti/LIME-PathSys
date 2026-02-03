@@ -9,6 +9,7 @@ class OpportunityStatisticsRepository:
     # Repositorio para métricas de oportunidad (cumplimiento en días hábiles)
     def __init__(self, db: AsyncIOMotorDatabase):
         self.collection = db.cases
+        self.excluded_entity_code = "HAMA"
 
     def _month_range(self, ref: Optional[datetime] = None) -> Dict[str, datetime]:
         # Calcula inicios de mes: actual, anterior y pre-anterior
@@ -40,13 +41,17 @@ class OpportunityStatisticsRepository:
     ) -> Dict[str, Any]:
         # Calcula porcentaje y tiempos dentro/fuera de oportunidad en un rango
         match_stage: Dict[str, Any] = {
-            "signed_at": {"$gte": start_date, "$lt": end_date},
+            "created_at": {"$gte": start_date, "$lt": end_date},
+            # Excluir Hospital Alma Máter por código (el código se guarda en id/entity_code/code)
+            "patient_info.entity_info.id": {"$ne": self.excluded_entity_code},
+            "patient_info.entity_info.entity_code": {"$ne": self.excluded_entity_code},
+            "patient_info.entity_info.code": {"$ne": self.excluded_entity_code},
         }
         if pathologist_code:
             match_stage["assigned_pathologist.id"] = pathologist_code
 
         projection = {
-            "signed_at": 1,
+            "created_at": 1,
             "state": 1,
             "assigned_pathologist.id": 1,
             "business_days": 1,
@@ -56,7 +61,12 @@ class OpportunityStatisticsRepository:
         cursor = self.collection.find(match_stage, projection=projection)
         docs = await cursor.to_list(length=None)
 
-        filtered = [d for d in docs if str(d.get("state")) == "Completado" and d.get("signed_at") and d.get("business_days") is not None]
+        filtered = [
+            d for d in docs
+            if str(d.get("state")) in ["Completado", "Por entregar"]
+            and d.get("created_at")
+            and d.get("business_days") is not None
+        ]
 
         total_considerados = len(filtered)
         if total_considerados == 0:
@@ -208,8 +218,12 @@ class OpportunityStatisticsRepository:
         start, end = self._month_bounds(year, month)
 
         match_stage: Dict[str, Any] = {
-            "state": "Completado",
-            "signed_at": {"$gte": start, "$lt": end},
+            "state": {"$in": ["Completado", "Por entregar"]},
+            "created_at": {"$gte": start, "$lt": end},
+            # Excluir Hospital Alma Máter por código (el código se guarda en id/entity_code/code)
+            "patient_info.entity_info.id": {"$ne": self.excluded_entity_code},
+            "patient_info.entity_info.entity_code": {"$ne": self.excluded_entity_code},
+            "patient_info.entity_info.code": {"$ne": self.excluded_entity_code},
         }
 
         if entity:
