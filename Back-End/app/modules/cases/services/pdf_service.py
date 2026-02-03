@@ -6,6 +6,31 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup
 import re
 from pathlib import Path
+from datetime import datetime, date
+
+# Mapeo valor interno -> etiqueta para informe (tildes, espacios; igual que frontend)
+METHOD_VALUE_TO_LABEL = {
+    "hematoxilina-eosina": "Hematoxilina-Eosina",
+    "inmunohistoquimica-polimero-peroxidasa": "Inmunohistoquímica: Polímero-Peroxidasa",
+    "coloraciones-especiales": "Coloraciones histoquímicas",
+    "inmunofluorescencia-metodo-directo": "Inmunofluorescencia: método directo",
+    "microscopia-electronica-transmision": "Microscopía electrónica de transmisión",
+}
+
+
+def _method_values_to_labels(values: list) -> list:
+    """Convierte lista de valores (keys) a etiquetas para mostrar en el informe."""
+    if not values:
+        return []
+    out = []
+    for v in values:
+        if isinstance(v, str):
+            label = METHOD_VALUE_TO_LABEL.get(v.strip().lower(), v.strip())
+            if label:
+                out.append(label)
+        else:
+            out.append(str(v))
+    return out
 
 
 from datetime import datetime, date

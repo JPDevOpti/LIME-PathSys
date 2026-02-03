@@ -7,7 +7,6 @@ class OpportunityStatisticsRepository:
     # Repositorio para métricas de oportunidad (cumplimiento en días hábiles)
     def __init__(self, db: AsyncIOMotorDatabase):
         self.collection = db.cases
-
         self.excluded_entity_code = "HAMA"
 
     def _month_range(self, ref: Optional[datetime] = None) -> Dict[str, datetime]:
@@ -60,7 +59,12 @@ class OpportunityStatisticsRepository:
         cursor = self.collection.find(match_stage, projection=projection)
         docs = await cursor.to_list(length=None)
 
-        filtered = [d for d in docs if str(d.get("state")) in ["Completado", "Por entregar"] and d.get("created_at") and d.get("business_days") is not None]
+        filtered = [
+            d for d in docs
+            if str(d.get("state")) in ["Completado", "Por entregar"]
+            and d.get("created_at")
+            and d.get("business_days") is not None
+        ]
 
         total_considerados = len(filtered)
         if total_considerados == 0:
