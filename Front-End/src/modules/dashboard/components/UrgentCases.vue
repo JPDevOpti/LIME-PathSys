@@ -349,8 +349,8 @@ const patologoSeleccionado = ref('')
 const sortKey = ref('codigo')
 const sortOrder = ref('desc')
 
-// Fallback: calcular días hábiles si el backend no los envía
-const calculateBusinessDays = (startDate: string): number => {
+// Cálculo de días hábiles igual que en CasesTable
+const calculateBusinessDays = (startDate: string, endDate?: string): number => {
   const parseDate = (s?: string): Date | null => {
     if (!s) return null
     const v = String(s).trim()
@@ -368,14 +368,12 @@ const calculateBusinessDays = (startDate: string): number => {
     const d = new Date(v)
     return isNaN(d.getTime()) ? null : d
   }
-  
+
   const start = parseDate(startDate)
-  const end = new Date() 
-  
-  if (!start || isNaN(start.getTime())) return 0
-  
-  const fromDate = start <= end ? start : end
-  const toDate = start <= end ? end : start
+  const end = endDate ? parseDate(endDate) : new Date()
+  if (!start || !end || isNaN((end as Date).getTime())) return 0
+  const fromDate = start <= (end as Date) ? start : (end as Date)
+  const toDate = start <= (end as Date) ? (end as Date) : start
 
   const normalize = (d: Date) => { const x = new Date(d); x.setHours(0,0,0,0); return x }
   let cur = normalize(fromDate)
@@ -386,7 +384,7 @@ const calculateBusinessDays = (startDate: string): number => {
 
   let days = 0
   while (cur <= endDay) {
-    const dow = cur.getDay() // 0=Sun, 1=Mon, ...
+    const dow = cur.getDay()
     const iso = formatISODate(cur)
     if (dow >= 1 && dow <= 5 && !holidays.has(iso)) days++
     cur.setDate(cur.getDate() + 1)
@@ -397,15 +395,12 @@ const calculateBusinessDays = (startDate: string): number => {
   const startIso = formatISODate(startNorm)
   const startIsBusiness = (startDow >= 1 && startDow <= 5) && !holidays.has(startIso)
   if (startIsBusiness) days = Math.max(0, days - 1)
-  
   return days
 }
 
 const minUrgentDays = 6
 
 const getDaysInSystem = (caso: CasoUrgente): number => {
-  const fromBackend = Number(caso.dias_en_sistema)
-  if (Number.isFinite(fromBackend) && fromBackend >= 0) return Math.floor(fromBackend)
   return calculateBusinessDays(caso.fecha_creacion)
 }
 
