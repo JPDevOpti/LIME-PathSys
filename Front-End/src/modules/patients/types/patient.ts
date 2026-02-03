@@ -38,7 +38,7 @@ export interface PatientData {
   second_name?: string | null
   first_lastname: string
   second_lastname?: string | null
-  birth_date: string
+  birth_date?: string | null
   age?: number
   gender: Gender
   location?: Location | null

@@ -714,12 +714,6 @@ const handleSave = async () => {
       return
     }
   
-    if (!form.value.birth_date || (typeof form.value.birth_date === 'string' && !form.value.birth_date.trim())) {
-      console.error('[EditPatientModal] Falta birth_date')
-      showError('Error de validación', 'La fecha de nacimiento es obligatoria. Por favor, ingrésela.')
-      return
-    }
-  
     if (!form.value.gender) {
       console.error('[EditPatientModal] Falta gender')
       showError('Error de validación', 'El sexo es obligatorio')
@@ -744,30 +738,32 @@ const handleSave = async () => {
       return
     }
   
-    // Validar fecha de nacimiento
-    const birthDateIso = toISODateString(form.value.birth_date)
-    if (!birthDateIso) {
+    // Validar fecha de nacimiento solo si se proporciona
+    const birthDateIso = form.value.birth_date ? toISODateString(form.value.birth_date) : ''
+    if (form.value.birth_date && !birthDateIso) {
       console.error('[EditPatientModal] birth_date no es válida:', form.value.birth_date)
       showError('Error de validación', 'La fecha de nacimiento no es válida. Por favor, ingrese una fecha válida.')
       return
     }
     
-    console.log('[EditPatientModal] birthDateIso:', birthDateIso)
+    if (birthDateIso) {
+      console.log('[EditPatientModal] birthDateIso:', birthDateIso)
   
-    const birthDate = new Date(birthDateIso)
-    const today = new Date()
-    const age = today.getFullYear() - birthDate.getFullYear()
+      const birthDate = new Date(birthDateIso)
+      const today = new Date()
+      const age = today.getFullYear() - birthDate.getFullYear()
   
-    if (birthDate > today) {
-      console.error('[EditPatientModal] birth_date es futura')
-      showError('Error de validación', 'La fecha de nacimiento no puede ser futura')
-      return
-    }
+      if (birthDate > today) {
+        console.error('[EditPatientModal] birth_date es futura')
+        showError('Error de validación', 'La fecha de nacimiento no puede ser futura')
+        return
+      }
   
-    if (age > 120) {
-      console.error('[EditPatientModal] age > 120:', age)
-      showError('Error de validación', 'La edad no puede ser mayor a 120 años')
-      return
+      if (age > 120) {
+        console.error('[EditPatientModal] age > 120:', age)
+        showError('Error de validación', 'La edad no puede ser mayor a 120 años')
+        return
+      }
     }
   
     // Validar dirección si se proporciona
@@ -856,7 +852,7 @@ const handleSave = async () => {
       second_name: secondName,
       first_lastname: form.value.first_lastname.trim(),
       second_lastname: secondLastname,
-      birth_date: birthDateIso,
+      birth_date: birthDateIso || undefined,
       gender: form.value.gender as Gender,
       location: locationPayload,
       entity_info: {
@@ -883,8 +879,9 @@ const handleSave = async () => {
       if (form.value.second_lastname.trim()) nameParts.push(form.value.second_lastname.trim())
       const fullName = nameParts.join(' ').trim()
       
-      // Calcular edad desde fecha de nacimiento
-      const age = calculateAge(birthDateIso)
+      // Calcular edad desde fecha de nacimiento si existe; si no, usar la edad actual si está disponible
+      const fallbackAge = Number(props.casePatientInfo?.age ?? originalPatientData.value?.age ?? 0)
+      const age = birthDateIso ? calculateAge(birthDateIso) : fallbackAge
       
       // Actualizar patient_code si cambió la identificación
       // El patient_code debe seguir el formato: "identification_type-identification_number"
