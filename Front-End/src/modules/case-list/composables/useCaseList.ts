@@ -54,10 +54,14 @@ export function useCaseList() {
     error.value = null
     try {
       const testsCatalog = new Map<string, string>()
+      const testsTimeCatalog = new Map<string, number>()
       try {
         const tests: BackendTest[] = await listTests()
         tests.forEach(t => {
           if (t.isActive !== false) testsCatalog.set(t.pruebaCode, t.pruebasName)
+          if (t.isActive !== false && Number.isFinite(t.time)) {
+            testsTimeCatalog.set(t.pruebaCode, Math.max(0, Math.floor(Number(t.time))))
+          }
         })
       } catch (e) {
       }
@@ -86,7 +90,7 @@ export function useCaseList() {
       }
 
       const data: BackendCase[] = fullSearch ? await searchCases(serverParams) : await listCases(serverParams)
-      cases.value = data.map((bk) => transformBackendCase(bk, testsCatalog))
+      cases.value = data.map((bk) => transformBackendCase(bk, testsCatalog, testsTimeCatalog))
     } catch (e: any) {
       error.value = 'Error al cargar los casos'
       cases.value = []
@@ -95,7 +99,11 @@ export function useCaseList() {
     }
   }
 
-  const transformBackendCase = (bk: BackendCase, testsCatalog: Map<string, string>): Case => {
+  const transformBackendCase = (
+    bk: BackendCase,
+    testsCatalog: Map<string, string>,
+    testsTimeCatalog: Map<string, number>
+  ): Case => {
     const getDate = (v: any): string => {
       if (!v) return ''
       if (typeof v === 'string') return v
@@ -114,6 +122,7 @@ export function useCaseList() {
 
     const flatTests: string[] = []
     const subsamples: Case['subsamples'] = []
+    const caseTestCodes: string[] = []
 
     const samples: any[] = (bk.samples as any) || (bk.muestras as any) || []
     if (Array.isArray(samples)) {
@@ -130,6 +139,7 @@ export function useCaseList() {
             for (let i = 0; i < cantidad; i++) {
               flatTests.push(testString)
             }
+            caseTestCodes.push(code)
           }
 
           items.push({ id: code, name: name || code, quantity: cantidad })
@@ -157,6 +167,14 @@ export function useCaseList() {
     const patientInfo: any = (bk.patient_info as any) || (bk.paciente as any) || {}
     const caseCode = bk.case_code || bk.caso_code || id
     const sampleType = (samples[0]?.body_region || samples[0]?.region_cuerpo || (patientInfo?.care_type || patientInfo?.tipo_atencion || ''))
+
+    const defaultUrgentDays = 6
+    let maxTime = 0
+    caseTestCodes.forEach(code => {
+      const t = testsTimeCatalog.get(code)
+      if (t && t > maxTime) maxTime = t
+    })
+    const tiempoOportunidadMax = maxTime > 0 ? maxTime : defaultUrgentDays
 
     return {
       id,
@@ -214,6 +232,7 @@ export function useCaseList() {
       subsamples,
       additional_notes: bk.additional_notes || [],
       complementary_tests: bk.complementary_tests || [],
+      tiempo_oportunidad_max: tiempoOportunidadMax,
     }
   }
 

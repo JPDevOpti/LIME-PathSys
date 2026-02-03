@@ -665,6 +665,12 @@ const elapsedDays = (c: Case): number => {
   return calculateBusinessDays(c.receivedAt, endDate)
 }
 
+const getUrgentLimitDays = (c: Case): number => {
+  const raw = Number(c.tiempo_oportunidad_max)
+  if (Number.isFinite(raw) && raw > 0) return Math.floor(raw)
+  return 6
+}
+
 const calculateBusinessDays = (startDate: string, endDate?: string): number => {
   const parseDate = (s?: string): Date | null => {
     if (!s) return null
@@ -725,8 +731,8 @@ const statusClass = (c: Case): string => {
 
 const daysClass = (c: Case): string => {
   const days = elapsedDays(c)
-  if (days >= 6) return 'bg-red-50 text-red-700'
-  if (days >= 5) return 'bg-yellow-50 text-yellow-700'
+  const limit = getUrgentLimitDays(c)
+  if (days > limit) return 'bg-red-50 text-red-700'
   return 'bg-brand-50 text-brand-700'
 }
 </script>

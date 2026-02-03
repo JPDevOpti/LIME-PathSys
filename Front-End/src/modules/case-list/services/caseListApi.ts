@@ -100,6 +100,7 @@ export interface BackendTest {
   pruebasName: string
   pruebasDescription?: string
   isActive?: boolean
+  time?: number
 }
 
 const CASES_BASE = '/cases'

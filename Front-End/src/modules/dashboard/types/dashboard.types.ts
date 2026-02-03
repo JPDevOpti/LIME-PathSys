@@ -26,6 +26,7 @@ export interface CasoUrgente {
   estado: CaseStatus
   prioridad: CasePriority
   dias_en_sistema: number
+  tiempo_oportunidad_max?: number
 }
 
 // Aggregated KPI metrics for patients and cases

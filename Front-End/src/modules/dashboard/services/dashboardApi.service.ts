@@ -208,7 +208,8 @@ class DashboardApiService {
       fecha_creacion: caso.fecha_creacion,
       estado: caso.estado as CaseStatus,
       prioridad: (caso.prioridad as CasePriority) || CasePriority.Normal,
-      dias_en_sistema: caso.dias_habiles_transcurridos || 0
+      dias_en_sistema: caso.dias_habiles_transcurridos || 0,
+      tiempo_oportunidad_max: typeof caso.tiempo_oportunidad_max === 'number' ? caso.tiempo_oportunidad_max : undefined
     }))
   }
 

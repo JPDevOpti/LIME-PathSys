@@ -53,6 +53,7 @@ export interface Case {
   }>
   additional_notes?: Array<{ date: string; note: string }>
   complementary_tests?: Array<{ code?: string; name?: string; quantity?: number; reason?: string }>
+  tiempo_oportunidad_max?: number
 }
 
 export interface Filters {
