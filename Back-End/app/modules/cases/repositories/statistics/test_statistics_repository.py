@@ -7,6 +7,49 @@ class TestStatisticsRepository:
     # Repositorio para estadísticas de pruebas (rendimiento y oportunidad)
     def __init__(self, database: AsyncIOMotorDatabase):
         self.collection = database.cases
+
+    def _add_max_time_fields(self, base_pipeline: List[Dict[str, Any]], default_time: int) -> List[Dict[str, Any]]:
+        # Agrega tiempo máximo de pruebas por caso usando lookup a tests
+        return [
+            *base_pipeline,
+            {
+                "$addFields": {
+                    "test_ids": {
+                        "$reduce": {
+                            "input": {"$ifNull": ["$samples", []]},
+                            "initialValue": [],
+                            "in": {
+                                "$concatArrays": [
+                                    "$$value",
+                                    {"$ifNull": ["$$this.tests.id", []]}
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "$lookup": {
+                    "from": "tests",
+                    "localField": "test_ids",
+                    "foreignField": "test_code",
+                    "as": "test_info"
+                }
+            },
+            {
+                "$addFields": {
+                    "max_time_raw": {"$max": "$test_info.time"},
+                    "max_time": {
+                        "$cond": [
+                            {"$and": [{"$ne": ["$max_time_raw", None]}, {"$gt": ["$max_time_raw", 0]}]},
+                            "$max_time_raw",
+                            default_time
+                        ]
+                    }
+                }
+            },
+            {"$unset": "test_ids"}
+        ]
     
     def _get_entity_filter_pattern(self, entity_name: str) -> str:
         # Devuelve patrón regex para filtrar entidades (soporta abreviaturas)
@@ -124,10 +167,11 @@ class TestStatisticsRepository:
         }
     
     async def get_test_details(
-        self, 
-        test_code: str, 
-        month: int, 
-        year: int, 
+        self,
+        test_code: str,
+        month: int,
+        year: int,
+        threshold_days: int = 7,
         entity_name: Optional[str] = None
     ) -> Dict[str, Any]:
         start_date = datetime(year, month, 1)
@@ -180,20 +224,18 @@ class TestStatisticsRepository:
         }
         opportunity_pipeline = [
             {"$match": match_conditions},
-            {"$unwind": "$samples"},
-            {"$unwind": "$samples.tests"},
-            {"$match": {"samples.tests.id": test_code}},
+            *self._add_max_time_fields([], threshold_days),
             {
                 "$group": {
                     "_id": None,
                     "dentro_oportunidad": {
                         "$sum": {
-                            "$cond": [{"$lte": ["$business_days", 7]}, 1, 0]
+                            "$cond": [{"$lte": ["$business_days", "$max_time"]}, 1, 0]
                         }
                     },
                     "fuera_oportunidad": {
                         "$sum": {
-                            "$cond": [{"$gt": ["$business_days", 7]}, 1, 0]
+                            "$cond": [{"$gt": ["$business_days", "$max_time"]}, 1, 0]
                         }
                     },
                     "total_casos": {"$sum": 1}
@@ -337,6 +379,7 @@ class TestStatisticsRepository:
         
         pipeline = [
             {"$match": match_conditions},
+            *self._add_max_time_fields([], threshold_days),
             {"$unwind": "$samples"},
             {"$unwind": "$samples.tests"},
             {
@@ -348,12 +391,12 @@ class TestStatisticsRepository:
                     "total_casos": {"$sum": 1},
                     "dentro_oportunidad": {
                         "$sum": {
-                            "$cond": [{"$lte": ["$business_days", threshold_days]}, 1, 0]
+                            "$cond": [{"$lte": ["$business_days", "$max_time"]}, 1, 0]
                         }
                     },
                     "fuera_oportunidad": {
                         "$sum": {
-                            "$cond": [{"$gt": ["$business_days", threshold_days]}, 1, 0]
+                            "$cond": [{"$gt": ["$business_days", "$max_time"]}, 1, 0]
                         }
                     },
                     "avg_business_days": {"$avg": "$business_days"}

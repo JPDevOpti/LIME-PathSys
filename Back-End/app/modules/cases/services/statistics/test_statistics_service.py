@@ -31,6 +31,7 @@ class TestStatisticsService:
         test_code: str, 
         month: int, 
         year: int, 
+        threshold_days: int = 7,
         entity_name: Optional[str] = None
     ) -> Dict[str, Any]:
         """Get detailed statistics for a specific test"""
@@ -45,7 +46,16 @@ class TestStatisticsService:
         if year < 2020 or year > 2030:
             raise BadRequestError("Year must be between 2020 and 2030")
         
-        return await self.repository.get_test_details(test_code.strip(), month, year, entity_name)
+        if not (1 <= threshold_days <= 60):
+            raise BadRequestError("Threshold days must be between 1 and 60")
+
+        return await self.repository.get_test_details(
+            test_code.strip(),
+            month,
+            year,
+            threshold_days,
+            entity_name
+        )
     
     async def get_test_pathologists(
         self, 

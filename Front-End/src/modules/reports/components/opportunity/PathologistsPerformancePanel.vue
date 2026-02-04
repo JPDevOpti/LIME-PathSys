@@ -7,7 +7,10 @@
       <div class="flex items-center justify-between mb-4">
         <h4 class="text-md font-medium text-gray-800">Comparativa por patólogo</h4>
       </div>
-      <div class="h-[320px] sm:h-[380px] lg:h-[420px]">
+      <div v-if="safeDatos.length === 0" class="text-gray-500 text-sm">
+        No hay datos de patólogos para el período seleccionado.
+      </div>
+      <div v-else class="h-[320px] sm:h-[380px] lg:h-[420px]">
         <apexchart type="bar" height="100%" :options="chartOptions" :series="chartSeries" />
       </div>
     </div>
@@ -22,11 +25,19 @@ import { DoctorIcon } from '@/assets/icons'
 
 const props = defineProps<{ datos: PathologistPerformance[] }>()
 
-const categories = computed(() => props.datos.map(p => p.name))
+const safeDatos = computed(() =>
+  props.datos.map((p) => ({
+    name: p.name || 'Sin nombre',
+    withinOpportunity: Number.isFinite(p.withinOpportunity) ? p.withinOpportunity : 0,
+    outOfOpportunity: Number.isFinite(p.outOfOpportunity) ? p.outOfOpportunity : 0
+  })).filter((p) => p.name)
+)
+
+const categories = computed(() => safeDatos.value.map(p => p.name))
 
 const chartSeries = computed(() => [
-  { name: 'Dentro de Oportunidad', data: props.datos.map(p => p.withinOpportunity) },
-  { name: 'Fuera de Oportunidad', data: props.datos.map(p => p.outOfOpportunity) }
+  { name: 'Dentro de Oportunidad', data: safeDatos.value.map(p => p.withinOpportunity) },
+  { name: 'Fuera de Oportunidad', data: safeDatos.value.map(p => p.outOfOpportunity) }
 ])
 
 const chartOptions = computed(() => ({

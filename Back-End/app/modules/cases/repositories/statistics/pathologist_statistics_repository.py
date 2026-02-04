@@ -16,6 +16,46 @@ class PathologistStatisticsRepository:
             "patient_info.entity_info.code": {"$ne": self.excluded_entity_code},
         }
 
+    def _add_max_time_fields(self, base_pipeline: List[Dict[str, Any]], default_time: int) -> List[Dict[str, Any]]:
+        # Agrega tiempo máximo de pruebas por caso usando lookup a tests
+        return [
+            *base_pipeline,
+            {"$unwind": {"path": "$samples", "preserveNullAndEmptyArrays": True}},
+            {"$unwind": {"path": "$samples.tests", "preserveNullAndEmptyArrays": True}},
+            {
+                "$lookup": {
+                    "from": "tests",
+                    "localField": "samples.tests.id",
+                    "foreignField": "test_code",
+                    "as": "test_info",
+                }
+            },
+            {"$unwind": {"path": "$test_info", "preserveNullAndEmptyArrays": True}},
+            {
+                "$group": {
+                    "_id": "$_id",
+                    "assigned_pathologist": {"$first": "$assigned_pathologist"},
+                    "pathologist": {"$first": "$pathologist"},
+                    "state": {"$first": "$state"},
+                    "created_at": {"$first": "$created_at"},
+                    "signed_at": {"$first": "$signed_at"},
+                    "business_days": {"$first": "$business_days"},
+                    "max_time_raw": {"$max": "$test_info.time"},
+                }
+            },
+            {
+                "$addFields": {
+                    "max_time": {
+                        "$cond": [
+                            {"$and": [{"$ne": ["$max_time_raw", None]}, {"$gt": ["$max_time_raw", 0]}]},
+                            "$max_time_raw",
+                            default_time,
+                        ]
+                    }
+                }
+            },
+        ]
+
     # Rendimiento mensual por patólogo (casos completados).
     async def get_pathologist_monthly_performance(
         self,
@@ -32,21 +72,54 @@ class PathologistStatisticsRepository:
             **self._exclude_entity_match()
         }
         if pathologist_name:
-            match_conditions["assigned_pathologist.name"] = {"$regex": pathologist_name.strip(), "$options": "i"}
+            name_regex = {"$regex": pathologist_name.strip(), "$options": "i"}
+            match_conditions["$or"] = [
+                {"assigned_pathologist.name": name_regex},
+                {"pathologist.name": name_regex},
+                {"pathologist": name_regex},
+            ]
         
-        pipeline = [
+        base_pipeline = [
             {"$match": match_conditions},
+            {
+                "$project": {
+                    "assigned_pathologist": 1,
+                    "pathologist": 1,
+                    "state": 1,
+                    "created_at": 1,
+                    "business_days": 1,
+                    "samples.tests.id": 1,
+                }
+            },
+        ]
+        pipeline = [
+            *self._add_max_time_fields(base_pipeline, threshold_days),
+            {
+                "$addFields": {
+                    "pathologist_name": {
+                        "$ifNull": [
+                            "$assigned_pathologist.name",
+                            {"$ifNull": ["$pathologist.name", "$pathologist"]},
+                        ]
+                    },
+                    "pathologist_code": {
+                        "$ifNull": ["$assigned_pathologist.id", "$pathologist.id"]
+                    },
+                    "business_days_safe": {"$ifNull": ["$business_days", 0]},
+                }
+            },
+            {"$match": {"pathologist_name": {"$ne": None, "$ne": ""}}},
             {
                 "$group": {
                     "_id": {
-                        "pathologist_code": "$assigned_pathologist.id",
-                        "pathologist_name": "$assigned_pathologist.name"
+                        "pathologist_code": "$pathologist_code",
+                        "pathologist_name": "$pathologist_name"
                     },
                     "total_cases": {"$sum": 1},
                     "within_opportunity": {
                         "$sum": {
                             "$cond": [
-                                {"$lte": ["$business_days", threshold_days]},
+                                {"$lte": ["$business_days_safe", "$max_time"]},
                                 1,
                                 0
                             ]
@@ -55,14 +128,14 @@ class PathologistStatisticsRepository:
                     "out_of_opportunity": {
                         "$sum": {
                             "$cond": [
-                                {"$gt": ["$business_days", threshold_days]},
+                                {"$gt": ["$business_days_safe", "$max_time"]},
                                 1,
                                 0
                             ]
                         }
                     },
-                    "total_business_days": {"$sum": "$business_days"},
-                    "avg_business_days": {"$avg": "$business_days"}
+                    "total_business_days": {"$sum": "$business_days_safe"},
+                    "avg_business_days": {"$avg": "$business_days_safe"}
                 }
             },
             {
@@ -94,7 +167,11 @@ class PathologistStatisticsRepository:
         pipeline = [
             {
                 "$match": {
-                    "assigned_pathologist.name": {"$regex": pathologist_name.strip(), "$options": "i"},
+                    "$or": [
+                        {"assigned_pathologist.name": {"$regex": pathologist_name.strip(), "$options": "i"}},
+                        {"pathologist.name": {"$regex": pathologist_name.strip(), "$options": "i"}},
+                        {"pathologist": {"$regex": pathologist_name.strip(), "$options": "i"}},
+                    ],
                     "state": {"$in": ["Completado", "Por entregar"]},
                     "created_at": {"$gte": start_date, "$lt": end_date},
                     **self._exclude_entity_match()
@@ -137,7 +214,11 @@ class PathologistStatisticsRepository:
         pipeline = [
             {
                 "$match": {
-                    "assigned_pathologist.name": {"$regex": pathologist_name.strip(), "$options": "i"},
+                    "$or": [
+                        {"assigned_pathologist.name": {"$regex": pathologist_name.strip(), "$options": "i"}},
+                        {"pathologist.name": {"$regex": pathologist_name.strip(), "$options": "i"}},
+                        {"pathologist": {"$regex": pathologist_name.strip(), "$options": "i"}},
+                    ],
                     "state": {"$in": ["Completado", "Por entregar"]},
                     "created_at": {"$gte": start_date, "$lt": end_date},
                     **self._exclude_entity_match()
@@ -175,14 +256,35 @@ class PathologistStatisticsRepository:
         pathologist_name: str,
         threshold_days: int = 7
     ) -> Dict[str, Any]:
-        pipeline = [
+        base_pipeline = [
             {
                 "$match": {
-                    "pathologist.name": pathologist_name.strip(),
+                    "$or": [
+                        {"assigned_pathologist.name": pathologist_name.strip()},
+                        {"pathologist.name": pathologist_name.strip()},
+                        {"pathologist": pathologist_name.strip()},
+                    ],
                     "state": {"$in": ["Completado", "Por entregar"]},
                     "created_at": {"$exists": True},
-                    "business_days": {"$exists": True},
                     **self._exclude_entity_match()
+                }
+            },
+            {
+                "$project": {
+                    "assigned_pathologist": 1,
+                    "pathologist": 1,
+                    "state": 1,
+                    "created_at": 1,
+                    "business_days": 1,
+                    "samples.tests.id": 1,
+                }
+            },
+        ]
+        pipeline = [
+            *self._add_max_time_fields(base_pipeline, threshold_days),
+            {
+                "$addFields": {
+                    "business_days_safe": {"$ifNull": ["$business_days", 0]},
                 }
             },
             {
@@ -192,7 +294,7 @@ class PathologistStatisticsRepository:
                     "within_opportunity": {
                         "$sum": {
                             "$cond": [
-                                {"$lte": ["$business_days", threshold_days]},
+                                {"$lte": ["$business_days_safe", "$max_time"]},
                                 1,
                                 0
                             ]
@@ -201,13 +303,13 @@ class PathologistStatisticsRepository:
                     "out_of_opportunity": {
                         "$sum": {
                             "$cond": [
-                                {"$gt": ["$business_days", threshold_days]},
+                                {"$gt": ["$business_days_safe", "$max_time"]},
                                 1,
                                 0
                             ]
                         }
                     },
-                    "avg_business_days": {"$avg": "$business_days"}
+                    "avg_business_days": {"$avg": "$business_days_safe"}
                 }
             },
             {
@@ -234,13 +336,36 @@ class PathologistStatisticsRepository:
         start_date = datetime(year, 1, 1)
         end_date = datetime(year + 1, 1, 1)
         
-        pipeline = [
+        base_pipeline = [
             {
                 "$match": {
-                    "pathologist.name": pathologist_name.strip(),
+                    "$or": [
+                        {"assigned_pathologist.name": pathologist_name.strip()},
+                        {"pathologist.name": pathologist_name.strip()},
+                        {"pathologist": pathologist_name.strip()},
+                    ],
                     "state": {"$in": ["Completado", "Por entregar"]},
                     "created_at": {"$gte": start_date, "$lt": end_date},
                     **self._exclude_entity_match()
+                }
+            },
+            {
+                "$project": {
+                    "assigned_pathologist": 1,
+                    "pathologist": 1,
+                    "state": 1,
+                    "created_at": 1,
+                    "signed_at": 1,
+                    "business_days": 1,
+                    "samples.tests.id": 1,
+                }
+            },
+        ]
+        pipeline = [
+            *self._add_max_time_fields(base_pipeline, threshold_days),
+            {
+                "$addFields": {
+                    "business_days_safe": {"$ifNull": ["$business_days", 0]},
                 }
             },
             {
@@ -253,7 +378,7 @@ class PathologistStatisticsRepository:
                     "within_opportunity": {
                         "$sum": {
                             "$cond": [
-                                {"$lte": ["$business_days", threshold_days]},
+                                {"$lte": ["$business_days_safe", "$max_time"]},
                                 1,
                                 0
                             ]
@@ -262,13 +387,13 @@ class PathologistStatisticsRepository:
                     "out_of_opportunity": {
                         "$sum": {
                             "$cond": [
-                                {"$gt": ["$business_days", threshold_days]},
+                                {"$gt": ["$business_days_safe", "$max_time"]},
                                 1,
                                 0
                             ]
                         }
                     },
-                    "avg_business_days": {"$avg": "$business_days"}
+                    "avg_business_days": {"$avg": "$business_days_safe"}
                 }
             },
             {

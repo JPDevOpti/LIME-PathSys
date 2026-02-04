@@ -9,6 +9,47 @@ class OpportunityStatisticsRepository:
         self.collection = db.cases
         self.excluded_entity_code = "HAMA"
 
+    def _add_max_time_fields(self, base_pipeline: list, default_time: int) -> list:
+        # Agrega tiempo máximo de pruebas por caso usando lookup a tests
+        return [
+            *base_pipeline,
+            {"$addFields": {"samples_original": {"$ifNull": ["$samples", []]}}},
+            {"$unwind": {"path": "$samples", "preserveNullAndEmptyArrays": True}},
+            {"$unwind": {"path": "$samples.tests", "preserveNullAndEmptyArrays": True}},
+            {
+                "$lookup": {
+                    "from": "tests",
+                    "localField": "samples.tests.id",
+                    "foreignField": "test_code",
+                    "as": "test_info",
+                }
+            },
+            {"$unwind": {"path": "$test_info", "preserveNullAndEmptyArrays": True}},
+            {
+                "$group": {
+                    "_id": "$case_code",
+                    "business_days": {"$first": "$business_days"},
+                    "state": {"$first": "$state"},
+                    "created_at": {"$first": "$created_at"},
+                    "samples": {"$first": "$samples_original"},
+                    "assigned_pathologist": {"$first": "$assigned_pathologist"},
+                    "pathologist": {"$first": "$pathologist"},
+                    "max_time_raw": {"$max": "$test_info.time"},
+                }
+            },
+            {
+                "$addFields": {
+                    "max_time": {
+                        "$cond": [
+                            {"$and": [{"$ne": ["$max_time_raw", None]}, {"$gt": ["$max_time_raw", 0]}]},
+                            "$max_time_raw",
+                            default_time,
+                        ]
+                    }
+                }
+            },
+        ]
+
     def _month_range(self, ref: Optional[datetime] = None) -> Dict[str, datetime]:
         # Calcula inicios de mes: actual, anterior y pre-anterior
         now = ref or datetime.now(timezone.utc)
@@ -48,22 +89,27 @@ class OpportunityStatisticsRepository:
         if pathologist_code:
             match_stage["assigned_pathologist.id"] = pathologist_code
 
-        projection = {
-            "created_at": 1,
-            "state": 1,
-            "assigned_pathologist.id": 1,
-            "business_days": 1,
-            "_id": 0,
-        }
+        base_pipeline = [
+            {"$match": match_stage},
+            {
+                "$project": {
+                    "case_code": 1,
+                    "created_at": 1,
+                    "state": 1,
+                    "assigned_pathologist.id": 1,
+                    "samples.tests.id": 1,
+                    "business_days": 1,
+                }
+            },
+        ]
+        pipeline = self._add_max_time_fields(base_pipeline, opportunity_days_threshold)
 
-        cursor = self.collection.find(match_stage, projection=projection)
-        docs = await cursor.to_list(length=None)
+        docs = await self.collection.aggregate(pipeline).to_list(length=None)
 
         filtered = [
             d for d in docs
             if str(d.get("state")) in ["Completado", "Por entregar"]
             and d.get("created_at")
-            and d.get("business_days") is not None
         ]
 
         total_considerados = len(filtered)
@@ -80,9 +126,10 @@ class OpportunityStatisticsRepository:
         dentro = 0
         fuera = 0
         for d in filtered:
-            business_days: int = d["business_days"]
+            business_days: int = int(d.get("business_days") or 0)
+            max_time = d.get("max_time") or opportunity_days_threshold
             diffs_days.append(business_days)
-            if business_days <= opportunity_days_threshold:
+            if business_days <= max_time:
                 dentro += 1
             else:
                 fuera += 1
@@ -231,24 +278,30 @@ class OpportunityStatisticsRepository:
             match_stage["$or"] = [
                 {"assigned_pathologist.id": pathologist},
                 {"assigned_pathologist.name": {"$regex": pathologist, "$options": "i"}},
+                {"pathologist.id": pathologist},
+                {"pathologist.name": {"$regex": pathologist, "$options": "i"}},
+                {"pathologist": {"$regex": pathologist, "$options": "i"}},
             ]
 
-        projection = {
-            "created_at": 1,
-            "state": 1,
-            "assigned_pathologist.id": 1,
-            "assigned_pathologist.name": 1,
-            "patient_info.entity_info.name": 1,
-            "patient_info.patient_code": 1,
-            "patient_info.created_at": 1,
-            "samples.tests.id": 1,
-            "samples.tests.name": 1,
-            "business_days": 1,
-            "_id": 0,
-        }
-
-        cursor = self.collection.find(match_stage, projection=projection)
-        docs = await cursor.to_list(length=None)
+        base_pipeline = [
+            {"$match": match_stage},
+            {
+                "$project": {
+                    "case_code": 1,
+                    "created_at": 1,
+                    "state": 1,
+                    "assigned_pathologist": 1,
+                    "pathologist": 1,
+                    "patient_info.entity_info.name": 1,
+                    "patient_info.patient_code": 1,
+                    "patient_info.created_at": 1,
+                    "samples": 1,
+                    "business_days": 1,
+                }
+            },
+        ]
+        pipeline = self._add_max_time_fields(base_pipeline, threshold_days)
+        docs = await self.collection.aggregate(pipeline).to_list(length=None)
 
         tests_map: Dict[str, Dict[str, Any]] = {}
         pat_map: Dict[str, Dict[str, Any]] = {}
@@ -258,11 +311,11 @@ class OpportunityStatisticsRepository:
 
         for d in docs:
             created_at: Optional[datetime] = d.get("created_at")
-            business_days: Optional[int] = d.get("business_days")
-            if not created_at or business_days is None:
+            if not created_at:
                 continue
-            days = business_days
-            within = days <= threshold_days
+            days = int(d.get("business_days") or 0)
+            max_time = d.get("max_time") or threshold_days
+            within = days <= max_time
             total += 1
             sum_days_all += days
             if within:
@@ -296,7 +349,9 @@ class OpportunityStatisticsRepository:
                         rec["out"] += 1
 
             # Aggregate by pathologist
-            ap = d.get("assigned_pathologist") or {}
+            ap = d.get("assigned_pathologist") or d.get("pathologist") or {}
+            if isinstance(ap, str):
+                ap = {"name": ap}
             pcode = str(ap.get("id") or "")
             pname = str(ap.get("name") or "")
             pkey = pcode or pname

@@ -63,6 +63,7 @@ import TestsOpportunityPanel from './TestsOpportunityPanel.vue'
 import PathologistsPerformancePanel from './PathologistsPerformancePanel.vue'
 import type { OpportunityTest, PathologistPerformance, OpportunitySummaryStats } from '../../types/opportunity.types'
 import { opportunityApiService } from '../../services/opportunity.service'
+import { testsApiService } from '@/modules/cases/services/testsApiService'
 
 const monthsFull = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -158,6 +159,7 @@ const clearSelection = () => {
 const apiTests = ref<OpportunityTest[]>([])
 const apiPathologists = ref<PathologistPerformance[]>([])
 const summary = ref<OpportunitySummaryStats | null>(null)
+const DEFAULT_OPPORTUNITY_DAYS = 6
 
 const testsForSelection = computed<OpportunityTest[]>(() => apiTests.value)
 
@@ -169,7 +171,7 @@ const monthlyPct = ref<number[]>([])
 async function loadFromApi() {
   try {
     const api = await opportunityApiService.getMonthlyOpportunity(Number(selectedMonth.value) + 1, Number(selectedYear.value))
-    apiTests.value = api.tests
+    apiTests.value = await enrichTestsWithTime(api.tests)
     apiPathologists.value = api.pathologists
     summary.value = (api.summary as OpportunitySummaryStats) || null
     
@@ -185,6 +187,28 @@ async function loadFromApi() {
     summary.value = null
     monthlyPct.value = []
     throw error
+  }
+}
+
+async function enrichTestsWithTime(tests: OpportunityTest[]): Promise<OpportunityTest[]> {
+  try {
+    const catalog = await testsApiService.getAllActiveTests()
+    const timeByCode = new Map<string, number>()
+    catalog.forEach((t) => {
+      const code = String(t.pruebaCode || '').trim()
+      if (!code) return
+      const time = Number(t.tiempo || 0)
+      if (Number.isFinite(time) && time > 0) timeByCode.set(code, Math.floor(time))
+    })
+    return tests.map((t) => ({
+      ...t,
+      opportunityTimeDays: timeByCode.get(t.code) ?? DEFAULT_OPPORTUNITY_DAYS
+    }))
+  } catch (error) {
+    return tests.map((t) => ({
+      ...t,
+      opportunityTimeDays: DEFAULT_OPPORTUNITY_DAYS
+    }))
   }
 }
 

@@ -45,12 +45,13 @@ async def get_test_details(
     test_code: str,
     month: int = Query(..., ge=1, le=12, description="Month (1-12)"),
     year: int = Query(..., ge=2020, le=2030, description="Year"),
+    threshold_days: int = Query(7, ge=1, le=60, alias="thresholdDays", description="Opportunity threshold in days"),
     entity: Optional[str] = Query(None, description="Optional entity name filter"),
     service: TestStatisticsService = Depends(get_test_statistics_service)
 ):
     """Get detailed statistics for a specific test"""
     try:
-        result = await service.get_test_details(test_code, month, year, entity)
+        result = await service.get_test_details(test_code, month, year, threshold_days, entity)
         return TestDetailsResponse(**result)
     except BadRequestError as e:
         raise HTTPException(status_code=400, detail=str(e))

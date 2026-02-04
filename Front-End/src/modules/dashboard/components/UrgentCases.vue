@@ -414,7 +414,7 @@ const getUrgentLimitDays = (caso: CasoUrgente): number => {
 const casosUrgentes = computed(() => {
   return casos.value
     .filter(c => c.paciente.entidad_codigo !== 'HAMA')
-    .filter(c => getDaysInSystem(c) >= getUrgentLimitDays(c))
+    .filter(c => getDaysInSystem(c) > getUrgentLimitDays(c))
     .slice()
     .sort((a, b) => {
     const getVal = (caso: CasoUrgente) => {
@@ -535,7 +535,7 @@ const statusLabel = (caso: CasoUrgente) => caso.estado
 const statusClass = (caso: CasoUrgente) => {
   const days = getDaysInSystem(caso)
   if (caso.estado === 'Por entregar') return 'bg-red-50 text-red-700 font-semibold'
-  if (days >= getUrgentLimitDays(caso) && caso.estado !== 'Completado') return 'bg-red-50 text-red-700 font-semibold'
+  if (days > getUrgentLimitDays(caso) && caso.estado !== 'Completado') return 'bg-red-50 text-red-700 font-semibold'
   if (caso.estado === 'Por firmar') return 'bg-yellow-50 text-yellow-700'
   if (caso.estado === 'En proceso') return 'bg-blue-50 text-blue-700'
   if (caso.estado === 'Completado') return 'bg-green-50 text-green-700'
@@ -544,7 +544,7 @@ const statusClass = (caso: CasoUrgente) => {
 
 const daysClass = (caso: CasoUrgente) => {
   const days = getDaysInSystem(caso)
-  return days >= getUrgentLimitDays(caso) && caso.estado !== 'Completado' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'
+  return days > getUrgentLimitDays(caso) && caso.estado !== 'Completado' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'
 }
 
 const handleEdit = (caso: CasoUrgente) => router.push(`/cases/edit/${caso.codigo}`)

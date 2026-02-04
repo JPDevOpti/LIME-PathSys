@@ -3,7 +3,8 @@ export interface OpportunityTest {
   name: string
   withinOpportunity: number
   outOfOpportunity: number
-  opportunityTime: string // e.g., '7 días'
+  averageDays?: number
+  opportunityTimeDays?: number
 }
 
 export interface OpportunityFilters {

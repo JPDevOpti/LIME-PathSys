@@ -26,7 +26,7 @@
       </div>
       <div class="mt-2">
         <div class="flex justify-between text-xs text-gray-500 mb-1">
-          <span>Tiempo de Oportunidad: {{ prueba.opportunityTime }}</span>
+          <span>Tiempo de Oportunidad: {{ opportunityTimeLabel }}</span>
           <span>{{ completion }}%</span>
         </div>
         <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
@@ -45,6 +45,10 @@ const props = defineProps<{ prueba: OpportunityTest }>()
 
 const total = computed(() => props.prueba.withinOpportunity + props.prueba.outOfOpportunity)
 const completion = computed(() => total.value ? Math.round((props.prueba.withinOpportunity / total.value) * 100) : 0)
+const opportunityTimeLabel = computed(() => {
+  const days = Number(props.prueba.opportunityTimeDays ?? 6)
+  return `${days.toFixed(0)} días`
+})
 
 const badgeClass = computed(() => {
   if (completion.value >= 85) return 'bg-green-100 text-green-800'

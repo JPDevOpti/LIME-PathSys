@@ -67,7 +67,7 @@ export class OpportunityApiService {
           name: String(t.name || ''),
           withinOpportunity: Number(t.withinOpportunity || 0),
           outOfOpportunity: Number(t.outOfOpportunity || 0),
-          opportunityTime: `${Number(t.averageDays || 0).toFixed(1)} días`
+          averageDays: Number(t.averageDays || 0)
         })
       }
     }
